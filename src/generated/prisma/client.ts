@@ -46,3 +46,109 @@ export { Prisma }
  * 
  */
 export type User = Prisma.UserModel
+/**
+ * Model Category
+ * A catalog category. Categories form a tree through the `parent`/`children`
+ * self-relation: `parentId` is nullable so that root categories exist, and a
+ * category always points at a single optional parent.
+ * 
+ * Cyclic parents cannot be expressed by the relation itself (a self-reference
+ * is valid as long as `parentId <> id`), so that rule is enforced by
+ * `CategoriesService` when `parentId` is written.
+ */
+export type Category = Prisma.CategoryModel
+/**
+ * Model Product
+ * A sellable catalog item, owned by exactly one category.
+ * 
+ * `base_price` is `Decimal(12,2)` so monetary values keep the two-decimal
+ * precision the business requires without ever routing money through a
+ * floating-point column.
+ * 
+ * The row deliberately carries no variants, attributes or stock columns.
+ * Those are separate aggregates that own their own tables and reference this
+ * one, so nothing about their shape has to be guessed now. Images are the
+ * first such aggregate and live in `ProductImage`.
+ * 
+ * Deleting a product cascades to its images and its variants: both are
+ * components of the product and are meaningless without it, and the partial
+ * unique index that guards the primary image is scoped per product. The
+ * deletion policy still has to be revisited when cart lines or order lines
+ * point at `products.id`, because those must *not* disappear with the product.
+ */
+export type Product = Prisma.ProductModel
+/**
+ * Model ProductImage
+ * A single image record attached to a product.
+ * 
+ * This is *metadata only*. The bytes live in an external image host and this
+ * table stores the two values needed to find and manage that asset again:
+ * 
+ * - `image_url` — the address a client renders.
+ * - `public_id` — the host-side identifier required to replace or delete the
+ * asset. It is stored but never used yet; no upload or delete integration
+ * exists at this point, so deleting a product leaves the remote asset
+ * orphaned. That is deliberate and tracked as the motivation for a later
+ * phase, not an oversight.
+ * 
+ * `sort_order` is the caller-controlled display position, lowest first. It is
+ * deliberately *not* unique: several images may share a position, and reads
+ * break ties on `created_at` so a listing is always deterministic.
+ * 
+ * `is_primary` marks the one image a storefront falls back to. "At most one per
+ * product" is enforced in the database by a partial unique index on
+ * `(product_id) WHERE is_primary = true`, declared in the migration rather than
+ * here because Prisma cannot express a predicate on a unique constraint. The
+ * service keeps the same invariant for well-behaved callers; the index is what
+ * actually settles a race.
+ */
+export type ProductImage = Prisma.ProductImageModel
+/**
+ * Model ProductVariant
+ * A purchasable configuration of a product.
+ * 
+ * This phase models only the *identity* and *price* of a variant: a globally
+ * unique `sku` and the amount it sells for. The descriptive axes a storefront
+ * would group by — colour, size, material — live in `VariantOption`, one row per
+ * name/value pair (for example `Color = Black`, `Size = M`). They are a separate
+ * table rather than columns here so the axes are open-ended rather than capped at
+ * a fixed set, and so this table does not have to be renamed.
+ * 
+ * `price` is `Decimal(12,2)`, matching `Product.base_price`, so a variant amount
+ * never passes through a floating-point column. It is a *variant* price rather
+ * than a delta from the product's base: a caller always states the amount that
+ * applies. "Greater than zero" is enforced by the service and by a `CHECK`
+ * constraint added in the migration, because Prisma cannot express a numeric
+ * bound in the schema.
+ * 
+ * `sku` is globally unique rather than unique per product: a stock keeping unit
+ * is meant to identify one row across the whole catalogue. Normalising it
+ * (trim + uppercase) before the uniqueness check is what keeps `abc-1` and
+ * `ABC-1` from becoming two rows.
+ * 
+ * Deleting a product cascades to its variants: unlike cart or order lines,
+ * variant metadata has no meaning without its product. The `onDelete: Cascade`
+ * here is what makes the product-level delete safe.
+ */
+export type ProductVariant = Prisma.ProductVariantModel
+/**
+ * Model VariantOption
+ * A single named axis of a variant, for example `Color = Black` or `Size = M`.
+ * 
+ * The pair is intentionally generic: there is no `colors` or `sizes` table. An
+ * axis exists only as the name a merchant typed, so the schema does not have to
+ * predict every axis a catalogue might need.
+ * 
+ * `(variant_id, option_name)` is unique, so a variant cannot carry `Color`
+ * twice. The constraint is *case-insensitive* as well: `Color` and `color` name
+ * the same axis and must collide. Prisma cannot express a case-insensitive unique
+ * constraint in the schema, so a functional unique index on
+ * `(variant_id, lower(option_name))` is declared in the migration alongside the
+ * ordinary one. Case is preserved in the stored value — `Color` is returned as
+ * `Color`, not `color` — so the index is what enforces the rule rather than a
+ * normalising write.
+ * 
+ * Deleting a variant cascades to its options: an option has no meaning without
+ * the variant it describes.
+ */
+export type VariantOption = Prisma.VariantOptionModel
