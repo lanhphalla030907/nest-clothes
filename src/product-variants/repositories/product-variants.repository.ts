@@ -95,6 +95,17 @@ export class ProductVariantsRepository {
   }
 
   /**
+   * Returns the variant with `id`, or `null` when none does.
+   *
+   * The lookup is deliberately unscoped by product: the caller is not walking the
+   * catalogue tree but addressing one variant directly (a cart line, for
+   * instance), so there is no parent product in the request to scope against.
+   */
+  findById(id: string): Promise<ProductVariant | null> {
+    return this.prisma.productVariant.findUnique({ where: { id } });
+  }
+
+  /**
    * Writes only the columns present in `data`, so an update can never
    * accidentally overwrite an unrelated column with an undefined value.
    *

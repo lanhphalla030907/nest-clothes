@@ -68,13 +68,23 @@ export type Category = Prisma.CategoryModel
  * The row deliberately carries no variants, attributes or stock columns.
  * Those are separate aggregates that own their own tables and reference this
  * one, so nothing about their shape has to be guessed now. Images are the
- * first such aggregate and live in `ProductImage`.
+ * first such aggregate and live in `ProductImage`; variants live in
+ * `ProductVariant` and descriptive attributes in `ProductAttribute`.
  * 
- * Deleting a product cascades to its images and its variants: both are
- * components of the product and are meaningless without it, and the partial
- * unique index that guards the primary image is scoped per product. The
- * deletion policy still has to be revisited when cart lines or order lines
- * point at `products.id`, because those must *not* disappear with the product.
+ * Deleting a product cascades to its images, its variants and its attributes:
+ * all are components of the product and are meaningless without it, and the
+ * partial unique index that guards the primary image is scoped per product.
+ * 
+ * One consequence is now real: because `cart_items` references a *variant* with
+ * `ON DELETE RESTRICT`, deleting a product that sits in somebody's cart is
+ * refused by the database. That is intentional — a product cannot vanish out of
+ * a customer's cart without an explicit decision — and it means the product
+ * must be deactivated (`is_active = false`) instead of deleted while it is
+ * referenced. `wishlist_items` points at the *product* itself with the same
+ * `ON DELETE RESTRICT`, so a saved product is protected for the same reason.
+ * `order_items` points at the *variant* with the same `ON DELETE RESTRICT`, so
+ * a variant somebody has already bought cannot be deleted out from under the
+ * order that references it.
  */
 export type Product = Prisma.ProductModel
 /**
@@ -128,7 +138,9 @@ export type ProductImage = Prisma.ProductImageModel
  * 
  * Deleting a product cascades to its variants: unlike cart or order lines,
  * variant metadata has no meaning without its product. The `onDelete: Cascade`
- * here is what makes the product-level delete safe.
+ * here is what makes the product-level delete safe. Note that the delete is
+ * *incomplete* on purpose: a variant held by a cart or an order is restricted,
+ * so the product delete fails and the caller must clear those first.
  */
 export type ProductVariant = Prisma.ProductVariantModel
 /**
@@ -152,3 +164,380 @@ export type ProductVariant = Prisma.ProductVariantModel
  * the variant it describes.
  */
 export type VariantOption = Prisma.VariantOptionModel
+/**
+ * Model ProductAttribute
+ * A descriptive fact about a product itself, for example `Material = Cotton`,
+ * `Fit = Oversized` or `Care = Machine Wash`.
+ * 
+ * Unlike `VariantOption`, an attribute is not attached to a variant: it
+ * describes the product as a whole and is shared by every variant. The pair is
+ * intentionally generic — there is no `materials` or `fits` table — so the
+ * schema does not have to predict every fact a catalogue might record.
+ * 
+ * `(product_id, lower(attribute_name))` is unique, so a product cannot carry
+ * `Material` twice and `Material` collides with `material`. Prisma cannot express
+ * a case-insensitive unique constraint, so the whole rule is a functional unique
+ * index declared in the migration. Case is preserved in the stored value —
+ * `Material` is returned as `Material`, not `material` — so the index is what
+ * enforces the rule rather than a normalising write.
+ * 
+ * Deleting a product cascades to its attributes: an attribute has no meaning
+ * without the product it describes.
+ */
+export type ProductAttribute = Prisma.ProductAttributeModel
+/**
+ * Model Inventory
+ * The stock counters for one variant.
+ * 
+ * There is exactly one row per variant — `variant_id` is unique — because stock
+ * is a single scalar ledger, not a history. When a history is needed it will be
+ * a separate append-only movement table that references this aggregate, so this
+ * row can stay a compact, frequently-updated counter.
+ * 
+ * `quantity` is the total physical stock and `reserved_quantity` the part of it
+ * promised to carts or orders that have not been fulfilled. The sellable amount
+ * is the derived value `available = quantity - reserved_quantity`. `available`
+ * is deliberately **not** stored: it is a function of the other two columns, and
+ * persisting it would create a third value that could disagree with them.
+ * 
+ * Both counters are non-negative and `reserved_quantity` may never exceed
+ * `quantity`. Prisma cannot express those as schema constraints, so they are
+ * declared as `CHECK` constraints in the migration. They are the database-level
+ * backstop that makes a concurrent write unable to persist invalid stock even
+ * when two writers interleave.
+ * 
+ * The unique index on `variant_id` also serves every `WHERE variant_id = ...`
+ * lookup, so no redundant secondary index is declared here.
+ * 
+ * Deleting a variant cascades to its inventory: stock has no meaning once the
+ * variant it counts is gone.
+ */
+export type Inventory = Prisma.InventoryModel
+/**
+ * Model Cart
+ * The mutable list of things one user intends to buy.
+ * 
+ * A cart is created lazily — the first time it is read or written — so a user
+ * who never adds anything has no row. `userId` is unique, so "one cart per
+ * user" is a database fact rather than a convention the service upholds.
+ * 
+ * The cart is a **wish list of intent, not a claim on stock**: nothing here
+ * touches `inventory.reserved_quantity`. Stock can change between adding an
+ * item and paying for it, and `GET /cart` deliberately reports the *current*
+ * `available` alongside each line so the client can see that it moved. The
+ * authoritative re-validation and reservation belong to the checkout phase,
+ * which is the only place allowed to mutate `reservedQuantity`.
+ * 
+ * Deleting a user cascades to its cart, and a cart cascades to its items: both
+ * are owned exclusively by the user and are meaningless once it is gone.
+ * Cart lines are deliberately *not* the reverse — see {@link CartItem}.
+ */
+export type Cart = Prisma.CartModel
+/**
+ * Model CartItem
+ * One line of a cart: a quantity of a single variant.
+ * 
+ * `quantity` is stored as an absolute value, never as a delta, so the row is
+ * the whole truth about the line and a read never has to replay a history.
+ * "Greater than zero" is enforced by the service *and* by a `CHECK` constraint
+ * added in the migration, because Prisma cannot express a numeric bound in the
+ * schema — the same treatment `inventory.quantity` receives.
+ * 
+ * `(cart_id, variant_id)` is unique: a variant appears at most once per cart,
+ * and adding it twice must *increment* the existing line rather than create a
+ * second one. That invariant is the reason a duplicate insert is a hard error
+ * and not a tolerated race — it is also the constraint that makes two
+ * concurrent adds of the same variant safe, because the loser of the race is
+ * rejected by the index and can be retried as an increment.
+ * 
+ * The unique index already serves every `WHERE cart_id = ...` lookup, so no
+ * redundant secondary index on `cart_id` is declared; only `variant_id` needs
+ * one, to answer "which carts reference this variant" and to let the foreign
+ * key be checked without a sequential scan.
+ * 
+ * Deleting the cart cascades to its lines — they are components of it.
+ * Deleting the referenced variant is **restricted** rather than cascading: a
+ * line is a promise made to a customer about a specific purchasable thing, so a
+ * catalogue deletion must fail loudly and force an explicit decision instead of
+ * silently emptying somebody's cart.
+ */
+export type CartItem = Prisma.CartItemModel
+/**
+ * Model Wishlist
+ * A saved list of products one user intends to buy later.
+ * 
+ * The mutable sibling of {@link Cart}: a cart is "what I am buying now" and a
+ * wishlist is "what I might come back for". They are separate aggregates
+ * because they answer different questions and have different lifetimes — emptying
+ * a cart must not discard a wishlist, and nothing in a wishlist implies a
+ * quantity, a price promise or a claim on stock.
+ * 
+ * It is created lazily — the first time it is read or written — so a user who
+ * never saves anything has no row. `userId` is unique, so "one wishlist per
+ * user" is a database fact rather than a convention the service upholds, and
+ * that unique index is also what settles a concurrent first-request race.
+ * 
+ * Nothing here touches `inventory`: a wishlist is not a claim on stock, so a
+ * saved product may sell out or be deactivated while it sits here. Reads
+ * therefore join the *current* product rather than a snapshot, and report
+ * availability as it is at response time.
+ * 
+ * Deleting a user cascades to its wishlist, and a wishlist cascades to its
+ * items: both are owned exclusively by the user and are meaningless once it is
+ * gone.
+ */
+export type Wishlist = Prisma.WishlistModel
+/**
+ * Model WishlistItem
+ * One saved product on a wishlist.
+ * 
+ * A wishlist records *that* a product is wanted, never how many of it: there is
+ * deliberately no `quantity` column. "I want two of these" is a cart decision,
+ * and keeping quantity out of this row is what stops a wishlist from quietly
+ * turning into a second, unreconciled cart.
+ * 
+ * Only `createdAt` is stored, and there is no `updatedAt`. A saved item has
+ * nothing to update — it is either saved or it is not — so an `updated_at`
+ * column would always be identical to `created_at` and would imply an editing
+ * operation that does not exist.
+ * 
+ * `(wishlist_id, product_id)` is unique: a product appears at most once per
+ * wishlist, and saving it twice must be a no-op rather than a second row. That
+ * invariant is what makes two concurrent saves of the same product safe — the
+ * loser's insert is rejected by the index and retried as "already saved", never
+ * surfaced as an error.
+ * 
+ * The unique index already serves every `WHERE wishlist_id = ...` lookup, so no
+ * redundant secondary index on `wishlist_id` is declared; only `product_id`
+ * needs one, to answer "which wishlists reference this product" and to let the
+ * foreign key be checked without a sequential scan.
+ * 
+ * Deleting the wishlist cascades to its items — they are components of it.
+ * Deleting the referenced product is **restricted** rather than cascading, for
+ * the same reason `cart_items` restricts: a catalogue deletion must fail loudly
+ * instead of silently altering what a customer saved, and the product should be
+ * deactivated first.
+ */
+export type WishlistItem = Prisma.WishlistItemModel
+/**
+ * Model Address
+ * One address in a user's address book.
+ * 
+ * Addresses are **user-owned mutable records**, not order history. Nothing about
+ * them is frozen: a customer corrects a typo, moves house, renames "Home" to
+ * "Apartment", or retires an address they no longer use. `updated_at` exists
+ * because, unlike a saved wishlist item, an address genuinely changes.
+ * 
+ * ## Why nothing here references a country or a city table
+ * 
+ * `country_code` is a bare `CHAR(2)` and `city` is free text. Normalising
+ * countries and cities into reference tables would imply the project wants to
+ * enforce a canonical list of place names — and a customer's address must be
+ * storable even when the place is not in our list, or misspelled, or newly
+ * built. A checkout that refuses an address because the city is unknown is worse
+ * than one that accepts a city it has never seen. Validation stays at the edge
+ * (ISO 3166-1 alpha-2 shape) and the value is stored as given.
+ * 
+ * `state_province` is nullable and `postal_code` is nullable and only length-
+ * bounded, because whether a country has states, districts, counties or
+ * provinces — and what its postal codes look like — varies so widely that any
+ * format rule here would be wrong for most of the world. `address_line2` is
+ * nullable for the same reason: apartments, floors and care-of lines are a
+ * local convention, not a universal field.
+ * 
+ * ## Exactly one default per user, enforced by the database
+ * 
+ * A user may hold many addresses but only one may be the default, so a checkout
+ * can always fill itself without asking. That invariant is enforced by a
+ * PostgreSQL **partial unique index** on `(user_id) WHERE is_default = true`.
+ * 
+ * It is a partial index rather than a plain unique index on `(user_id,
+ * is_default)` because the latter would be wrong in the most common case: it
+ * would also forbid two *non-default* addresses, since `false` would collide
+ * with itself. Prisma cannot express a predicate on a unique constraint, so the
+ * index is declared in the migration SQL and is deliberately absent from this
+ * schema — the same arrangement `product_images_primary_key` uses.
+ * 
+ * The index is also what makes the rule safe under concurrency. Two requests that
+ * each try to become the default cannot both win: the loser's write is rejected
+ * by the index, and `AddressService` retries it as a fresh read-modify-write
+ * rather than surfacing a conflict.
+ * 
+ * ## Delete behaviour
+ * 
+ * Deleting a user cascades to its addresses: an address has no meaning without
+ * its owner. Note the contrast with `wishlist_items.product_id`, which restricts:
+ * an address cannot be depended on by anything durable yet, precisely because
+ * orders will not point here — see below.
+ * 
+ * ## Why orders will not reference this table
+ * 
+ * An order must keep the address it was shipped to even after the customer edits
+ * or deletes the address it came from, so `orders` stores its own immutable
+ * **snapshot** of these fields at checkout rather than a foreign key to
+ * `addresses`. Pointing an order at a mutable row would let last month's
+ * delivered parcel change its destination the next time somebody fixes a typo in
+ * their address book.
+ */
+export type Address = Prisma.AddressModel
+/**
+ * Model Order
+ * A confirmed purchase by one user.
+ * 
+ * An order is a **frozen record of a transaction**, and everything about it is
+ * shaped by that one idea. Three consequences run through the whole model:
+ * 
+ * ## 1. The customer-facing identifier is `order_number`, not `id`
+ * 
+ * `id` is an internal UUID and appears in URLs only; `order_number` is what a
+ * customer is told and what support reads over the phone. It is therefore a
+ * deliberately *unpredictable* string rather than the primary key: a sequential
+ * number would let one customer enumerate and read another's orders by
+ * counting. `OrderNumberService` mints `ORD-YYYYMMDD-XXXXXX` from
+ * `crypto.randomInt` over a 36-character alphabet, giving 31 bits per character
+ * and ~36^6 possibilities per day, and `order_number` carries a `UNIQUE`
+ * constraint as the final arbiter. The UUID stays out of the customer-facing
+ * surface entirely.
+ * ## 2. The money is already decided
+ * 
+ * `subtotal`, `shipping_fee`, `discount_amount` and `total_amount` are stored,
+ * not recomputed on read. An order total is a *quotation the customer accepted*;
+ * if it were derived from live product prices, a later catalogue edit would
+ * silently rewrite what somebody was charged. Every amount is
+ * `Decimal(12,2)` — the same NUMERIC discipline as `Product.base_price` — so no
+ * figure ever passes through a float. The invariant
+ * `total = subtotal + shipping_fee - discount_amount` is a `CHECK` constraint in
+ * the migration, and each component is separately constrained to be
+ * non-negative. There is deliberately **no tax column yet**: adding one later is
+ * additive, whereas a wrong tax figure baked into an immutable total would not
+ * be.
+ * ## 3. Everything it points at is copied, not referenced
+ * 
+ * The shipping address is a **snapshot**, not a foreign key to {@link Address}.
+ * Editing or deleting an address must not change where a past parcel went, so
+ * the seven `shipping_*` columns duplicate the address fields on purpose. The
+ * same reasoning drives {@link OrderItem}, which snapshots the product name,
+ * SKU, options and price. This is the one place in the schema where
+ * denormalising is the correct choice.
+ * 
+ * ## Status is extensible, mutation is not
+ * 
+ * `status` is `VARCHAR(30)` rather than a database enum, matching the existing
+ * `User.status` and `Product.status` convention, and it holds the lifecycle
+ * `PENDING` → `CONFIRMED` → `PROCESSING` → `SHIPPED` → `DELIVERED` with
+ * `CANCELLED` as an exit from any pre-delivery state. The value set lives in
+ * `OrderStatus` (see `constants/order-status.constants.ts`), not in the
+ * database, so a new state is a code change rather than an `ALTER TYPE`.
+ * 
+ * ## Delete behaviour
+ * 
+ * Deleting a user is **restricted**, and this is the one place in the schema
+ * where that is right. A cart, a wishlist and an address book all cascade: they
+ * are private working data with no value once the owner is gone. An order is not
+ * — it is a financial record, and deleting it must be a deliberate, auditable
+ * decision rather than a side effect of an account deletion. Callers that want
+ * the cascade must remove the orders explicitly first.
+ * 
+ * Deleting an order cascades to its items: a line is meaningless without the
+ * order it belongs to, and the order is the only thing that makes it.
+ * 
+ * There is **no public route that mutates an order**. `GET /orders` and
+ * `GET /orders/:id` are the entire HTTP surface of this feature. Prices,
+ * totals, status and snapshots are written exactly once, by the checkout phase
+ * that does not exist yet, and never by a client.
+ */
+export type Order = Prisma.OrderModel
+/**
+ * Model OrderItem
+ * One line of an order: a quantity of one variant, as it was sold.
+ * 
+ * ## This row is a snapshot, and that is its entire purpose
+ * 
+ * Every descriptive and monetary column here is a **copy taken at checkout**,
+ * not a reference to the live catalogue:
+ * 
+ * | column                   | why it is copied rather than joined                             |
+ * | ------------------------ | ----------------------------------------------------------------- |
+ * | `product_name`           | the product may later be renamed, or the variant may be folded into another |
+ * | `sku`                    | a SKU identifies a *historical* thing, and a re-issued SKU must not rewrite an old receipt |
+ * | `variant_options_snapshot` | the `VariantOption` rows can be edited or deleted; "Black / M" is a fact about *that* order |
+ * | `unit_price`             | the catalogue price changes; the price the customer paid must not   |
+ * | `line_total`             | derived from the price above, so it must be frozen with it          |
+ * 
+ * This is the deliberate opposite of {@link CartItem}, which *does* join the
+ * live variant and product because a cart records current intent. Reading an
+ * old order must never show today's name or today's price, and the only way to
+ * guarantee that is to not look.
+ * 
+ * `variant_options_snapshot` is `JSONB` rather than a join to `variant_options`
+ * for exactly that reason: the options are a value belonging to this line, not
+ * rows owned by the variant.
+ * 
+ * `line_total` is stored rather than computed so the stored figure is the figure
+ * that was agreed. The service recomputes it with `Decimal` before writing, and
+ * a `CHECK` constraint in the migration rejects a line whose total is not the
+ * product of its price and quantity — so a bug in that arithmetic cannot reach
+ * the database even if it somehow reached a write.
+ * 
+ * ## Constraints
+ * 
+ * `quantity > 0`, `unit_price > 0` and `line_total > 0` are `CHECK` constraints
+ * in the migration rather than schema attributes, because Prisma cannot express
+ * a numeric bound. A line with no units, a zero price or a non-positive total is
+ * meaningless, and the check is the database-level backstop that holds even when
+ * two writers interleave.
+ * 
+ * ## Delete behaviour
+ * 
+ * Deleting the order cascades to its lines: they are components of it and have
+ * no meaning on their own. Deleting the referenced variant is **restricted**, for
+ * the same reason `cart_items.variant_id` restricts — but here it matters even
+ * more, because unlike a cart line this row is permanent financial history. The
+ * variant must be deactivated, never deleted, once it has been sold.
+ * 
+ * There is no unique constraint on `(order_id, variant_id)`: unlike a cart, an
+ * order does not merge duplicate lines, because the two lines may have been
+ * priced differently at the moment they were placed. `@@index([orderId])` serves
+ * the item listing and the cascade lookup; no second index on `order_id` is
+ * needed.
+ */
+export type OrderItem = Prisma.OrderItemModel
+/**
+ * Model Payment
+ * One attempt to pay for an order, through one payment provider.
+ * 
+ * ## A payment is an *attempt*, and the row is never rewritten to be a different one
+ * 
+ * `Order` has **many** payments, not one, and that is the whole design. A customer
+ * whose first QR expires, or whose bank declines the first card, has to be able to
+ * try again without the earlier attempt being erased — so a new attempt is a new
+ * row, and the old one keeps whatever status it reached. Nothing here is updated
+ * "in place" to become a different payment: the only column a normal flow moves is
+ * `status`, and only forwards (see `payments_status_transition`).
+ * 
+ * This is why `amount` is stored on the payment rather than read through
+ * `order_id`. The order total is immutable history, and so is the figure the
+ * customer was actually asked to pay for *this* attempt. Keeping the two apart means
+ * a later change to an order's money can never silently rewrite what a payment
+ * record says was collected — the same reasoning as the order line snapshots.
+ * 
+ * ## Why `transactionId` is generated here rather than by the provider
+ * 
+ * PayWay's QR API takes the transaction id as an *input* and rejects a duplicate
+ * with code `403`. Generating it server-side is therefore what lets a retry be
+ * distinguishable from a replay: a new attempt gets a new id, and the uniqueness
+ * constraint below is what makes "already used" impossible to write twice.
+ * 
+ * The column is `VARCHAR(20)` because that is PayWay's documented maximum for
+ * `tran_id`. Storing our own wider id and truncating it at the boundary would put
+ * two distinct payments one collision away from sharing a provider transaction.
+ * See `transaction-id.generator.ts` for how the id is shaped to fit.
+ * 
+ * ## What is deliberately *not* stored
+ * 
+ * No credential, key or signature. `PAYWAY_API_KEY` is an environment secret and
+ * has no reason to be duplicated into a row that could be exported, logged or read
+ * back through the API. The provider reference and the payer's masked account are
+ * the only provider-derived values kept, and both are non-secret by construction.
+ */
+export type Payment = Prisma.PaymentModel

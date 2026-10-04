@@ -23,6 +23,17 @@ export class UsersRepository {
     return this.prisma.user.findUnique({ where: { email } });
   }
 
+  /**
+   * Returns the user with `id`, or `null` when no such user exists.
+   *
+   * Exists for features that are scoped to a user supplied by the request
+   * (currently the cart) and therefore have to confirm the owner is real before
+   * writing anything on their behalf.
+   */
+  findById(id: string): Promise<User | null> {
+    return this.prisma.user.findUnique({ where: { id } });
+  }
+
   /** Persists a new user and returns the stored entity. */
   create(data: Prisma.UserCreateInput): Promise<User> {
     return this.prisma.user.create({ data });
