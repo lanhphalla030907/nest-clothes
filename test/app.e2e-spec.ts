@@ -38,13 +38,30 @@ describe('AppController (e2e)', () => {
     // The orders surface is deliberately GET-only: no checkout, no status
     // transition, no cancellation. A future handler added to `OrderController`
     // would show up here as an extra route.
+    //
+    // `GET /orders` is 401 rather than 400 because authentication runs before a handler
+    // is invoked: with no credential there is nothing to route, so the request is
+    // refused by `JwtAuthGuard` itself.
+    //
+    // The other two are still 404. Guards run for routes that exist, so a verb the
+    // controller never declared is refused by the router before any guard sees it —
+    // which is exactly what makes this pair a check that the surface stays read-only
+    // rather than a check about authentication.
     const server = app.getHttpServer();
 
     return Promise.all([
-      request(server).get('/orders').expect(400),
+      request(server).get('/orders').expect(401),
       request(server).post('/orders').expect(404),
       request(server).delete('/orders/some-id').expect(404),
     ]);
+  });
+
+  it('refuses an unauthenticated call to the order detail route', () => {
+    // A syntactically valid UUID, so the only thing that could reject this is the guard.
+    // Reaching `ParseUUIDPipe` would have produced a different status.
+    return request(app.getHttpServer())
+      .get('/orders/3f2504e0-4f89-41d3-9a0c-0305e82c3301')
+      .expect(401);
   });
 
   afterAll(async () => {

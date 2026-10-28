@@ -9,7 +9,11 @@ import { randomUUID } from 'node:crypto';
 import { Prisma } from '../src/generated/prisma/client.js';
 import { PrismaModule } from '../src/prisma/prisma.module.js';
 import { PrismaService } from '../src/prisma/prisma.service.js';
-import { TEMPORARY_USER_ID_HEADER } from '../src/common/decorators/temporary-user-id.decorator.js';
+import {
+  bearerHeaders,
+  tokenIssuerFor,
+  type IssueToken,
+} from './support/e2e-auth.js';
 import { OrderModule } from '../src/orders/order.module.js';
 import { OrderNumberGenerator } from '../src/orders/order-number.generator.js';
 
@@ -69,10 +73,19 @@ describe('Orders (PostgreSQL)', () => {
   const nextOrderNumber = (letter: string) =>
     `PROBE-${run}-${letter}${(sequence += 1).toString(36).toUpperCase()}`;
 
-  const headers = (id: string) => ({
-    'Content-Type': 'application/json',
-    [TEMPORARY_USER_ID_HEADER]: id,
-  });
+  /**
+   * Sends requests as `id`, by signing that user's access token.
+   *
+   * The token comes from the application's own `AccessTokenService`, so `JwtAuthGuard`
+   * verifies it for the same reasons it would verify a client's — including the database
+   * lookup, which is why a fixture written straight through Prisma works here without
+   * ever having a password.
+   *
+   * `user: null` deliberately means *send no credential at all*, which is a distinct
+   * scenario from "send a token for a user that does not exist".
+   */
+  let issueToken: IssueToken;
+  let headers: (id: string) => Record<string, string>;
 
   const api = async (
     method: string,
@@ -176,6 +189,8 @@ describe('Orders (PostgreSQL)', () => {
     }).compile();
 
     app = module.createNestApplication();
+    issueToken = tokenIssuerFor(app);
+    headers = bearerHeaders(issueToken);
     app.useGlobalPipes(
       new ValidationPipe({
         whitelist: true,
@@ -625,33 +640,47 @@ describe('Orders (PostgreSQL)', () => {
       }
     });
 
-    it('404s a claimed user that does not exist', async () => {
+    it('401s a token whose user the database does not know', async () => {
       const ghost = randomUUID();
 
       expect((await api('GET', '/orders', { user: ghost })).status).toBe(
-        HttpStatus.NOT_FOUND,
+        HttpStatus.UNAUTHORIZED,
       );
       expect((await getOrder(olderOrderId, ghost)).status).toBe(
-        HttpStatus.NOT_FOUND,
+        HttpStatus.UNAUTHORIZED,
       );
     });
 
-    it('400s a malformed X-User-Id on both routes', async () => {
-      const list = await api('GET', '/orders', { user: 'not-a-uuid' });
-      const detail = await getOrder(olderOrderId, 'not-a-uuid');
+    it('401s a token whose signature was tampered with', async () => {
+      const tampered = `${issueToken(userId).slice(0, -6)}AAAAAA`;
 
-      expect(list.status).toBe(HttpStatus.BAD_REQUEST);
-      expect(detail.status).toBe(HttpStatus.BAD_REQUEST);
+      const list = await fetch(`${base}/orders`, {
+        headers: { Authorization: `Bearer ${tampered}` },
+      });
+      const detail = await fetch(`${base}/orders/${olderOrderId}`, {
+        headers: { Authorization: `Bearer ${tampered}` },
+      });
+
+      expect(list.status).toBe(HttpStatus.UNAUTHORIZED);
+      expect(detail.status).toBe(HttpStatus.UNAUTHORIZED);
     });
 
-    it('400s a missing X-User-Id on both routes', async () => {
+    it('401s a request with no token on both routes', async () => {
       const list = await api('GET', '/orders', { user: null });
       const detail = await api('GET', `/orders/${olderOrderId}`, {
         user: null,
       });
 
-      expect(list.status).toBe(HttpStatus.BAD_REQUEST);
-      expect(detail.status).toBe(HttpStatus.BAD_REQUEST);
+      expect(list.status).toBe(HttpStatus.UNAUTHORIZED);
+      expect(detail.status).toBe(HttpStatus.UNAUTHORIZED);
+    });
+
+    it('401s the retired X-User-Id header rather than believing it', async () => {
+      const res = await fetch(`${base}/orders`, {
+        headers: { 'X-User-Id': userId },
+      });
+
+      expect(res.status).toBe(HttpStatus.UNAUTHORIZED);
     });
 
     it('400s a malformed order id', async () => {

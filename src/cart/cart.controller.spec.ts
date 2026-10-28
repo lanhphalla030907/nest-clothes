@@ -4,6 +4,8 @@ import {
   type INestApplication,
 } from '@nestjs/common';
 import { Test, TestingModule } from '@nestjs/testing';
+import { TestIdentityRegistry } from '../../test/support/auth-fixtures.js';
+import { Role } from '../generated/prisma/enums.js';
 import { CartController } from './cart.controller.js';
 import { CartService } from './cart.service.js';
 import { AddCartItemDto } from './dto/add-cart-item.dto.js';
@@ -14,9 +16,16 @@ import {
 } from './dto/cart-item-response.dto.js';
 import { CartResponseDto } from './dto/cart-response.dto.js';
 import { UpdateCartItemDto } from './dto/update-cart-item.dto.js';
-import { TEMPORARY_USER_ID_HEADER } from '../common/decorators/temporary-user-id.decorator.js';
 
 const USER_ID = 'a1b2c3d4-e5f6-4f70-8a9b-0c1d2e3f4a5b';
+const UNKNOWN_USER_ID = 'd3e4f5a6-b7c8-4903-8d2e-4a5b6c7d8e9f';
+
+/** The identity the guard attaches, as a controller receives it. */
+const caller = (id = USER_ID) => ({
+  id,
+  email: 'ada@example.test',
+  role: Role.CUSTOMER,
+});
 const ITEM_ID = 'd2e3f4a5-b6c7-4d8e-9f0a-1b2c3d4e5f60';
 const VARIANT_ID = 'e3f4a5b6-c7d8-4e9f-8a0b-2c3d4e5f6071';
 
@@ -80,10 +89,14 @@ describe('CartController', () => {
 
   beforeEach(async () => {
     service = buildServiceMock();
+    const identities = new TestIdentityRegistry();
 
     const module: TestingModule = await Test.createTestingModule({
       controllers: [CartController],
-      providers: [{ provide: CartService, useValue: service }],
+      providers: [
+        ...identities.providers(),
+        { provide: CartService, useValue: service },
+      ],
     }).compile();
 
     controller = module.get<CartController>(CartController);
@@ -93,11 +106,11 @@ describe('CartController', () => {
     expect(controller).toBeDefined();
   });
 
-  it('delegates the read for the claimed user', () => {
+  it('delegates the read for the authenticated user', () => {
     const expected = buildCartResponse();
     service.findCart.mockReturnValue(expected);
 
-    expect(controller.findCart(USER_ID)).toBe(expected);
+    expect(controller.findCart(caller())).toBe(expected);
     expect(service.findCart).toHaveBeenCalledWith(USER_ID);
   });
 
@@ -109,7 +122,7 @@ describe('CartController', () => {
     const expected = buildItemResponse();
     service.addItem.mockReturnValue(expected);
 
-    expect(controller.addItem(USER_ID, dto)).toBe(expected);
+    expect(controller.addItem(caller(), dto)).toBe(expected);
     expect(service.addItem).toHaveBeenCalledWith(USER_ID, dto);
   });
 
@@ -118,17 +131,17 @@ describe('CartController', () => {
     const expected = buildItemResponse({ quantity: 3 });
     service.updateItem.mockReturnValue(expected);
 
-    expect(controller.updateItem(USER_ID, ITEM_ID, dto)).toBe(expected);
+    expect(controller.updateItem(caller(), ITEM_ID, dto)).toBe(expected);
     expect(service.updateItem).toHaveBeenCalledWith(USER_ID, ITEM_ID, dto);
   });
 
   it('delegates the removal', () => {
-    expect(controller.removeItem(USER_ID, ITEM_ID)).toBeUndefined();
+    expect(controller.removeItem(caller(), ITEM_ID)).toBeUndefined();
     expect(service.removeItem).toHaveBeenCalledWith(USER_ID, ITEM_ID);
   });
 
   it('delegates the clear', () => {
-    expect(controller.clearCart(USER_ID)).toBeUndefined();
+    expect(controller.clearCart(caller())).toBeUndefined();
     expect(service.clearCart).toHaveBeenCalledWith(USER_ID);
   });
 });
@@ -136,15 +149,25 @@ describe('CartController', () => {
 describe('CartController (HTTP)', () => {
   let app: INestApplication;
   let service: ReturnType<typeof buildServiceMock>;
+  let identities: TestIdentityRegistry;
   let base: string;
   let userHeaders: Record<string, string>;
 
   beforeEach(async () => {
     service = buildServiceMock();
+    identities = new TestIdentityRegistry();
+    identities.register({
+      id: USER_ID,
+      email: 'ada@example.test',
+      role: Role.CUSTOMER,
+    });
 
     const module: TestingModule = await Test.createTestingModule({
       controllers: [CartController],
-      providers: [{ provide: CartService, useValue: service }],
+      providers: [
+        ...identities.providers(),
+        { provide: CartService, useValue: service },
+      ],
     }).compile();
 
     app = module.createNestApplication();
@@ -159,7 +182,7 @@ describe('CartController (HTTP)', () => {
     base = await app.getUrl();
     userHeaders = {
       'Content-Type': 'application/json',
-      [TEMPORARY_USER_ID_HEADER]: USER_ID,
+      ...identities.bearerHeaderFor(USER_ID),
     };
   });
 
@@ -273,21 +296,39 @@ describe('CartController (HTTP)', () => {
     expect(service.clearCart).toHaveBeenCalledWith(USER_ID);
   });
 
-  it('a missing identity header → 400 before the service runs', async () => {
+  it('a missing access token → 401 before the service runs', async () => {
     const res = await fetch(`${base}/cart`, {
       headers: { 'Content-Type': 'application/json' },
     });
 
-    expect(res.status).toBe(HttpStatus.BAD_REQUEST);
+    expect(res.status).toBe(HttpStatus.UNAUTHORIZED);
     expect(service.findCart).not.toHaveBeenCalled();
   });
 
-  it('a malformed identity header → 400 before the service runs', async () => {
+  it('the retired X-User-Id header → 401, it is no longer a credential', async () => {
     const res = await fetch(`${base}/cart`, {
-      headers: { [TEMPORARY_USER_ID_HEADER]: 'not-a-uuid' },
+      headers: { 'X-User-Id': USER_ID },
     });
 
-    expect(res.status).toBe(HttpStatus.BAD_REQUEST);
+    expect(res.status).toBe(HttpStatus.UNAUTHORIZED);
+    expect(service.findCart).not.toHaveBeenCalled();
+  });
+
+  it('a token that does not verify → 401 before the service runs', async () => {
+    const res = await fetch(`${base}/cart`, {
+      headers: { Authorization: 'Bearer not-a-token' },
+    });
+
+    expect(res.status).toBe(HttpStatus.UNAUTHORIZED);
+    expect(service.findCart).not.toHaveBeenCalled();
+  });
+
+  it('a well-formed token for a user who does not exist → 401', async () => {
+    const res = await fetch(`${base}/cart`, {
+      headers: identities.bearerHeaderFor(UNKNOWN_USER_ID),
+    });
+
+    expect(res.status).toBe(HttpStatus.UNAUTHORIZED);
     expect(service.findCart).not.toHaveBeenCalled();
   });
 

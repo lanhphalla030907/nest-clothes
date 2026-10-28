@@ -6,16 +6,23 @@
  * something that is true of the source but not of the artefact: a file missing from
  * the build, a decorator the compiler dropped, a module that never got imported.
  *
- * It walks the four behaviours that matter and then deletes everything it created:
+ * It walks the behaviours that matter and then deletes everything it created:
  *
  *   1. a real checkout reserves stock, writes an order and empties the cart
  *   2. ordering more than is available is 409 and leaves no trace
  *   3. another user's address is 404, not 403
  *   4. an empty cart is 400
+ *   5. a missing, legacy or tampered credential is 401, and `/auth/me` works
+ *   6. concurrent checkouts against the same stock never oversell
+ *
+ * Credentials come from a real `POST /auth/login` against the running server rather than
+ * a token signed here, so this stays a test of the server's authentication instead of a
+ * second implementation of it.
  *
  * Usage: node scripts/smoke-checkout.mjs <baseUrl>
  */
 import 'dotenv/config';
+import { hash } from 'argon2';
 import { PrismaPg } from '@prisma/adapter-pg';
 // From `dist`, so the whole smoke test runs against build output and needs no
 // TypeScript loader.
@@ -34,13 +41,26 @@ const check = (name, ok, detail = '') => {
 };
 
 const userIds = [];
+const tokens = new Map();
 
-const post = async (path, body, user) => {
+const get = async (path, user) => {
+  const token = user === undefined ? undefined : tokens.get(user);
+  const res = await fetch(`${base}${path}`, {
+    headers: token === undefined ? {} : { Authorization: `Bearer ${token}` },
+  });
+  const text = await res.text();
+
+  return { status: res.status, body: text === '' ? undefined : JSON.parse(text) };
+};
+
+const post = async (path, body, user, extraHeaders = {}) => {
+  const token = user === undefined ? undefined : tokens.get(user);
   const res = await fetch(`${base}${path}`, {
     method: 'POST',
     headers: {
-      ...(user === undefined ? {} : { 'X-User-Id': user }),
+      ...(token === undefined ? {} : { Authorization: `Bearer ${token}` }),
       'Content-Type': 'application/json',
+      ...extraHeaders,
     },
     ...(body === undefined ? {} : { body: JSON.stringify(body) }),
   });
@@ -70,16 +90,29 @@ try {
   });
 
   const makeUser = async (name) => {
+    const password = `${run}-${name}-password`;
     const user = await prisma.user.create({
       data: {
         firstName: 'Smoke',
         lastName: 'Tester',
         email: `${run}-${name}@example.test`,
-        passwordHash: 'argon2-not-a-real-hash',
+        // A real Argon2id hash, so the account can actually log in: this script obtains
+        // its credentials the way a client does rather than by signing a token itself,
+        // which would leave it testing its own copy of the signing rules instead of the
+        // server's.
+        passwordHash: await hash(password),
         status: 'ACTIVE',
       },
     });
     userIds.push(user.id);
+
+    const login = await post('/auth/login', { email: user.email, password });
+    if (login.status !== 200 || typeof login.body?.accessToken !== 'string') {
+      throw new Error(
+        `login failed for ${user.email}: ${login.status} ${JSON.stringify(login.body)}`,
+      );
+    }
+    tokens.set(user.id, login.body.accessToken);
 
     return user.id;
   };
@@ -203,12 +236,37 @@ try {
     empty.body?.message,
   );
 
-  // --- 5. the identity header is still required ------------------------------
+  // --- 5. the bearer token is required ---------------------------------------
   const anonymous = await post('/checkout', { addressId: ownerAddress });
   check(
-    'a request with no identity is rejected',
-    anonymous.status === 400,
+    'a request with no token is 401',
+    anonymous.status === 401,
     `got ${anonymous.status}`,
+  );
+  // The header that used to name a user is now just another unrecognised header: a
+  // smoke test is the right place to prove that, since it runs against the real build
+  // rather than a test double.
+  const legacy = await post('/checkout', { addressId: ownerAddress }, undefined, {
+    'X-User-Id': owner,
+  });
+  check(
+    'the old X-User-Id header no longer authenticates',
+    legacy.status === 401,
+    `got ${legacy.status}`,
+  );
+  const tampered = await post('/checkout', { addressId: ownerAddress }, undefined, {
+    Authorization: `Bearer ${tokens.get(owner).slice(0, -3)}xyz`,
+  });
+  check(
+    'a tampered token is 401',
+    tampered.status === 401,
+    `got ${tampered.status}`,
+  );
+  const me = await get('/auth/me', owner);
+  check(
+    'GET /auth/me echoes the authenticated user',
+    me.status === 200 && me.body?.id === owner,
+    `got ${me.status}`,
   );
 
   // --- 6. concurrent checkouts against the same stock -------------------------

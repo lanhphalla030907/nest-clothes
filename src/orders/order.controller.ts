@@ -3,15 +3,18 @@ import {
   Get,
   Param,
   ParseUUIDPipe,
+  UseGuards,
 } from '@nestjs/common';
-import { TemporaryUserId } from '../common/decorators/temporary-user-id.decorator.js';
+import { CurrentUser } from '../auth/decorators/current-user.decorator.js';
+import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard.js';
+import type { AuthenticatedUser } from '../auth/types/authenticated-user.js';
 import { OrderResponseDto } from './dto/order-response.dto.js';
 import { OrderSummaryResponseDto } from './dto/order-summary-response.dto.js';
 import { OrderService } from './order.service.js';
 
 /**
  * HTTP routing only: run the pipes, delegate to `OrderService`, return its result.
- * No business rules and no database access live here.
+ * No business rules and no database access lives here.
  *
  * The controller is mounted under `/orders`, so every route acts on *the caller's*
  * orders. It is mounted with nothing else — no `POST`, `PATCH` or `DELETE` handler
@@ -21,12 +24,10 @@ import { OrderService } from './order.service.js';
  *
  * ## Identity
  *
- * The caller is {@link TemporaryUserId}, the `X-User-Id` stand-in that exists
- * because authentication does not yet. It is a claim, not proof of identity, and the
- * service confirms the claimed user is real before reading anything. The controller
- * receives the user id as an ordinary parameter and mounts no guard of its own, so
- * replacing the decorator with a real guard is a change to this one decorator rather
- * than to every route.
+ * The caller is {@link CurrentUser}, resolved from a verified access token by
+ * `JwtAuthGuard`. It replaced an `X-User-Id` header, which any caller could assert;
+ * a request with no valid `Authorization: Bearer` header is now a 401 and the old
+ * header is ignored, so there is no way to read another customer's orders.
  *
  * ## Which errors come from where
  *
@@ -35,6 +36,7 @@ import { OrderService } from './order.service.js';
  * not the caller's — and "absent" and "not yours" are deliberately the same 404, so
  * this endpoint cannot be used to probe for the existence of another user's order.
  */
+@UseGuards(JwtAuthGuard)
 @Controller('orders')
 export class OrderController {
   constructor(private readonly orderService: OrderService) {}
@@ -52,28 +54,16 @@ export class OrderController {
    */
   @Get()
   listOrders(
-    @TemporaryUserId(new ParseUUIDPipe()) userId: string,
+    @CurrentUser() user: AuthenticatedUser,
   ): Promise<OrderSummaryResponseDto[]> {
-    return this.orderService.listOrders(userId);
+    return this.orderService.listOrders(user.id);
   }
 
-  /**
-   * `GET /orders/:id` — one of the caller's orders, with its items.
-   *
-   * | Condition                              | Status |
-   * | -------------------------------------- | ------ |
-   * | Malformed `:id`, or missing/malformed `X-User-Id` | 400 |
-   * | Claimed user does not exist            | 404    |
-   * | Order absent, or owned by another user | 404    |
-   *
-   * The 404 is shared on purpose: telling the two apart would confirm that an order
-   * id exists, which is itself information a caller should not have.
-   */
   @Get(':id')
   getOrder(
-    @TemporaryUserId(new ParseUUIDPipe()) userId: string,
+    @CurrentUser() user: AuthenticatedUser,
     @Param('id', ParseUUIDPipe) id: string,
   ): Promise<OrderResponseDto> {
-    return this.orderService.getOrder(userId, id);
+    return this.orderService.getOrder(user.id, id);
   }
 }

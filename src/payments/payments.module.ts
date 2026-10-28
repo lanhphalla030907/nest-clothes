@@ -1,4 +1,5 @@
 import { Module } from '@nestjs/common';
+import { JwtAuthModule } from '../auth/jwt/jwt-auth.module.js';
 import { OrderModule } from '../orders/order.module.js';
 import { TransactionIdGenerator } from './payment-transaction-id.generator.js';
 import { PaymentsController } from './payments.controller.js';
@@ -59,6 +60,14 @@ const paywayHttpClientProvider: {
  * application with real credentials. That is what makes "no automated test touches the
  * network" a structural property rather than a promise in a README.
  *
+ * ## Why `JwtAuthModule` is imported
+ *
+ * `PaymentsController` mounts `JwtAuthGuard` on `createPayment` only, and the guard has
+ * to be resolvable from this module's context. The import is here rather than global so
+ * that the *asymmetry* is stated at the module boundary: creating a payment is the
+ * caller's own action and is authenticated, while the PayWay callback stays open
+ * because PayWay cannot present a token.
+ *
  * ## Why `OrderModule` is imported
  *
  * Confirming a payment promotes the order to `CONFIRMED`, and that write has to commit
@@ -73,7 +82,7 @@ const paywayHttpClientProvider: {
  * callback path. Only `PaymentsService` and the repository are exported.
  */
 @Module({
-  imports: [OrderModule],
+  imports: [JwtAuthModule, OrderModule],
   controllers: [PaymentsController],
   providers: [
     paywayConfigProvider,

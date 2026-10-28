@@ -147,9 +147,9 @@ export interface ResolvedOrderLine {
  *
  * | Condition                                    | Status    | Rationale                                         |
  * | -------------------------------------------- | --------- | ------------------------------------------------- |
- * | Missing or malformed `X-User-Id`             | 400       | Rejected by `ParseUUIDPipe`, before the service.  |
+ * | Missing, malformed or expired token          | 401       | Rejected by `JwtAuthGuard`, before the service.   |
+ * | Token whose user no longer exists           | 401       | Rejected by `JwtAuthGuard`, before the service.   |
  * | Malformed `:id` in the path                  | 400       | Rejected by `ParseUUIDPipe`, before the service.  |
- * | Claimed user does not exist                  | 404       | The claimed identity is not a real user.           |
  * | Order absent, or owned by another user       | 404       | Same 404, so ownership cannot be probed.           |
  * | Negative money value                         | 400       | `InvalidMoneyValueError`; also a `CHECK` below.    |
  * | Zero, negative or fractional line quantity   | 400       | `InvalidMoneyValueError`; also a `CHECK` below.    |
@@ -460,9 +460,11 @@ export class OrderService {
   /**
    * Confirms the claimed identity is a real user.
    *
-   * The temporary `X-User-Id` header is an unverified claim, so this check is what
-   * stops a caller reading or writing against a user id that does not exist or no
-   * longer does.
+   * `JwtAuthGuard` has already resolved the bearer token to a real, active user, so in
+   * practice this is a second line of defence rather than the primary one. It stays
+   * because a 404 from a query scoped by a non-existent id would be indistinguishable
+   * from an id that is merely absent, and this turns the first case into a clear 404
+   * before any query runs.
    */
   private async requireUser(userId: string): Promise<void> {
     const user = await this.usersRepository.findById(userId);

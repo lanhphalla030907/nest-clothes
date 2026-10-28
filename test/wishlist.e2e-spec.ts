@@ -9,7 +9,11 @@ import { randomUUID } from 'node:crypto';
 import { Prisma } from '../src/generated/prisma/client.js';
 import { PrismaModule } from '../src/prisma/prisma.module.js';
 import { PrismaService } from '../src/prisma/prisma.service.js';
-import { TEMPORARY_USER_ID_HEADER } from '../src/common/decorators/temporary-user-id.decorator.js';
+import {
+  bearerHeaders,
+  tokenIssuerFor,
+  type IssueToken,
+} from './support/e2e-auth.js';
 import { WishlistModule } from '../src/wishlist/wishlist.module.js';
 
 /**
@@ -54,10 +58,16 @@ describe('Wishlist (PostgreSQL)', () => {
   /** Active product whose only variant is sold out. */
   let soldOutProductId: string;
 
-  const headers = (id: string) => ({
-    'Content-Type': 'application/json',
-    [TEMPORARY_USER_ID_HEADER]: id,
-  });
+  /**
+   * Sends requests as `id`, by signing that user's access token.
+   *
+   * The token comes from the application's own `AccessTokenService`, so `JwtAuthGuard`
+   * verifies it for the same reasons it would verify a client's — including the database
+   * lookup, which is why a fixture written straight through Prisma works here without
+   * ever having a password.
+   */
+  let issueToken: IssueToken;
+  let headers: (id: string) => Record<string, string>;
 
   const api = async (
     method: string,
@@ -95,6 +105,8 @@ describe('Wishlist (PostgreSQL)', () => {
     }).compile();
 
     app = module.createNestApplication();
+    issueToken = tokenIssuerFor(app);
+    headers = bearerHeaders(issueToken);
     app.useGlobalPipes(
       new ValidationPipe({
         whitelist: true,
@@ -392,13 +404,35 @@ describe('Wishlist (PostgreSQL)', () => {
       expect(await prisma.wishlistItem.count({})).toBe(before);
     });
 
-    it('rejects an unknown or malformed user', async () => {
+    it('rejects a caller the database does not know, and a caller with no token', async () => {
+      // A correctly signed token for a user that was never created is an
+      // authentication failure, refused at the guard: 401, never a 404 that would
+      // confirm the wishlist route exists for that id.
       expect(
         (await api('GET', '/wishlist', { user: randomUUID() })).status,
-      ).toBe(HttpStatus.NOT_FOUND);
+      ).toBe(HttpStatus.UNAUTHORIZED);
 
       const res = await fetch(`${base}/wishlist`, { method: 'GET' });
-      expect(res.status).toBe(HttpStatus.BAD_REQUEST);
+      expect(res.status).toBe(HttpStatus.UNAUTHORIZED);
+    });
+
+    it('rejects a suspended account, even with a valid token', async () => {
+      // A throwaway user rather than the suite's own: suspending the fixture would
+      // silently invalidate every later test in the file, which is a much easier mistake
+      // to read past than an extra fixture.
+      const suspended = await prisma.user.create({
+        data: {
+          firstName: 'Wish',
+          lastName: 'Suspended',
+          email: email('suspended'),
+          passwordHash: 'argon2-not-a-real-hash',
+          status: 'SUSPENDED',
+        },
+      });
+
+      const res = await api('GET', '/wishlist', { user: suspended.id });
+
+      expect(res.status).toBe(HttpStatus.UNAUTHORIZED);
     });
   });
 

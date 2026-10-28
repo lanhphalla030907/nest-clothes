@@ -9,8 +9,11 @@ import {
   ParseUUIDPipe,
   Patch,
   Post,
+  UseGuards,
 } from '@nestjs/common';
-import { TemporaryUserId } from '../common/decorators/temporary-user-id.decorator.js';
+import { CurrentUser } from '../auth/decorators/current-user.decorator.js';
+import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard.js';
+import type { AuthenticatedUser } from '../auth/types/authenticated-user.js';
 import { AddressResponseDto } from './dto/address-response.dto.js';
 import { CreateAddressDto } from './dto/create-address.dto.js';
 import { UpdateAddressDto } from './dto/update-address.dto.js';
@@ -19,7 +22,7 @@ import { AddressesService } from './addresses.service.js';
 /**
  * HTTP routing only: parse the request through the pipes and DTOs, delegate to
  * `AddressesService`, return its result. No business rules and no database access
- * live here.
+ * lives here.
  *
  * The controller is mounted under `/addresses` and every route is scoped by the
  * caller's identity, so a client never names an owner: it can only ever reach its own
@@ -29,12 +32,10 @@ import { AddressesService } from './addresses.service.js';
  *
  * ## Identity
  *
- * The caller is {@link TemporaryUserId}, the `X-User-Id` stand-in that exists
- * because authentication does not yet, shared with the cart and wishlist features.
- * It is a claim, not proof of identity. Controllers receive the user id as an
- * ordinary parameter, so swapping that decorator for a real guard is the only change
- * a later phase will need. The controller mounts no guard of its own for the same
- * reason.
+ * The caller is {@link CurrentUser}, resolved from a verified access token by
+ * `JwtAuthGuard`, replacing the `X-User-Id` claim this controller used to accept. A
+ * request without a valid `Authorization: Bearer` header is a 401 and the old header is
+ * ignored, so there is no way to select whose address book is addressed.
  *
  * `:id` runs through `ParseUUIDPipe`, so a malformed id is a 400 before the service
  * is reached and 404 stays reserved for a well-formed id that is absent or not the
@@ -47,6 +48,7 @@ import { AddressesService } from './addresses.service.js';
  * own route means a client never has to send `PATCH {"isDefault": true}` to mean it,
  * and it keeps the one invariant-carrying operation obvious in the API surface.
  */
+@UseGuards(JwtAuthGuard)
 @Controller('addresses')
 export class AddressesController {
   constructor(private readonly addressesService: AddressesService) {}
@@ -58,26 +60,24 @@ export class AddressesController {
    * address book is a normal state, not a missing resource.
    */
   @Get()
-  findAll(
-    @TemporaryUserId(new ParseUUIDPipe()) userId: string,
-  ): Promise<AddressResponseDto[]> {
-    return this.addressesService.findAll(userId);
+  findAll(@CurrentUser() user: AuthenticatedUser): Promise<AddressResponseDto[]> {
+    return this.addressesService.findAll(user.id);
   }
 
   @Get(':id')
   findOne(
-    @TemporaryUserId(new ParseUUIDPipe()) userId: string,
+    @CurrentUser() user: AuthenticatedUser,
     @Param('id', ParseUUIDPipe) id: string,
   ): Promise<AddressResponseDto> {
-    return this.addressesService.findOne(userId, id);
+    return this.addressesService.findOne(user.id, id);
   }
 
   @Post()
   create(
-    @TemporaryUserId(new ParseUUIDPipe()) userId: string,
+    @CurrentUser() user: AuthenticatedUser,
     @Body() dto: CreateAddressDto,
   ): Promise<AddressResponseDto> {
-    return this.addressesService.create(userId, dto);
+    return this.addressesService.create(user.id, dto);
   }
 
   /**
@@ -89,11 +89,11 @@ export class AddressesController {
    */
   @Patch(':id')
   update(
-    @TemporaryUserId(new ParseUUIDPipe()) userId: string,
+    @CurrentUser() user: AuthenticatedUser,
     @Param('id', ParseUUIDPipe) id: string,
     @Body() dto: UpdateAddressDto,
   ): Promise<AddressResponseDto> {
-    return this.addressesService.update(userId, id, dto);
+    return this.addressesService.update(user.id, id, dto);
   }
 
   /**
@@ -111,18 +111,18 @@ export class AddressesController {
   @Post(':id/default')
   @HttpCode(HttpStatus.OK)
   setDefault(
-    @TemporaryUserId(new ParseUUIDPipe()) userId: string,
+    @CurrentUser() user: AuthenticatedUser,
     @Param('id', ParseUUIDPipe) id: string,
   ): Promise<AddressResponseDto> {
-    return this.addressesService.setDefault(userId, id);
+    return this.addressesService.setDefault(user.id, id);
   }
 
   @Delete(':id')
   @HttpCode(HttpStatus.NO_CONTENT)
   remove(
-    @TemporaryUserId(new ParseUUIDPipe()) userId: string,
+    @CurrentUser() user: AuthenticatedUser,
     @Param('id', ParseUUIDPipe) id: string,
   ): Promise<void> {
-    return this.addressesService.remove(userId, id);
+    return this.addressesService.remove(user.id, id);
   }
 }

@@ -20,8 +20,10 @@ import { ProductVariantsRepository } from './repositories/product-variants.repos
  * `product_variants` from its own repository. This mirrors `ProductsModule`,
  * which exports `ProductsRepository` for `ProductVariantsService`.
  *
- * `ProductVariantsService` is deliberately *not* exported: nothing outside this
- * module needs variant business rules.
+ * Also exports `ProductVariantsService`, for `AdminProductVariantsController`.
+ * The admin routes manage variants and the public routes read them, but both are
+ * the same SKU normalisation, the same catalogue-wide uniqueness check and the
+ * same product-ownership chain; delegating keeps one implementation of each.
  *
  * Nothing here imports `VariantOptionsModule`; the edge runs VariantOptions ->
  * ProductVariants, never the reverse, so the graph stays acyclic.
@@ -33,6 +35,6 @@ import { ProductVariantsRepository } from './repositories/product-variants.repos
   imports: [ProductsModule],
   controllers: [ProductVariantsController],
   providers: [ProductVariantsService, ProductVariantsRepository],
-  exports: [ProductVariantsRepository],
+  exports: [ProductVariantsRepository, ProductVariantsService],
 })
 export class ProductVariantsModule {}

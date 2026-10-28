@@ -4,7 +4,8 @@ import {
   type INestApplication,
 } from '@nestjs/common';
 import { Test, TestingModule } from '@nestjs/testing';
-import { TEMPORARY_USER_ID_HEADER } from '../common/decorators/temporary-user-id.decorator.js';
+import { TestIdentityRegistry } from '../../test/support/auth-fixtures.js';
+import { Role } from '../generated/prisma/enums.js';
 import { AddressesController } from './addresses.controller.js';
 import { AddressesService } from './addresses.service.js';
 import { AddressResponseDto } from './dto/address-response.dto.js';
@@ -13,6 +14,14 @@ import { UpdateAddressDto } from './dto/update-address.dto.js';
 
 const USER_ID = 'a1b2c3d4-e5f6-4f70-8a9b-0c1d2e3f4a5b';
 const ADDRESS_ID = 'c1d2e3f4-a5b6-4c7d-8e9f-0a1b2c3d4e5f';
+const UNKNOWN_USER_ID = 'd3e4f5a6-b7c8-4903-8d2e-4a5b6c7d8e9f';
+
+/** The identity the guard attaches, as a controller receives it. */
+const caller = (id = USER_ID) => ({
+  id,
+  email: 'ada@example.test',
+  role: Role.CUSTOMER,
+});
 
 /** A complete address body, so each test only has to state what it changes. */
 const VALID_BODY = {
@@ -63,14 +72,24 @@ const buildServiceMock = () => ({
 describe('AddressesController (HTTP)', () => {
   let app: INestApplication;
   let service: ReturnType<typeof buildServiceMock>;
+  let identities: TestIdentityRegistry;
   let base: string;
 
   beforeAll(async () => {
     service = buildServiceMock();
+    identities = new TestIdentityRegistry();
+    identities.register({
+      id: USER_ID,
+      email: 'ada@example.test',
+      role: Role.CUSTOMER,
+    });
 
     const module: TestingModule = await Test.createTestingModule({
       controllers: [AddressesController],
-      providers: [{ provide: AddressesService, useValue: service }],
+      providers: [
+        ...identities.providers(),
+        { provide: AddressesService, useValue: service },
+      ],
     }).compile();
 
     app = module.createNestApplication();
@@ -101,9 +120,7 @@ describe('AddressesController (HTTP)', () => {
     fetch(`${base}${path}`, {
       method,
       headers: {
-        ...(options.user === undefined
-          ? {}
-          : { [TEMPORARY_USER_ID_HEADER]: options.user }),
+        ...(options.user === undefined ? {} : identities.bearerHeaderFor(options.user)),
         ...(options.body === undefined
           ? {}
           : { 'Content-Type': 'application/json' }),
@@ -135,17 +152,26 @@ describe('AddressesController (HTTP)', () => {
       expect(await res.json()).toEqual([]);
     });
 
-    it('rejects a request without the identity header', async () => {
+    it('rejects a request with no access token', async () => {
       const res = await request('GET', '/addresses');
 
-      expect(res.status).toBe(HttpStatus.BAD_REQUEST);
+      expect(res.status).toBe(HttpStatus.UNAUTHORIZED);
       expect(service.findAll).not.toHaveBeenCalled();
     });
 
-    it('rejects a malformed identity header before the service', async () => {
-      const res = await request('GET', '/addresses', { user: 'not-a-uuid' });
+    it('rejects the retired X-User-Id header', async () => {
+      const res = await fetch(`${base}/addresses`, {
+        headers: { 'X-User-Id': USER_ID },
+      });
 
-      expect(res.status).toBe(HttpStatus.BAD_REQUEST);
+      expect(res.status).toBe(HttpStatus.UNAUTHORIZED);
+      expect(service.findAll).not.toHaveBeenCalled();
+    });
+
+    it('rejects a well-formed token for a user who does not exist', async () => {
+      const res = await request('GET', '/addresses', { user: UNKNOWN_USER_ID });
+
+      expect(res.status).toBe(HttpStatus.UNAUTHORIZED);
       expect(service.findAll).not.toHaveBeenCalled();
     });
   });
@@ -460,12 +486,10 @@ describe('AddressesController (HTTP)', () => {
       expect(res.status).toBe(HttpStatus.OK);
     });
 
-    it('rejects a malformed identity header', async () => {
-      const res = await request('POST', `/addresses/${ADDRESS_ID}/default`, {
-        user: 'nope',
-      });
+    it('rejects a request with no access token', async () => {
+      const res = await request('POST', `/addresses/${ADDRESS_ID}/default`);
 
-      expect(res.status).toBe(HttpStatus.BAD_REQUEST);
+      expect(res.status).toBe(HttpStatus.UNAUTHORIZED);
       expect(service.setDefault).not.toHaveBeenCalled();
     });
 
@@ -523,7 +547,7 @@ describe('AddressesController (HTTP)', () => {
       const expected = [buildAddressResponse()];
       service.findAll.mockReturnValue(expected);
 
-      expect(controller.findAll(USER_ID)).toBe(expected);
+      expect(controller.findAll(caller())).toBe(expected);
     });
 
     it('delegates the create with the DTO instance', () => {
@@ -532,7 +556,7 @@ describe('AddressesController (HTTP)', () => {
       const expected = buildAddressResponse();
       service.create.mockReturnValue(expected);
 
-      expect(controller.create(USER_ID, dto)).toBe(expected);
+      expect(controller.create(caller(), dto)).toBe(expected);
       expect(service.create).toHaveBeenCalledWith(USER_ID, dto);
     });
 
@@ -542,7 +566,7 @@ describe('AddressesController (HTTP)', () => {
       const expected = buildAddressResponse({ label: 'Work' });
       service.update.mockReturnValue(expected);
 
-      expect(controller.update(USER_ID, ADDRESS_ID, dto)).toBe(expected);
+      expect(controller.update(caller(), ADDRESS_ID, dto)).toBe(expected);
       expect(service.update).toHaveBeenCalledWith(USER_ID, ADDRESS_ID, dto);
     });
 
@@ -551,13 +575,13 @@ describe('AddressesController (HTTP)', () => {
 
       service.remove.mockResolvedValue(undefined);
       await expect(
-        controller.remove(USER_ID, ADDRESS_ID),
+        controller.remove(caller(), ADDRESS_ID),
       ).resolves.toBeUndefined();
       expect(service.remove).toHaveBeenCalledWith(USER_ID, ADDRESS_ID);
 
       const expected = buildAddressResponse();
       service.setDefault.mockReturnValue(expected);
-      expect(controller.setDefault(USER_ID, ADDRESS_ID)).toBe(expected);
+      expect(controller.setDefault(caller(), ADDRESS_ID)).toBe(expected);
     });
   });
 });

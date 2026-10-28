@@ -1,4 +1,5 @@
 import { Module } from '@nestjs/common';
+import { JwtAuthModule } from '../auth/jwt/jwt-auth.module.js';
 import { ProductsModule } from '../products/products.module.js';
 import { UsersModule } from '../users/users.module.js';
 import { WishlistController } from './wishlist.controller.js';
@@ -9,10 +10,11 @@ import { WishlistRepository } from './repositories/wishlist.repository.js';
  * Owns the wishlist aggregate: `wishlists` and `wishlist_items`, plus the rules
  * about what may be saved on one.
  *
- * Imports two sibling features for their repositories, and only their repositories:
+ * Imports `JwtAuthModule`, for the guard the controller is decorated with, plus two
+ * sibling features for their repositories:
  *
- * - `UsersRepository` — to confirm the identity behind the temporary `X-User-Id`
- *   header is a real user before writing a wishlist on their behalf.
+ * - `UsersRepository` — to confirm the caller behind the access token is a real user
+ *   before writing a wishlist on their behalf.
  * - `ProductsRepository` — to confirm a product exists before saving it, without
  *   this module issuing any SQL against `products`.
  *
@@ -31,7 +33,7 @@ import { WishlistRepository } from './repositories/wishlist.repository.js';
  * `@Global`.
  */
 @Module({
-  imports: [UsersModule, ProductsModule],
+  imports: [JwtAuthModule, UsersModule, ProductsModule],
   controllers: [WishlistController],
   providers: [WishlistService, WishlistRepository],
 })

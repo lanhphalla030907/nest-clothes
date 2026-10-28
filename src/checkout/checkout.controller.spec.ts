@@ -8,13 +8,15 @@ import {
   type INestApplication,
 } from '@nestjs/common';
 import { Test, TestingModule } from '@nestjs/testing';
-import { TEMPORARY_USER_ID_HEADER } from '../common/decorators/temporary-user-id.decorator.js';
+import { TestIdentityRegistry } from '../../test/support/auth-fixtures.js';
+import { Role } from '../generated/prisma/enums.js';
 import { CheckoutController } from './checkout.controller.js';
 import { CheckoutService } from './checkout.service.js';
 import { CheckoutResponseDto } from './dto/checkout-response.dto.js';
 
 const USER_ID = 'a1b2c3d4-e5f6-4f70-8a9b-0c1d2e3f4a5b';
 const ADDRESS_ID = 'b2c3d4e5-f6a7-4b8c-9d0e-1f2a3b4c5d6e';
+const UNKNOWN_USER_ID = 'd3e4f5a6-b7c8-4903-8d2e-4a5b6c7d8e9f';
 
 const buildReceipt = (): CheckoutResponseDto =>
   Object.assign(new CheckoutResponseDto(), {
@@ -54,14 +56,24 @@ const buildReceipt = (): CheckoutResponseDto =>
 describe('CheckoutController (HTTP)', () => {
   let app: INestApplication;
   let service: { checkout: ReturnType<typeof vi.fn> };
+  let identities: TestIdentityRegistry;
   let base: string;
 
   beforeAll(async () => {
     service = { checkout: vi.fn().mockResolvedValue(buildReceipt()) };
+    identities = new TestIdentityRegistry();
+    identities.register({
+      id: USER_ID,
+      email: 'ada@example.test',
+      role: Role.CUSTOMER,
+    });
 
     const module: TestingModule = await Test.createTestingModule({
       controllers: [CheckoutController],
-      providers: [{ provide: CheckoutService, useValue: service }],
+      providers: [
+        ...identities.providers(),
+        { provide: CheckoutService, useValue: service },
+      ],
     }).compile();
 
     app = module.createNestApplication();
@@ -89,18 +101,18 @@ describe('CheckoutController (HTTP)', () => {
     fetch(`${base}/checkout`, {
       method: 'POST',
       headers: {
-        [TEMPORARY_USER_ID_HEADER]: user,
+        ...identities.bearerHeaderFor(user),
         'Content-Type': 'application/json',
       },
       body: JSON.stringify(body),
     });
 
   /**
-   * The same request with the identity header omitted.
+   * The same request with no credentials at all.
    *
    * A separate helper rather than an argument, because a default parameter cannot
    * express "no header": passing `undefined` explicitly would trigger the default and
-   * quietly send the very header the test needs to prove is absent.
+   * quietly send the very credential the test needs to prove is absent.
    */
   const postWithoutIdentity = (body: unknown) =>
     fetch(`${base}/checkout`, {
@@ -172,17 +184,17 @@ describe('CheckoutController (HTTP)', () => {
       expect(service.checkout).not.toHaveBeenCalled();
     });
 
-    it('rejects a request without the identity header', async () => {
+    it('rejects a request with no access token', async () => {
       const res = await postWithoutIdentity({ addressId: ADDRESS_ID });
 
-      expect(res.status).toBe(HttpStatus.BAD_REQUEST);
+      expect(res.status).toBe(HttpStatus.UNAUTHORIZED);
       expect(service.checkout).not.toHaveBeenCalled();
     });
 
-    it('rejects a malformed identity header before the service', async () => {
-      const res = await post({ addressId: ADDRESS_ID }, 'not-a-uuid');
+    it('rejects a well-formed token for a user who does not exist', async () => {
+      const res = await post({ addressId: ADDRESS_ID }, UNKNOWN_USER_ID);
 
-      expect(res.status).toBe(HttpStatus.BAD_REQUEST);
+      expect(res.status).toBe(HttpStatus.UNAUTHORIZED);
       expect(service.checkout).not.toHaveBeenCalled();
     });
 
@@ -241,7 +253,7 @@ describe('CheckoutController (HTTP)', () => {
       // there must be no second verb on this path for a client to find later.
       const res = await fetch(`${base}/checkout`, {
         method: 'GET',
-        headers: { [TEMPORARY_USER_ID_HEADER]: USER_ID },
+        headers: identities.bearerHeaderFor(USER_ID),
       });
 
       expect(res.status).toBe(HttpStatus.NOT_FOUND);

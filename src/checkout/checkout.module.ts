@@ -1,5 +1,6 @@
 import { Module } from '@nestjs/common';
 import { AddressesModule } from '../addresses/addresses.module.js';
+import { JwtAuthModule } from '../auth/jwt/jwt-auth.module.js';
 import { CartModule } from '../cart/cart.module.js';
 import { InventoryModule } from '../inventory/inventory.module.js';
 import { OrderModule } from '../orders/order.module.js';
@@ -26,7 +27,9 @@ import { CheckoutService } from './checkout.service.js';
  *   arithmetic, so totals are computed in one place for the whole application.
  * - `AddressesModule` → `AddressesService`. Reading a user's address, so ownership
  *   stays the address book's rule to enforce.
- * - `UsersModule` → `UsersRepository`. Confirming the claimed `X-User-Id` is a real
+ * - `JwtAuthModule` → `JwtAuthGuard`. Authenticating the caller before a cart is
+ *   turned into an order.
+ * - `UsersModule` → `UsersRepository`. Confirming the authenticated caller is a real
  *   user before an order is created against it.
  *
  * `CheckoutService` is not exported: nothing composes a checkout, and a second entry
@@ -38,6 +41,7 @@ import { CheckoutService } from './checkout.service.js';
  */
 @Module({
   imports: [
+    JwtAuthModule,
     UsersModule,
     CartModule,
     InventoryModule,

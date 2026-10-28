@@ -9,8 +9,11 @@ import {
   ParseUUIDPipe,
   Patch,
   Post,
+  UseGuards,
 } from '@nestjs/common';
-import { TemporaryUserId } from '../common/decorators/temporary-user-id.decorator.js';
+import { CurrentUser } from '../auth/decorators/current-user.decorator.js';
+import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard.js';
+import type { AuthenticatedUser } from '../auth/types/authenticated-user.js';
 import { AddCartItemDto } from './dto/add-cart-item.dto.js';
 import { CartItemResponseDto } from './dto/cart-item-response.dto.js';
 import { CartResponseDto } from './dto/cart-response.dto.js';
@@ -31,58 +34,57 @@ import { CartService } from './cart.service.js';
  *
  * ## Identity
  *
- * The caller is {@link TemporaryUserId}, the `X-User-Id` stand-in that exists
- * because authentication does not yet. It is a claim, not proof of identity.
- * Controllers receive the user id as an ordinary parameter, so swapping that
- * decorator for a real guard is the only change this phase will need. The
- * controller mounts no guard of its own for the same reason.
+ * The caller is {@link CurrentUser}, resolved from a verified access token by
+ * `JwtAuthGuard`. It replaced an `X-User-Id` header, which was a *claim* — any caller
+ * who knew a UUID could send it — and there is no fallback to it: a request without a
+ * valid `Authorization: Bearer` header is a 401 before this controller runs, even if it
+ * still carries that header. Ownership therefore comes from `req.user`, which nothing in
+ * the request can influence.
  *
- * `:itemId` runs through `ParseUUIDPipe`, so a malformed id is a 400 before the
- * service is reached and 404 stays reserved for a well-formed id that is absent
- * or not the caller's.
+ * No `ParseUUIDPipe` is applied to the identity: the guard resolved it from a database
+ * row, so a malformed identity was already a 401. `:itemId` still runs through it, so a
+ * malformed id is a 400 before the service is reached and 404 stays reserved for a
+ * well-formed id that is absent or not the caller's.
  */
+@UseGuards(JwtAuthGuard)
 @Controller('cart')
 export class CartController {
   constructor(private readonly cartService: CartService) {}
 
   @Get()
-  findCart(
-    @TemporaryUserId(new ParseUUIDPipe()) userId: string,
-  ): Promise<CartResponseDto> {
-    return this.cartService.findCart(userId);
+  findCart(@CurrentUser() user: AuthenticatedUser): Promise<CartResponseDto> {
+    return this.cartService.findCart(user.id);
   }
 
   @Post('items')
   addItem(
-    @TemporaryUserId(new ParseUUIDPipe()) userId: string,
+    @CurrentUser() user: AuthenticatedUser,
     @Body() dto: AddCartItemDto,
   ): Promise<CartItemResponseDto> {
-    return this.cartService.addItem(userId, dto);
+    return this.cartService.addItem(user.id, dto);
   }
 
   @Patch('items/:itemId')
   updateItem(
-    @TemporaryUserId(new ParseUUIDPipe()) userId: string,
+    @CurrentUser() user: AuthenticatedUser,
     @Param('itemId', ParseUUIDPipe) itemId: string,
     @Body() dto: UpdateCartItemDto,
   ): Promise<CartItemResponseDto> {
-    return this.cartService.updateItem(userId, itemId, dto);
+    return this.cartService.updateItem(user.id, itemId, dto);
   }
 
   @Delete('items/:itemId')
   @HttpCode(HttpStatus.NO_CONTENT)
   removeItem(
-    @TemporaryUserId(new ParseUUIDPipe()) userId: string,
+    @CurrentUser() user: AuthenticatedUser,
     @Param('itemId', ParseUUIDPipe) itemId: string,
   ): Promise<void> {
-    return this.cartService.removeItem(userId, itemId);
+    return this.cartService.removeItem(user.id, itemId);
   }
 
   @Delete()
   @HttpCode(HttpStatus.NO_CONTENT)
-  clearCart(
-    @TemporaryUserId(new ParseUUIDPipe()) userId: string,
-  ): Promise<void> {
-    return this.cartService.clearCart(userId);
+  clearCart(@CurrentUser() user: AuthenticatedUser): Promise<void> {
+    return this.cartService.clearCart(user.id);
   }
 }

@@ -1,8 +1,9 @@
-import { ConflictException, Injectable } from '@nestjs/common';
+import { ConflictException, Injectable, NotFoundException } from '@nestjs/common';
 import { PasswordService } from '../auth/password/password.service.js';
 import { ACTIVE_USER_STATUS } from '../common/constants/user-status.constants.js';
 import { normalizeEmail } from '../common/utils/normalize-email.js';
 import { Prisma } from '../generated/prisma/client.js';
+import { Role } from '../generated/prisma/enums.js';
 import { CreateUserDto } from './dto/create-user.dto.js';
 import { UserResponseDto } from './dto/user-response.dto.js';
 import { UsersRepository } from './repositories/users.repository.js';
@@ -30,6 +31,7 @@ export class UsersService {
         passwordHash,
         phone: dto.phone,
         status: ACTIVE_USER_STATUS,
+        role: Role.CUSTOMER,
       });
 
       return UserResponseDto.fromEntity(user);
@@ -40,6 +42,23 @@ export class UsersService {
 
       throw error;
     }
+  }
+
+  /**
+   * The user with `id`, or `null` when no such user exists.
+   *
+   * The read is not owner-scoped, so it belongs to the administrative path only and is
+   * reached exclusively through a route guarded by `@Roles(Role.ADMIN)`. There is no
+   * "look up anybody" method on this service for a customer-facing route to pick up.
+   */
+  async findOne(id: string): Promise<UserResponseDto> {
+    const user = await this.usersRepository.findById(id);
+
+    if (!user) {
+      throw new NotFoundException('User does not exist');
+    }
+
+    return UserResponseDto.fromEntity(user);
   }
 
   /**

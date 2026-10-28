@@ -75,13 +75,77 @@ describe('ProductsRepository', () => {
     expect(create).toHaveBeenCalledWith({ data });
   });
 
-  it('findAll returns every product newest first', async () => {
+  it('findAll returns every product newest first, unfiltered', async () => {
     const products = [buildProduct(), buildProduct({ id: 'p-2' })];
     findMany.mockResolvedValue(products);
 
     await expect(repository.findAll()).resolves.toBe(products);
     expect(findMany).toHaveBeenCalledWith({
+      where: {},
       orderBy: [{ createdAt: 'desc' }, { id: 'asc' }],
+    });
+  });
+
+  it('findMany filters by status alone', async () => {
+    findMany.mockResolvedValue([]);
+
+    await repository.findMany({ status: 'ACTIVE' });
+
+    expect(findMany).toHaveBeenCalledWith({
+      where: { status: 'ACTIVE' },
+      orderBy: [{ createdAt: 'desc' }, { id: 'asc' }],
+    });
+  });
+
+  it('findMany filters by isActive and categoryId together', async () => {
+    findMany.mockResolvedValue([]);
+
+    await repository.findMany({ isActive: false, categoryId: 'c-9' });
+
+    expect(findMany).toHaveBeenCalledWith({
+      where: { isActive: false, categoryId: 'c-9' },
+      orderBy: [{ createdAt: 'desc' }, { id: 'asc' }],
+    });
+  });
+
+  it('findMany matches search case-insensitively against name or slug', async () => {
+    findMany.mockResolvedValue([]);
+
+    await repository.findMany({ search: 'Peacoat' });
+
+    expect(findMany).toHaveBeenCalledWith({
+      where: {
+        OR: [
+          { name: { contains: 'Peacoat', mode: 'insensitive' } },
+          { slug: { contains: 'Peacoat', mode: 'insensitive' } },
+        ],
+      },
+      orderBy: [{ createdAt: 'desc' }, { id: 'asc' }],
+    });
+  });
+
+  it('findMany omits an absent filter entirely rather than matching on undefined', async () => {
+    findMany.mockResolvedValue([]);
+
+    await repository.findMany({ isActive: true });
+
+    expect(findMany).toHaveBeenCalledWith({
+      // `status: undefined` would be a real `WHERE status = NULL` in Prisma's eyes.
+      where: { isActive: true },
+      orderBy: [{ createdAt: 'desc' }, { id: 'asc' }],
+    });
+  });
+
+  it('updateLifecycle writes the lifecycle columns through the same primitive', async () => {
+    const product = buildProduct({ status: 'ACTIVE', isActive: false });
+    update.mockResolvedValue(product);
+
+    await expect(
+      repository.updateLifecycle('p-1', { status: 'ACTIVE', isActive: false }),
+    ).resolves.toBe(product);
+    expect(update).toHaveBeenCalledWith({
+      where: { id: 'p-1' },
+      data: { status: 'ACTIVE', isActive: false },
     });
   });
 

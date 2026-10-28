@@ -1,4 +1,5 @@
 import { Module } from '@nestjs/common';
+import { JwtAuthModule } from '../auth/jwt/jwt-auth.module.js';
 import { UsersModule } from '../users/users.module.js';
 import { AddressesController } from './addresses.controller.js';
 import { AddressesService } from './addresses.service.js';
@@ -8,14 +9,17 @@ import { AddressRepository } from './repositories/address.repository.js';
  * Owns the address book: the `addresses` table and the rules about which entry is
  * the user's default.
  *
- * Imports one sibling feature, and only for its repository:
+ * Imports two things:
  *
- * - `UsersRepository` — to confirm the identity behind the temporary `X-User-Id`
- *   header is a real user before writing addresses on their behalf.
+ * - `JwtAuthModule` — supplying the `JwtAuthGuard` the controller is decorated with.
+ *   It is a provider import rather than a global, so this module states plainly that it
+ *   requires authentication instead of inheriting it from somewhere up the tree.
+ * - `UsersModule`, for its repository only — to confirm the caller behind the access
+ *   token is a real user before writing addresses on their behalf.
  *
- * That module already exports its repository for exactly this purpose, so no module
- * reaches into another's tables and the edge runs one way:
- * Addresses -> Users. Nothing imports `AddressesModule` yet.
+ * `UsersModule` already exports its repository for exactly this purpose, so no module
+ * reaches into another's tables, and the edges run one way only:
+ * Addresses -> {JwtAuth, Users}. Nothing imports `AddressesModule` yet.
  *
  * Nothing here imports `CartModule`, `WishlistModule` or `ProductsModule`: an
  * address is a user-owned record with no relationship to any of them, and their
@@ -34,7 +38,7 @@ import { AddressRepository } from './repositories/address.repository.js';
  * `@Global`.
  */
 @Module({
-  imports: [UsersModule],
+  imports: [JwtAuthModule, UsersModule],
   controllers: [AddressesController],
   providers: [AddressesService, AddressRepository],
   exports: [AddressesService],

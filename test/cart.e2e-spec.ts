@@ -10,7 +10,11 @@ import { Prisma } from '../src/generated/prisma/client.js';
 import { CartModule } from '../src/cart/cart.module.js';
 import { PrismaModule } from '../src/prisma/prisma.module.js';
 import { PrismaService } from '../src/prisma/prisma.service.js';
-import { TEMPORARY_USER_ID_HEADER } from '../src/common/decorators/temporary-user-id.decorator.js';
+import {
+  bearerHeaders,
+  tokenIssuerFor,
+  type IssueToken,
+} from './support/e2e-auth.js';
 
 /**
  * Cart behaviour against a **real PostgreSQL** database.
@@ -47,10 +51,16 @@ describe('Cart (PostgreSQL)', () => {
   let variantId: string;
   let otherVariantId: string;
 
-  const headers = (id: string) => ({
-    'Content-Type': 'application/json',
-    [TEMPORARY_USER_ID_HEADER]: id,
-  });
+  /**
+   * Sends requests as `id`, by signing that user's access token.
+   *
+   * The token comes from the application's own `AccessTokenService`, so `JwtAuthGuard`
+   * verifies it for the same reasons it would verify a client's — including the database
+   * lookup, which is why a fixture written straight through Prisma works here without
+   * ever having a password.
+   */
+  let issueToken: IssueToken;
+  let headers: (id: string) => Record<string, string>;
 
   const api = async (
     method: string,
@@ -88,6 +98,8 @@ describe('Cart (PostgreSQL)', () => {
     }).compile();
 
     app = module.createNestApplication();
+    issueToken = tokenIssuerFor(app);
+    headers = bearerHeaders(issueToken);
     app.useGlobalPipes(
       new ValidationPipe({
         whitelist: true,
@@ -318,9 +330,30 @@ describe('Cart (PostgreSQL)', () => {
       expect(res.status).toBe(HttpStatus.BAD_REQUEST);
     });
 
-    it('an unknown but well-formed user → 404', async () => {
+    it('a token for a user who does not exist → 401, not 404', async () => {
+      // The token is well-formed and correctly signed; the database simply has no such
+      // user. That is an authentication failure, so the guard refuses it and no service
+      // is reached — there is nothing to 404 about.
       const res = await api('GET', '/cart', { user: randomUUID() });
-      expect(res.status).toBe(HttpStatus.NOT_FOUND);
+      expect(res.status).toBe(HttpStatus.UNAUTHORIZED);
+    });
+
+    it('the retired X-User-Id header is no longer a credential', async () => {
+      const res = await fetch(`${base}/cart`, {
+        headers: { 'X-User-Id': userId },
+      });
+
+      expect(res.status).toBe(HttpStatus.UNAUTHORIZED);
+    });
+
+    it('a token whose signature has been tampered with → 401', async () => {
+      const tampered = `${issueToken(userId).slice(0, -6)}AAAAAA`;
+
+      const res = await fetch(`${base}/cart`, {
+        headers: { Authorization: `Bearer ${tampered}` },
+      });
+
+      expect(res.status).toBe(HttpStatus.UNAUTHORIZED);
     });
   });
 

@@ -92,8 +92,8 @@ const ADDRESS_NOT_FOUND_MESSAGE =
  *
  * | Condition                                    | Status | Rationale                                        |
  * | -------------------------------------------- | ------ | ------------------------------------------------ |
- * | Missing / malformed `X-User-Id`              | 400    | Rejected by `ParseUUIDPipe`, before the service.  |
- * | User does not exist                          | 404    | The claimed identity is not a real user.          |
+ * | Missing, malformed or expired token          | 401    | Rejected by `JwtAuthGuard`, before the service.   |
+ * | Token whose user no longer exists            | 401    | Rejected by `JwtAuthGuard`, before the service.   |
  * | Malformed `:id`                              | 400    | Rejected by `ParseUUIDPipe`, before the service.  |
  * | Unknown field in the body                    | 400    | Rejected by `forbidNonWhitelisted`.               |
  * | Invalid field value, or `null` for a required field | 400 | Rejected by the DTO validator.               |

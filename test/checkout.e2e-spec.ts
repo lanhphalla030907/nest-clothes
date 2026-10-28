@@ -10,7 +10,11 @@ import { Prisma } from '../src/generated/prisma/client.js';
 import { CheckoutModule } from '../src/checkout/checkout.module.js';
 import { PrismaModule } from '../src/prisma/prisma.module.js';
 import { PrismaService } from '../src/prisma/prisma.service.js';
-import { TEMPORARY_USER_ID_HEADER } from '../src/common/decorators/temporary-user-id.decorator.js';
+import {
+  bearerHeaders,
+  tokenIssuerFor,
+  type IssueToken,
+} from './support/e2e-auth.js';
 
 /**
  * Checkout against a **real PostgreSQL** database.
@@ -67,10 +71,16 @@ describe('Checkout (PostgreSQL)', () => {
   /** Each buyer's own address, so `checkout({ user })` never borrows someone else's. */
   const buyerAddresses = new Map<string, string>();
 
-  const headers = (id: string) => ({
-    'Content-Type': 'application/json',
-    [TEMPORARY_USER_ID_HEADER]: id,
-  });
+  /**
+   * Sends requests as `id`, by signing that user's access token.
+   *
+   * The token comes from the application's own `AccessTokenService`, so `JwtAuthGuard`
+   * verifies it for the same reasons it would verify a client's — including the database
+   * lookup, which is why a fixture written straight through Prisma works here without
+   * ever having a password.
+   */
+  let issueToken: IssueToken;
+  let headers: (id: string) => Record<string, string>;
 
   const api = async (
     method: string,
@@ -216,6 +226,8 @@ describe('Checkout (PostgreSQL)', () => {
     }).compile();
 
     app = module.createNestApplication();
+    issueToken = tokenIssuerFor(app);
+    headers = bearerHeaders(issueToken);
     app.useGlobalPipes(
       new ValidationPipe({
         whitelist: true,
@@ -814,10 +826,14 @@ describe('Checkout (PostgreSQL)', () => {
     });
 
     it('writes nothing for a user that does not exist', async () => {
+      // Counted before and after rather than against zero: this suite runs alongside
+      // others against the same database, so "no order was added" is the claim worth
+      // making, not "the table is empty".
+      const before = await prisma.order.count();
       const res = await checkout({ user: randomUUID() });
 
-      expect(res.status).toBe(HttpStatus.NOT_FOUND);
-      expect(await prisma.order.count()).toBe(0);
+      expect(res.status).toBe(HttpStatus.UNAUTHORIZED);
+      expect(await prisma.order.count()).toBe(before);
     });
   });
 
@@ -1030,14 +1046,14 @@ describe('Checkout (PostgreSQL)', () => {
       expect(await countOrders()).toBe(0);
     });
 
-    it('rejects a request with no identity header', async () => {
+    it('rejects a request with no access token', async () => {
       const res = await fetch(`${base}/checkout`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ addressId }),
       });
 
-      expect(res.status).toBe(HttpStatus.BAD_REQUEST);
+      expect(res.status).toBe(HttpStatus.UNAUTHORIZED);
     });
 
     it('offers no way to change or cancel an order', async () => {

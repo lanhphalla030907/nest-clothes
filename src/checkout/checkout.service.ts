@@ -147,7 +147,7 @@ export class CheckoutService {
   /**
    * Converts the caller's cart into an order and reserves the stock for it.
    *
-   * @param userId The claimed identity from `X-User-Id`; verified to be a real user.
+   * @param userId The authenticated caller's id, from the verified access token.
    * @param dto The address to ship to; verified to belong to that user.
    * @returns The order just written, read back inside the same transaction.
    * @throws BadRequest 400 when the cart is empty, a quantity is not a positive
@@ -377,10 +377,10 @@ export class CheckoutService {
   }
 
   /**
-   * Confirms the claimed identity is a real user.
+   * Confirms the authenticated caller is a real user.
    *
-   * The `X-User-Id` header is an unverified claim, so this is what stops a checkout
-   * creating an order for a user id that does not exist. Done before the transaction
+   * `JwtAuthGuard` already resolved the bearer token to a real, active user, so this is
+   * a second line of defence rather than the primary one. It runs before the transaction
    * opens because it cannot succeed or fail depending on anything inside it.
    */
   private async requireUser(userId: string): Promise<void> {

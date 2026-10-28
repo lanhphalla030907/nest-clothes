@@ -1,5 +1,6 @@
 import { Module } from '@nestjs/common';
 import { AddressesModule } from './addresses/addresses.module.js';
+import { AdminModule } from './admin/admin.module.js';
 import { AppController } from './app.controller.js';
 import { AppService } from './app.service.js';
 import { AuthModule } from './auth/auth.module.js';
@@ -31,6 +32,13 @@ import { PaymentsModule } from './payments/payments.module.js';
     PrismaModule,
     AuthModule,
     UsersModule,
+    /**
+     * `AdminModule` comes after `AuthModule` and `UsersModule` because it mounts the
+     * role-guarded routes: it needs `JwtAuthGuard`/`RolesGuard` from the former's
+     * `JwtAuthModule` and `UsersService` from the latter. It is a consumer of both, so
+     * neither imports it.
+     */
+    AdminModule,
     CategoriesModule,
     ProductsModule,
     ProductImagesModule,

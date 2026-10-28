@@ -83,8 +83,8 @@ const PRODUCT_RESTRICTED_MESSAGE =
  *
  * | Condition                                       | Status | Rationale                                    |
  * * ----------------------------------------------- | ------ | -------------------------------------------- |
- * | Missing / malformed `X-User-Id`                 | 400    | Rejected by `ParseUUIDPipe`, before the service. |
- * | User does not exist                             | 404    | The claimed identity is not a real user.      |
+ * | Missing, malformed or expired token             | 401    | Rejected by `JwtAuthGuard`, before the service. |
+ * | Token whose user no longer exists              | 401    | Rejected by `JwtAuthGuard`, before the service. |
  * | Malformed `productId` in the body               | 400    | Rejected by the DTO validator.                |
  * | Any unknown field in the body                   | 400    | Rejected by `forbidNonWhitelisted`.          |
  * | Malformed `:itemId`                             | 400    | Rejected by `ParseUUIDPipe`, before the service. |

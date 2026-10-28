@@ -1,9 +1,15 @@
-import { Injectable, UnauthorizedException } from '@nestjs/common';
+import {
+  Injectable,
+  NotFoundException,
+  UnauthorizedException,
+} from '@nestjs/common';
 import { ACTIVE_USER_STATUS } from '../common/constants/user-status.constants.js';
 import { normalizeEmail } from '../common/utils/normalize-email.js';
 import { UserResponseDto } from '../users/dto/user-response.dto.js';
 import { UsersRepository } from '../users/repositories/users.repository.js';
+import { LoginResponseDto } from './dto/login-response.dto.js';
 import { LoginDto } from './dto/login.dto.js';
+import { AccessTokenService } from './jwt/access-token.service.js';
 import { PasswordService } from './password/password.service.js';
 
 /**
@@ -29,16 +35,21 @@ export class AuthService {
   constructor(
     private readonly usersRepository: UsersRepository,
     private readonly passwordService: PasswordService,
+    private readonly accessTokenService: AccessTokenService,
   ) {}
 
   /**
-   * Authenticates an existing user and returns its safe representation.
+   * Authenticates an existing user and returns a token plus its safe representation.
    *
    * `lastLoginAt` is written only once the credentials are proven valid and the
-   * account is active. Unexpected repository failures are intentionally allowed
-   * to propagate instead of being reported as an authentication failure.
+   * account is active. Unexpected repository failures are intentionally allowed to
+   * propagate instead of being reported as an authentication failure.
+   *
+   * The token is signed **after** the successful write, from the same row the response
+   * describes, so the claims and the returned user cannot disagree. Signing before the
+   * write would hand out a token for an account whose login was never recorded.
    */
-  async login(dto: LoginDto): Promise<UserResponseDto> {
+  async login(dto: LoginDto): Promise<LoginResponseDto> {
     const email = normalizeEmail(dto.email);
 
     const user = await this.usersRepository.findByEmail(email);
@@ -66,7 +77,29 @@ export class AuthService {
       new Date(),
     );
 
-    return UserResponseDto.fromEntity(authenticatedUser);
+    return LoginResponseDto.fromIdentity(
+      authenticatedUser,
+      this.accessTokenService.sign(authenticatedUser),
+      this.accessTokenService.expiresIn,
+    );
+  }
+
+  /**
+   * The safe representation of the caller, as the database currently has it.
+   *
+   * Reads the row rather than echoing the token's claims, so a role or status changed
+   * after the token was issued is reflected immediately. The guard has already
+   * established that the account is active and exists, so the `null` branch is a
+   * defensive 404 rather than an expected outcome.
+   */
+  async currentUser(userId: string): Promise<UserResponseDto> {
+    const user = await this.usersRepository.findById(userId);
+
+    if (!user) {
+      throw new NotFoundException('User does not exist');
+    }
+
+    return UserResponseDto.fromEntity(user);
   }
 
   private async equaliseTimingAgainstUnknownEmail(password: string): Promise<void> {

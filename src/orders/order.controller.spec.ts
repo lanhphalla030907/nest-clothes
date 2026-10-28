@@ -6,7 +6,8 @@ import {
   type INestApplication,
 } from '@nestjs/common';
 import { Test, TestingModule } from '@nestjs/testing';
-import { TEMPORARY_USER_ID_HEADER } from '../common/decorators/temporary-user-id.decorator.js';
+import { TestIdentityRegistry } from '../../test/support/auth-fixtures.js';
+import { Role } from '../generated/prisma/enums.js';
 import { OrderItemResponseDto } from './dto/order-item-response.dto.js';
 import { OrderResponseDto } from './dto/order-response.dto.js';
 import { OrderSummaryResponseDto } from './dto/order-summary-response.dto.js';
@@ -15,6 +16,7 @@ import { OrderService } from './order.service.js';
 
 const USER_ID = 'a1b2c3d4-e5f6-4f70-8a9b-0c1d2e3f4a5b';
 const OTHER_USER_ID = 'b2c3d4e5-f6a7-4b81-9c0d-1e2f3a4b5c6d';
+const UNKNOWN_USER_ID = 'd3e4f5a6-b7c8-4903-8d2e-4a5b6c7d8e9f';
 const ORDER_ID = 'c3d4e5f6-a7b8-4c92-8d1e-2f3a4b5c6d7e';
 const VARIANT_ID = 'e5f6a7b8-c9d0-4eb4-af30-4b5c6d7e8f90';
 
@@ -105,14 +107,21 @@ const buildServiceMock = () => ({
 describe('OrderController (HTTP)', () => {
   let app: INestApplication;
   let service: ReturnType<typeof buildServiceMock>;
+  let identities: TestIdentityRegistry;
   let base: string;
 
   beforeAll(async () => {
     service = buildServiceMock();
+    identities = new TestIdentityRegistry();
+    identities.register({ id: USER_ID, email: 'ada@example.test', role: Role.CUSTOMER });
+    identities.register({ id: OTHER_USER_ID, email: 'bob@example.test', role: Role.CUSTOMER });
 
     const module: TestingModule = await Test.createTestingModule({
       controllers: [OrderController],
-      providers: [{ provide: OrderService, useValue: service }],
+      providers: [
+        ...identities.providers(),
+        { provide: OrderService, useValue: service },
+      ],
     }).compile();
 
     app = module.createNestApplication();
@@ -145,7 +154,7 @@ describe('OrderController (HTTP)', () => {
       headers: {
         ...(options.user === undefined
           ? {}
-          : { [TEMPORARY_USER_ID_HEADER]: options.user }),
+          : identities.bearerHeaderFor(options.user)),
         ...(options.body === undefined
           ? {}
           : { 'Content-Type': 'application/json' }),
@@ -204,17 +213,26 @@ describe('OrderController (HTTP)', () => {
       );
     });
 
-    it('rejects a request without the identity header', async () => {
+    it('rejects a request with no access token', async () => {
       const res = await request('GET', '/orders');
 
-      expect(res.status).toBe(HttpStatus.BAD_REQUEST);
+      expect(res.status).toBe(HttpStatus.UNAUTHORIZED);
       expect(service.listOrders).not.toHaveBeenCalled();
     });
 
-    it('rejects a malformed identity header before the service', async () => {
-      const res = await request('GET', '/orders', { user: 'not-a-uuid' });
+    it('rejects a token that does not verify before the service', async () => {
+      const res = await fetch(`${base}/orders`, {
+        headers: { Authorization: 'Bearer not-a-token' },
+      });
 
-      expect(res.status).toBe(HttpStatus.BAD_REQUEST);
+      expect(res.status).toBe(HttpStatus.UNAUTHORIZED);
+      expect(service.listOrders).not.toHaveBeenCalled();
+    });
+
+    it('rejects a token whose user is not in the database', async () => {
+      const res = await request('GET', '/orders', { user: UNKNOWN_USER_ID });
+
+      expect(res.status).toBe(HttpStatus.UNAUTHORIZED);
       expect(service.listOrders).not.toHaveBeenCalled();
     });
 
@@ -296,12 +314,12 @@ describe('OrderController (HTTP)', () => {
       expect(service.getOrder).not.toHaveBeenCalled();
     });
 
-    it('rejects a malformed identity header before the service', async () => {
-      const res = await request('GET', `/orders/${ORDER_ID}`, {
-        user: 'not-a-uuid',
+    it('rejects the old X-User-Id header instead of trusting it', async () => {
+      const res = await fetch(`${base}/orders/${ORDER_ID}`, {
+        headers: { 'X-User-Id': USER_ID },
       });
 
-      expect(res.status).toBe(HttpStatus.BAD_REQUEST);
+      expect(res.status).toBe(HttpStatus.UNAUTHORIZED);
       expect(service.getOrder).not.toHaveBeenCalled();
     });
 

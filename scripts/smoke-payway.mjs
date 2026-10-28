@@ -46,6 +46,7 @@
  * its own environment.
  */
 import 'dotenv/config';
+import { hash } from 'argon2';
 import { PrismaPg } from '@prisma/adapter-pg';
 // From `dist`, so the script runs against build output and needs no TypeScript loader.
 import { PrismaClient } from '../dist/generated/prisma/client.js';
@@ -77,11 +78,22 @@ const check = (name, ok, detail = '') => {
   console.log(`${ok ? 'PASS' : 'FAIL'}  ${name}${detail ? ` — ${detail}` : ''}`);
 };
 
+const userIds = [];
+const tokens = new Map();
+
+/**
+ * `user` is a user id, resolved to that user's access token.
+ *
+ * A token obtained from a real login rather than signed here, so this script keeps
+ * testing the server's authentication. Passing no `user` sends no `Authorization` header
+ * at all — which is exactly what the callback checks below rely on staying unauthenticated.
+ */
 const post = async (path, body, user) => {
+  const token = user === undefined ? undefined : tokens.get(user);
   const res = await fetch(`${base}${path}`, {
     method: 'POST',
     headers: {
-      ...(user === undefined ? {} : { 'X-User-Id': user }),
+      ...(token === undefined ? {} : { Authorization: `Bearer ${token}` }),
       'Content-Type': 'application/json',
     },
     ...(body === undefined ? {} : { body: JSON.stringify(body) }),
@@ -91,25 +103,34 @@ const post = async (path, body, user) => {
   return { status: res.status, body: text === '' ? undefined : JSON.parse(text) };
 };
 
-const userIds = [];
-
 try {
   const category = await prisma.category.create({
     data: { name: `Smoke PayWay ${run}`, slug: run },
   });
+  const password = `${run}-password`;
   const owner = (
     await prisma.user.create({
       data: {
         firstName: 'Smoke',
         lastName: 'PayWay',
         email: `${run}@example.test`,
-        passwordHash: 'argon2-not-a-real-hash',
+        passwordHash: await hash(password),
         status: 'ACTIVE',
       },
     })
   ).id;
   userIds.push(owner);
 
+  const login = await post('/auth/login', { email: `${run}@example.test`, password });
+  if (login.status !== 200 || typeof login.body?.accessToken !== 'string') {
+    throw new Error(
+      `login failed: ${login.status} ${JSON.stringify(login.body)}`,
+    );
+  }
+  tokens.set(owner, login.body.accessToken);
+
+  // The payment route is authenticated; the callback is not. Both are exercised below,
+  // so a mistake in either direction would show up here rather than in production.
   const order = await prisma.order.create({
     data: {
       userId: owner,
@@ -127,6 +148,16 @@ try {
       shippingCountryCode: 'KH',
     },
   });
+
+  // The payment route is authenticated; the callback is not. Both are exercised here, so
+  // a guard accidentally applied to the callback — or dropped from the payment route —
+  // shows up against the live build rather than in production.
+  const anonymousPayment = await post(`/orders/${order.id}/payments`, {});
+  check(
+    'the payment route refuses an unauthenticated caller with 401',
+    anonymousPayment.status === 401,
+    `got ${anonymousPayment.status}`,
+  );
 
   // --- 1. the real provider call ------------------------------------------------
   // A rejected signature surfaces as a 4xx/5xx here rather than as a QR, which is the

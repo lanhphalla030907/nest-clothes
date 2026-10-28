@@ -11,7 +11,11 @@ import { OrderModule } from '../src/orders/order.module.js';
 import { PaymentsModule } from '../src/payments/payments.module.js';
 import { PrismaModule } from '../src/prisma/prisma.module.js';
 import { PrismaService } from '../src/prisma/prisma.service.js';
-import { TEMPORARY_USER_ID_HEADER } from '../src/common/decorators/temporary-user-id.decorator.js';
+import {
+  bearerHeaders,
+  tokenIssuerFor,
+  type IssueToken,
+} from './support/e2e-auth.js';
 import {
   PAYWAY_HTTP_CLIENT,
   type PaywayHttpClient,
@@ -151,10 +155,16 @@ describe('Payments (PostgreSQL)', () => {
     return Promise.resolve(next);
   };
 
-  const headers = (id: string) => ({
-    'Content-Type': 'application/json',
-    [TEMPORARY_USER_ID_HEADER]: id,
-  });
+  /**
+   * Sends requests as `id`, by signing that user's access token.
+   *
+   * The token comes from the application's own `AccessTokenService`, so `JwtAuthGuard`
+   * verifies it for the same reasons it would verify a client's — including the database
+   * lookup, which is why a fixture written straight through Prisma works here without
+   * ever having a password.
+   */
+  let issueToken: IssueToken;
+  let headers: (id: string) => Record<string, string>;
 
   const api = async (
     method: string,
@@ -254,6 +264,8 @@ describe('Payments (PostgreSQL)', () => {
       .compile();
 
     app = module.createNestApplication();
+    issueToken = tokenIssuerFor(app);
+    headers = bearerHeaders(issueToken);
     app.useGlobalPipes(
       new ValidationPipe({
         whitelist: true,
@@ -479,7 +491,7 @@ describe('Payments (PostgreSQL)', () => {
         expect(provider.calls).toHaveLength(0);
       });
 
-      it('404s without the identity header', async () => {
+      it('401s without an access token', async () => {
         const order = await createOrder(userId);
 
         const response = await fetch(`${base}/orders/${order.id}/payments`, {
@@ -488,7 +500,7 @@ describe('Payments (PostgreSQL)', () => {
           body: '{}',
         });
 
-        expect(response.status).toBe(HttpStatus.BAD_REQUEST);
+        expect(response.status).toBe(HttpStatus.UNAUTHORIZED);
       });
 
       it.each(['CONFIRMED', 'PROCESSING', 'SHIPPED', 'DELIVERED', 'CANCELLED'])(

@@ -74,7 +74,9 @@ describe('ProductsService', () => {
   let productRepoFindAll: ReturnType<typeof vi.fn>;
   let productRepoFindById: ReturnType<typeof vi.fn>;
   let productRepoFindBySlug: ReturnType<typeof vi.fn>;
+  let productRepoFindMany: ReturnType<typeof vi.fn>;
   let productRepoUpdate: ReturnType<typeof vi.fn>;
+  let productRepoUpdateLifecycle: ReturnType<typeof vi.fn>;
   let productRepoDelete: ReturnType<typeof vi.fn>;
   let categoryRepoFindById: ReturnType<typeof vi.fn>;
 
@@ -83,7 +85,9 @@ describe('ProductsService', () => {
     productRepoFindAll = vi.fn();
     productRepoFindById = vi.fn();
     productRepoFindBySlug = vi.fn();
+    productRepoFindMany = vi.fn();
     productRepoUpdate = vi.fn();
+    productRepoUpdateLifecycle = vi.fn();
     productRepoDelete = vi.fn();
     categoryRepoFindById = vi.fn();
 
@@ -97,7 +101,9 @@ describe('ProductsService', () => {
             findAll: productRepoFindAll,
             findById: productRepoFindById,
             findBySlug: productRepoFindBySlug,
+            findMany: productRepoFindMany,
             update: productRepoUpdate,
+            updateLifecycle: productRepoUpdateLifecycle,
             delete: productRepoDelete,
           },
         },
@@ -338,6 +344,208 @@ describe('ProductsService', () => {
         NotFoundException,
       );
       expect(productRepoDelete).not.toHaveBeenCalled();
+    });
+
+    it('a product still referenced by a cart, wishlist or order is refused with 409', async () => {
+      // PostgreSQL refuses these deletes: `wishlist_items` points at the product while
+      // `cart_items` and `order_items` point at its variants, all ON DELETE RESTRICT. A
+      // 500 would tell the caller the request was malformed when it was merely not yet
+      // possible, so P2003 becomes a conflict.
+      productRepoFindById.mockResolvedValue(buildProduct());
+      productRepoDelete.mockRejectedValue(buildUniqueViolation('P2003'));
+
+      await expect(service.remove('p-1')).rejects.toBeInstanceOf(
+        ConflictException,
+      );
+    });
+
+    it('any other database error on delete still propagates unchanged', async () => {
+      const failure = buildUniqueViolation('P2025');
+      productRepoFindById.mockResolvedValue(buildProduct());
+      productRepoDelete.mockRejectedValue(failure);
+
+      await expect(service.remove('p-1')).rejects.toBe(failure);
+    });
+  });
+
+  describe('filtered listing', () => {
+    it('passes the filters through to the repository and maps the rows', async () => {
+      const products = [buildProduct({ id: 'p-1' }), buildProduct({ id: 'p-2' })];
+      productRepoFindMany.mockResolvedValue(products);
+
+      const result = await service.findMany({
+        status: 'ACTIVE',
+        isActive: true,
+        categoryId: 'c-1',
+        search: 'tee',
+      });
+
+      expect(productRepoFindMany).toHaveBeenCalledWith({
+        status: 'ACTIVE',
+        isActive: true,
+        categoryId: 'c-1',
+        search: 'tee',
+      });
+      expect(result.map((product) => product.id)).toEqual(['p-1', 'p-2']);
+    });
+
+    it('no filters at all reaches the repository as an empty object', async () => {
+      productRepoFindMany.mockResolvedValue([]);
+
+      await service.findMany();
+
+      expect(productRepoFindMany).toHaveBeenCalledWith({});
+    });
+  });
+
+  describe('lifecycle on create', () => {
+    beforeEach(() => {
+      productRepoFindBySlug.mockResolvedValue(null);
+      categoryRepoFindById.mockResolvedValue(buildCategory());
+      productRepoCreate.mockImplementation((data: Record<string, unknown>) =>
+        Promise.resolve(buildProduct(data)),
+      );
+    });
+
+    it('a create that names no lifecycle gets the published defaults', async () => {
+      await service.create(buildCreateDto());
+
+      expect(productRepoCreate.mock.calls[0][0]).toMatchObject({
+        status: 'DRAFT',
+        isActive: true,
+      });
+    });
+
+    it('an explicit status is used as written', async () => {
+      await service.create(buildCreateDto(), { status: 'ACTIVE' });
+
+      expect(productRepoCreate.mock.calls[0][0]).toMatchObject({
+        status: 'ACTIVE',
+      });
+    });
+
+    it('status and isActive stay independent of one another', async () => {
+      // ACTIVE but switched off is a legitimate state, and so is the reverse. Coupling
+      // them here would redefine what the two columns mean everywhere else.
+      await service.create(buildCreateDto(), {
+        status: 'ACTIVE',
+        isActive: false,
+      });
+      expect(productRepoCreate.mock.calls[0][0]).toMatchObject({
+        status: 'ACTIVE',
+        isActive: false,
+      });
+
+      await service.create(buildCreateDto(), { status: 'DRAFT', isActive: true });
+      expect(productRepoCreate.mock.calls[1][0]).toMatchObject({
+        status: 'DRAFT',
+        isActive: true,
+      });
+    });
+  });
+
+  describe('lifecycle on update', () => {
+    beforeEach(() => {
+      productRepoFindById.mockResolvedValue(buildProduct());
+      productRepoFindBySlug.mockResolvedValue(null);
+      productRepoUpdate.mockImplementation((id: string, data: Record<string, unknown>) =>
+        Promise.resolve(buildProduct({ id, ...data })),
+      );
+      productRepoUpdateLifecycle.mockImplementation(
+        (id: string, data: Record<string, unknown>) =>
+          Promise.resolve(buildProduct({ id, ...data })),
+      );
+    });
+
+    it('an omitted lifecycle field writes neither column', async () => {
+      // The property that makes an unrelated edit safe: correcting a price must not
+      // unpublish the product.
+      await service.update('p-1', buildUpdateDto({ basePrice: '29.90' }));
+
+      expect(productRepoUpdate).toHaveBeenCalledWith('p-1', { basePrice: '29.90' });
+      expect(productRepoUpdateLifecycle).not.toHaveBeenCalled();
+    });
+
+    it('no content and no lifecycle writes nothing at all', async () => {
+      await service.update('p-1', buildUpdateDto());
+
+      expect(productRepoUpdate).not.toHaveBeenCalled();
+      expect(productRepoUpdateLifecycle).not.toHaveBeenCalled();
+    });
+
+    it('status alone is written through the lifecycle method', async () => {
+      const result = await service.update('p-1', buildUpdateDto(), {
+        status: 'ARCHIVED',
+      });
+
+      expect(productRepoUpdate).not.toHaveBeenCalled();
+      expect(productRepoUpdateLifecycle).toHaveBeenCalledWith('p-1', {
+        status: 'ARCHIVED',
+      });
+      expect(result.status).toBe('ARCHIVED');
+    });
+
+    it('isActive alone is written through the lifecycle method', async () => {
+      await service.update('p-1', buildUpdateDto(), { isActive: false });
+
+      expect(productRepoUpdateLifecycle).toHaveBeenCalledWith('p-1', {
+        isActive: false,
+      });
+    });
+
+    it('content is written before the lifecycle', async () => {
+      const order: string[] = [];
+      productRepoUpdate.mockImplementation(() => {
+        order.push('content');
+
+        return Promise.resolve(buildProduct());
+      });
+      productRepoUpdateLifecycle.mockImplementation(() => {
+        order.push('lifecycle');
+
+        return Promise.resolve(buildProduct());
+      });
+
+      await service.update(
+        'p-1',
+        buildUpdateDto({ name: 'Renamed' }),
+        { status: 'ACTIVE' },
+      );
+
+      expect(order).toEqual(['content', 'lifecycle']);
+    });
+
+    it('a rejected slug leaves the lifecycle untouched', async () => {
+      // A slug or category that fails validation is discovered before either write, so
+      // a lifecycle change can never be left behind by a content change that never
+      // happened.
+      productRepoFindBySlug.mockResolvedValue(buildProduct({ id: 'p-2' }));
+
+      await expect(
+        service.update('p-1', buildUpdateDto({ slug: 'taken' }), {
+          status: 'ACTIVE',
+        }),
+      ).rejects.toBeInstanceOf(ConflictException);
+
+      expect(productRepoUpdate).not.toHaveBeenCalled();
+      expect(productRepoUpdateLifecycle).not.toHaveBeenCalled();
+    });
+
+    it('a content-only edit answers with the row it just wrote', async () => {
+      // Returning the row read before the write would report the old price, which is the
+      // kind of stale confirmation a client cannot detect.
+      productRepoUpdate.mockResolvedValue(buildProduct({ basePrice: '29.90' }));
+
+      const result = await service.update('p-1', buildUpdateDto({ basePrice: '29.90' }));
+
+      expect(result.basePrice).toBe('29.90');
+    });
+
+    it('an edit that writes nothing answers with the row already loaded', async () => {
+      const result = await service.update('p-1', buildUpdateDto());
+
+      expect(result.id).toBe('p-1');
+      expect(productRepoFindById).toHaveBeenCalledTimes(1);
     });
   });
 });

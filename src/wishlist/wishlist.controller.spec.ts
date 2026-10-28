@@ -4,7 +4,8 @@ import {
   type INestApplication,
 } from '@nestjs/common';
 import { Test, TestingModule } from '@nestjs/testing';
-import { TEMPORARY_USER_ID_HEADER } from '../common/decorators/temporary-user-id.decorator.js';
+import { TestIdentityRegistry } from '../../test/support/auth-fixtures.js';
+import { Role } from '../generated/prisma/enums.js';
 import { WishlistController } from './wishlist.controller.js';
 import { WishlistService } from './wishlist.service.js';
 import { AddWishlistItemDto } from './dto/add-wishlist-item.dto.js';
@@ -20,6 +21,14 @@ const USER_ID = 'a1b2c3d4-e5f6-4f70-8a9b-0c1d2e3f4a5b';
 const ITEM_ID = 'd2e3f4a5-b6c7-4d8e-9f0a-1b2c3d4e5f60';
 const WISHLIST_ID = 'c1d2e3f4-a5b6-4c7d-8e9f-0a1b2c3d4e5f';
 const PRODUCT_ID = 'e3f4a5b6-c7d8-4e9f-8a0b-2c3d4e5f6071';
+const UNKNOWN_USER_ID = 'd3e4f5a6-b7c8-4903-8d2e-4a5b6c7d8e9f';
+
+/** The identity the guard attaches, as a controller receives it. */
+const caller = (id = USER_ID) => ({
+  id,
+  email: 'ada@example.test',
+  role: Role.CUSTOMER,
+});
 
 const buildItemResponse = (
   overrides: Partial<WishlistItemResponseDto> = {},
@@ -84,14 +93,24 @@ const buildServiceMock = () => ({
 describe('WishlistController (HTTP)', () => {
   let app: INestApplication;
   let service: ReturnType<typeof buildServiceMock>;
+  let identities: TestIdentityRegistry;
   let base: string;
 
   beforeAll(async () => {
     service = buildServiceMock();
+    identities = new TestIdentityRegistry();
+    identities.register({
+      id: USER_ID,
+      email: 'ada@example.test',
+      role: Role.CUSTOMER,
+    });
 
     const module: TestingModule = await Test.createTestingModule({
       controllers: [WishlistController],
-      providers: [{ provide: WishlistService, useValue: service }],
+      providers: [
+        ...identities.providers(),
+        { provide: WishlistService, useValue: service },
+      ],
     }).compile();
 
     app = module.createNestApplication();
@@ -122,9 +141,7 @@ describe('WishlistController (HTTP)', () => {
     fetch(`${base}${path}`, {
       method,
       headers: {
-        ...(options.user === undefined
-          ? {}
-          : { [TEMPORARY_USER_ID_HEADER]: options.user }),
+        ...(options.user === undefined ? {} : identities.bearerHeaderFor(options.user)),
         ...(options.body === undefined
           ? {}
           : { 'Content-Type': 'application/json' }),
@@ -135,7 +152,7 @@ describe('WishlistController (HTTP)', () => {
     });
 
   describe('GET /wishlist', () => {
-    it('returns 200 with the wishlist for the claimed user', async () => {
+    it('returns 200 with the wishlist for the authenticated user', async () => {
       service.findWishlist.mockResolvedValue(buildWishlistResponse());
 
       const res = await request('GET', '/wishlist', { user: USER_ID });
@@ -157,17 +174,35 @@ describe('WishlistController (HTTP)', () => {
       );
     });
 
-    it('rejects a request without the identity header', async () => {
+    it('rejects a request with no access token', async () => {
       const res = await request('GET', '/wishlist');
 
-      expect(res.status).toBe(HttpStatus.BAD_REQUEST);
+      expect(res.status).toBe(HttpStatus.UNAUTHORIZED);
       expect(service.findWishlist).not.toHaveBeenCalled();
     });
 
-    it('rejects a malformed identity header before the service', async () => {
-      const res = await request('GET', '/wishlist', { user: 'not-a-uuid' });
+    it('rejects the retired X-User-Id header', async () => {
+      const res = await fetch(`${base}/wishlist`, {
+        headers: { 'X-User-Id': USER_ID },
+      });
 
-      expect(res.status).toBe(HttpStatus.BAD_REQUEST);
+      expect(res.status).toBe(HttpStatus.UNAUTHORIZED);
+      expect(service.findWishlist).not.toHaveBeenCalled();
+    });
+
+    it('rejects a token that does not verify before the service', async () => {
+      const res = await fetch(`${base}/wishlist`, {
+        headers: { Authorization: 'Bearer not-a-token' },
+      });
+
+      expect(res.status).toBe(HttpStatus.UNAUTHORIZED);
+      expect(service.findWishlist).not.toHaveBeenCalled();
+    });
+
+    it('rejects a well-formed token for a user who does not exist', async () => {
+      const res = await request('GET', '/wishlist', { user: UNKNOWN_USER_ID });
+
+      expect(res.status).toBe(HttpStatus.UNAUTHORIZED);
       expect(service.findWishlist).not.toHaveBeenCalled();
     });
   });
@@ -313,10 +348,35 @@ describe('WishlistController (HTTP)', () => {
       expect(service.clearWishlist).toHaveBeenCalledWith(USER_ID);
     });
 
-    it('rejects a malformed identity header', async () => {
-      const res = await request('DELETE', '/wishlist', { user: 'nope' });
+    it('rejects an expired token', async () => {
+      const res = await fetch(`${base}/wishlist`, {
+        method: 'DELETE',
+        headers: {
+          Authorization: `Bearer ${identities.signExpired({
+            id: USER_ID,
+            email: 'ada@example.test',
+            role: Role.CUSTOMER,
+          })}`,
+        },
+      });
 
-      expect(res.status).toBe(HttpStatus.BAD_REQUEST);
+      expect(res.status).toBe(HttpStatus.UNAUTHORIZED);
+      expect(service.clearWishlist).not.toHaveBeenCalled();
+    });
+
+    it('rejects a token signed with another key', async () => {
+      const res = await fetch(`${base}/wishlist`, {
+        method: 'DELETE',
+        headers: {
+          Authorization: `Bearer ${identities.signWithForeignKey({
+            id: USER_ID,
+            email: 'ada@example.test',
+            role: Role.CUSTOMER,
+          })}`,
+        },
+      });
+
+      expect(res.status).toBe(HttpStatus.UNAUTHORIZED);
       expect(service.clearWishlist).not.toHaveBeenCalled();
     });
   });
@@ -327,7 +387,7 @@ describe('WishlistController (HTTP)', () => {
       const expected = buildWishlistResponse();
       service.findWishlist.mockReturnValue(expected);
 
-      expect(controller.findWishlist(USER_ID)).toBe(expected);
+      expect(controller.findWishlist(caller())).toBe(expected);
     });
 
     it('delegates the add with the DTO instance', () => {
@@ -338,7 +398,7 @@ describe('WishlistController (HTTP)', () => {
       const expected = buildItemResponse();
       service.addItem.mockReturnValue(expected);
 
-      expect(controller.addItem(USER_ID, dto)).toBe(expected);
+      expect(controller.addItem(caller(), dto)).toBe(expected);
       expect(service.addItem).toHaveBeenCalledWith(USER_ID, dto);
     });
   });

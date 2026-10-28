@@ -1,4 +1,5 @@
 import type { User } from '../../generated/prisma/client.js';
+import type { Role } from '../../generated/prisma/enums.js';
 
 /**
  * Outbound representation of a user.
@@ -13,6 +14,8 @@ export class UserResponseDto {
   email: string;
   phone: string | null;
   status: string;
+  /** Authorisation level. Safe to expose: it is what the API already enforces. */
+  role: Role;
   emailVerifiedAt: Date | null;
   lastLoginAt: Date | null;
   createdAt: Date;
@@ -26,7 +29,8 @@ export class UserResponseDto {
     dto.lastName = user.lastName;
     dto.email = user.email;
     dto.phone = user.phone;
-    dto.status = user.status; 
+    dto.status = user.status;
+    dto.role = user.role;
     dto.emailVerifiedAt = user.emailVerifiedAt;
     dto.lastLoginAt = user.lastLoginAt;
     dto.createdAt = user.createdAt;

@@ -20,7 +20,19 @@ import { ProductImagesRepository } from './repositories/product-images.repositor
  * Anything else from that module — the SDK client, the credentials — stays
  * unexported, so this feature cannot inject them even if it tried to.
  *
- * Nothing is exported: no other module needs product-image behaviour yet.
+ * Exports `ProductImagesService`, for `AdminProductImagesController`. An
+ * administrator uploading or promoting an image is doing the same operation a
+ * public route does, and the parts that are easy to get subtly wrong — reading
+ * `imageUrl` and `publicId` off Cloudinary's response instead of the request,
+ * the compensating delete when the row insert fails, the swap that demotes the
+ * incumbent primary, refusing to delete or clear the only primary — all live in
+ * this service. A second implementation of the image rules would be a second
+ * place for the single-primary invariant and the orphaned-asset compensation to
+ * be wrong, and would be a second Cloudinary integration.
+ *
+ * The repository stays unexported: no other module needs image persistence, and
+ * the ownership chain (product -> image) is enforced inside the service rather
+ * than left for a caller to reproduce.
  *
  * `PrismaService` arrives without an explicit import because `PrismaModule` is
  * `@Global`.
@@ -29,5 +41,6 @@ import { ProductImagesRepository } from './repositories/product-images.repositor
   imports: [ProductsModule],
   controllers: [ProductImagesController],
   providers: [ProductImagesService, ProductImagesRepository],
+  exports: [ProductImagesService],
 })
 export class ProductImagesModule {}

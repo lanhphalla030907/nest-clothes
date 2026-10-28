@@ -1,5 +1,4 @@
 import {
-  BadRequestException,
   Body,
   Controller,
   Delete,
@@ -13,26 +12,13 @@ import {
   UploadedFile,
   UseInterceptors,
 } from '@nestjs/common';
-import { FileInterceptor } from '@nestjs/platform-express';
-import {
-  CLOUDINARY_ALLOWED_MIME_TYPES,
-  CLOUDINARY_MAX_FILE_SIZE_BYTES,
-  isAllowedImageMimeType,
-} from '../cloudinary/cloudinary.constants.js';
 import { CreateProductImageDto } from './dto/create-product-image.dto.js';
 import { ProductImageResponseDto } from './dto/product-image-response.dto.js';
 import { UpdateProductImageDto } from './dto/update-product-image.dto.js';
 import { UploadProductImageDto } from './dto/upload-product-image.dto.js';
+import { ProductImageUploadInterceptor } from './interceptors/product-image-upload.interceptor.js';
 import type { UploadedImageFile } from './interfaces/uploaded-image-file.js';
 import { ProductImagesService } from './product-images.service.js';
-
-/**
- * The multipart form field the image must be sent under.
- *
- * A named field rather than "any file": `AnyFilesInterceptor` would accept a file
- * under an arbitrary key and then leave the service guessing which one to upload.
- */
-const UPLOAD_FILE_FIELD = 'file';
 
 /**
  * HTTP routing only: parse the request through the pipes and DTOs, delegate to
@@ -60,15 +46,8 @@ const UPLOAD_FILE_FIELD = 'file';
  * do. They are therefore separate paths with separate contracts, and the metadata
  * route keeps its Phase 4A behaviour untouched.
  *
- * ## Where file rejection happens
- *
- * `fileFilter` and `limits` reject a bad file while it is still being received, so
- * an oversized or non-image upload never reaches memory in full and never reaches
- * Cloudinary. Both limits are sourced from the Cloudinary constants rather than
- * restated, so they cannot drift from the service's own rules. `CloudinaryService`
- * re-checks both after the file is buffered — that second gate is what holds for a
- * direct service call — and it is the one that inspects the actual bytes via
- * Cloudinary's `allowed_formats`.
+ * The multipart boundary is {@link ProductImageUploadInterceptor}, shared with
+ * `AdminProductImagesController` so both routes admit exactly the same files.
  */
 @Controller('products/:productId/images')
 export class ProductImagesController {
@@ -82,25 +61,7 @@ export class ProductImagesController {
    * to special-case this one.
    */
   @Post('upload')
-  @UseInterceptors(
-    FileInterceptor(UPLOAD_FILE_FIELD, {
-      limits: { fileSize: CLOUDINARY_MAX_FILE_SIZE_BYTES },
-      fileFilter: (_request, file, callback) => {
-        if (!isAllowedImageMimeType(file.mimetype)) {
-          callback(
-            new BadRequestException(
-              `Unsupported image type. Allowed types: ${CLOUDINARY_ALLOWED_MIME_TYPES.join(', ')}`,
-            ),
-            false,
-          );
-
-          return;
-        }
-
-        callback(null, true);
-      },
-    }),
-  )
+  @UseInterceptors(ProductImageUploadInterceptor)
   upload(
     @Param('productId', ParseUUIDPipe) productId: string,
     @UploadedFile() file: UploadedImageFile | undefined,

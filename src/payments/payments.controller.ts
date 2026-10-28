@@ -7,8 +7,11 @@ import {
   ParseUUIDPipe,
   Post,
   Req,
+  UseGuards,
 } from '@nestjs/common';
-import { TemporaryUserId } from '../common/decorators/temporary-user-id.decorator.js';
+import { CurrentUser } from '../auth/decorators/current-user.decorator.js';
+import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard.js';
+import type { AuthenticatedUser } from '../auth/types/authenticated-user.js';
 import { CreatePaymentDto } from './dto/create-payment.dto.js';
 import { PaywayCallbackAckDto } from './dto/payway-callback-ack.dto.js';
 import { parsePaywayCallback } from './dto/payway-callback.parser.js';
@@ -33,6 +36,15 @@ interface RawBodyRequest {
  * somebody's order id — or inventing a grouping segment that exists only to hold two
  * routes. So each method carries its full path, which is also how the contract was
  * specified.
+ *
+ * ## The guard is on one method, not the controller
+ *
+ * `createPayment` is the caller's own action and mounts `JwtAuthGuard`: the order is
+ * resolved from the authenticated identity, replacing the `X-User-Id` header that any
+ * caller could previously assert. The PayWay callback stays unauthenticated by
+ * necessity — PayWay signs nothing we could verify and cannot be given a token — so
+ * mounting the guard at class level would break the webhook. That asymmetry is the
+ * reason the guard is applied per method rather than once.
  *
  * ## Why `@Req()` on the callback instead of `@Body()`
  *
@@ -73,8 +85,9 @@ export class PaymentsController {
    */
   @Post('orders/:orderId/payments')
   @HttpCode(HttpStatus.OK)
+  @UseGuards(JwtAuthGuard)
   createPayment(
-    @TemporaryUserId(new ParseUUIDPipe()) userId: string,
+    @CurrentUser() user: AuthenticatedUser,
     @Param('orderId', ParseUUIDPipe) orderId: string,
     @Body() dto: CreatePaymentDto,
   ): Promise<PaymentResponseDto> {
@@ -82,7 +95,7 @@ export class PaymentsController {
     // it has no fields to read, and there is nothing in it worth touching.
     void dto;
 
-    return this.paymentsService.createPayment(userId, orderId);
+    return this.paymentsService.createPayment(user.id, orderId);
   }
 
   /**

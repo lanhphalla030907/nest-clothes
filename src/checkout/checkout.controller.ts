@@ -3,10 +3,12 @@ import {
   Controller,
   HttpCode,
   HttpStatus,
-  ParseUUIDPipe,
   Post,
+  UseGuards,
 } from '@nestjs/common';
-import { TemporaryUserId } from '../common/decorators/temporary-user-id.decorator.js';
+import { CurrentUser } from '../auth/decorators/current-user.decorator.js';
+import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard.js';
+import type { AuthenticatedUser } from '../auth/types/authenticated-user.js';
 import { CheckoutService } from './checkout.service.js';
 import { CheckoutResponseDto } from './dto/checkout-response.dto.js';
 import { CheckoutDto } from './dto/checkout.dto.js';
@@ -18,18 +20,18 @@ import { CheckoutDto } from './dto/checkout.dto.js';
  *
  * ## Identity
  *
- * The caller is {@link TemporaryUserId}, the `X-User-Id` stand-in that exists
- * because authentication does not yet. It is a claim, not proof, which is why the
- * service verifies the user exists before it writes anything. The controller receives
- * the user id as an ordinary parameter and knows nothing about where it came from,
- * so replacing the decorator with a real guard is the only change needed later.
+ * The caller is {@link CurrentUser}, resolved from a verified access token by
+ * `JwtAuthGuard`. It replaced an `X-User-Id` header, which was a claim rather than
+ * proof; a request without a valid `Authorization: Bearer` header is now a 401 and the
+ * old header is ignored. The cart to be emptied and the order to be written belong to
+ * the authenticated user, and nothing in the request can name a different one.
  *
  * ## Why the mount point carries no path
  *
  * `POST /checkout` is mounted on the root rather than under `/cart`, because the
  * *result* of a checkout is an order, not a cart: the cart is an input to it and is
  * gone afterwards. Nothing about the request names a cart id, which means a client
- * cannot ask to check out somebody else's cart — the cart is found by the claimed
+ * cannot ask to check out somebody else's cart — the cart is found by the authenticated
  * identity, and there is exactly one per user.
  *
  * ## The address is the only input
@@ -46,6 +48,7 @@ import { CheckoutDto } from './dto/checkout.dto.js';
  * response body carries its id and number. It is not `204`, and it is not `200`: the
  * client has something new to keep.
  */
+@UseGuards(JwtAuthGuard)
 @Controller('checkout')
 export class CheckoutController {
   constructor(private readonly checkoutService: CheckoutService) {}
@@ -53,9 +56,9 @@ export class CheckoutController {
   @Post()
   @HttpCode(HttpStatus.CREATED)
   checkout(
-    @TemporaryUserId(new ParseUUIDPipe()) userId: string,
+    @CurrentUser() user: AuthenticatedUser,
     @Body() dto: CheckoutDto,
   ): Promise<CheckoutResponseDto> {
-    return this.checkoutService.checkout(userId, dto);
+    return this.checkoutService.checkout(user.id, dto);
   }
 }

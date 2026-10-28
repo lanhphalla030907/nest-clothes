@@ -1,4 +1,5 @@
 import { Module } from '@nestjs/common';
+import { JwtAuthModule } from '../auth/jwt/jwt-auth.module.js';
 import { InventoryModule } from '../inventory/inventory.module.js';
 import { ProductVariantsModule } from '../product-variants/product-variants.module.js';
 import { UsersModule } from '../users/users.module.js';
@@ -10,11 +11,11 @@ import { CartRepository } from './repositories/cart.repository.js';
  * Owns the cart aggregate: `carts` and `cart_items`, plus the rules about what
  * may go in one.
  *
- * Imports three sibling features for their repositories, and only their
- * repositories:
+ * Imports `JwtAuthModule`, for the guard the controller is decorated with, plus three
+ * sibling features for their repositories:
  *
- * - `UsersRepository` — to confirm the identity behind the temporary `X-User-Id`
- *   header is a real user before writing a cart on their behalf.
+ * - `UsersRepository` — to confirm the caller behind the access token is a real user
+ *   before writing a cart on their behalf.
  * - `ProductVariantsRepository` — to confirm a requested variant exists and is
  *   active, without this module issuing any SQL against `product_variants`.
  * - `InventoryRepository` — to read the stock counters a cart write must be
@@ -37,7 +38,7 @@ import { CartRepository } from './repositories/cart.repository.js';
  * `@Global`.
  */
 @Module({
-  imports: [UsersModule, ProductVariantsModule, InventoryModule],
+  imports: [JwtAuthModule, UsersModule, ProductVariantsModule, InventoryModule],
   controllers: [CartController],
   providers: [CartService, CartRepository],
   exports: [CartRepository],

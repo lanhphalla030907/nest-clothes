@@ -8,7 +8,11 @@ import { Test, TestingModule } from '@nestjs/testing';
 import { randomUUID } from 'node:crypto';
 import { PrismaModule } from '../src/prisma/prisma.module.js';
 import { PrismaService } from '../src/prisma/prisma.service.js';
-import { TEMPORARY_USER_ID_HEADER } from '../src/common/decorators/temporary-user-id.decorator.js';
+import {
+  bearerHeaders,
+  tokenIssuerFor,
+  type IssueToken,
+} from './support/e2e-auth.js';
 import { AddressesModule } from '../src/addresses/addresses.module.js';
 import { CreateAddressDto } from '../src/addresses/dto/create-address.dto.js';
 import { UpdateAddressDto } from '../src/addresses/dto/update-address.dto.js';
@@ -47,10 +51,16 @@ describe('Addresses (PostgreSQL)', () => {
   /** User with no addresses at all, for the empty-book and first-address cases. */
   let emptyUserId: string;
 
-  const headers = (id: string) => ({
-    'Content-Type': 'application/json',
-    [TEMPORARY_USER_ID_HEADER]: id,
-  });
+  /**
+   * Sends requests as `id`, by signing that user's access token.
+   *
+   * The token comes from the application's own `AccessTokenService`, so `JwtAuthGuard`
+   * verifies it for the same reasons it would verify a client's — including the database
+   * lookup, which is why a fixture written straight through Prisma works here without
+   * ever having a password.
+   */
+  let issueToken: IssueToken;
+  let headers: (id: string) => Record<string, string>;
 
   const api = async (
     method: string,
@@ -130,6 +140,8 @@ describe('Addresses (PostgreSQL)', () => {
     }).compile();
 
     app = module.createNestApplication();
+    issueToken = tokenIssuerFor(app);
+    headers = bearerHeaders(issueToken);
     app.useGlobalPipes(
       new ValidationPipe({
         whitelist: true,
@@ -373,15 +385,19 @@ describe('Addresses (PostgreSQL)', () => {
       expect(await prisma.address.count({ where: { id: mine.id } })).toBe(1);
     });
 
-    it('answers 404 for an unknown user rather than creating an orphan', async () => {
+    it('answers 401 for a caller the database does not know', async () => {
+      // A correctly signed token naming a user that does not exist. The guard resolves
+      // the caller from the user table before anything else, so this is an
+      // authentication failure — 401, and never a 404 that would let a caller probe
+      // which user ids are real.
       const res = await api('GET', '/addresses', {
         user: '00000000-0000-4000-8000-000000000000',
       });
 
-      expect(res.status).toBe(HttpStatus.NOT_FOUND);
+      expect(res.status).toBe(HttpStatus.UNAUTHORIZED);
     });
 
-    it('answers 404 when creating for an unknown user', async () => {
+    it('writes no orphan address for an unknown caller', async () => {
       const before = await prisma.address.count();
 
       const res = await api('POST', '/addresses', {
@@ -389,22 +405,30 @@ describe('Addresses (PostgreSQL)', () => {
         body: validBody(),
       });
 
-      expect(res.status).toBe(HttpStatus.NOT_FOUND);
+      expect(res.status).toBe(HttpStatus.UNAUTHORIZED);
       expect(await prisma.address.count()).toBe(before);
     });
   });
 
   describe('validation over HTTP', () => {
-    it('rejects a missing identity header', async () => {
+    it('rejects a request with no access token', async () => {
       const res = await fetch(`${base}/addresses`);
 
-      expect(res.status).toBe(HttpStatus.BAD_REQUEST);
+      expect(res.status).toBe(HttpStatus.UNAUTHORIZED);
     });
 
-    it('rejects a malformed identity header', async () => {
-      const res = await api('GET', '/addresses', { user: 'not-a-uuid' });
+    it('rejects the retired X-User-Id header', async () => {
+      const res = await fetch(`${base}/addresses`, {
+        headers: { 'X-User-Id': userId },
+      });
 
-      expect(res.status).toBe(HttpStatus.BAD_REQUEST);
+      expect(res.status).toBe(HttpStatus.UNAUTHORIZED);
+    });
+
+    it('rejects a token for a user the database does not know', async () => {
+      const res = await api('GET', '/addresses', { user: randomUUID() });
+
+      expect(res.status).toBe(HttpStatus.UNAUTHORIZED);
     });
 
     it('rejects a malformed address id', async () => {
@@ -815,14 +839,18 @@ describe('Addresses (PostgreSQL)', () => {
       ).toBe(0);
     });
 
-    it('answers 404 once the owning user is gone', async () => {
+    it('answers 401 once the owning user is gone', async () => {
+      // The user's rows were removed, and `JwtAuthGuard` re-reads the user table on
+      // every request, so the token they still hold stops working at once rather than
+      // lasting until it expires. That immediacy is the point: the address rows went
+      // with the user, and there is nothing left this identity may read.
       const user = await createUser('cascade-later');
-      const created = await createAddress(validBody(), user);
+      await createAddress(validBody(), user);
       await prisma.user.delete({ where: { id: user } });
 
-      const res = await api('GET', `/addresses/${created.id}`, { user });
+      const res = await api('GET', '/addresses', { user });
 
-      expect(res.status).toBe(HttpStatus.NOT_FOUND);
+      expect(res.status).toBe(HttpStatus.UNAUTHORIZED);
     });
   });
 

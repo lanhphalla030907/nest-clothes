@@ -1,9 +1,16 @@
-import { UnauthorizedException } from '@nestjs/common';
+import { NotFoundException, UnauthorizedException } from '@nestjs/common';
 import { Test, TestingModule } from '@nestjs/testing';
+import {
+  TEST_JWT_SETTINGS,
+  testAccessTokenService,
+} from '../../test/support/auth-fixtures.js';
+import { Role } from '../generated/prisma/enums.js';
 import { UserResponseDto } from '../users/dto/user-response.dto.js';
 import { UsersRepository } from '../users/repositories/users.repository.js';
 import { AuthService } from './auth.service.js';
+import { AccessTokenService } from './jwt/access-token.service.js';
 import { LoginDto } from './dto/login.dto.js';
+import { LoginResponseDto } from './dto/login-response.dto.js';
 import { PasswordService } from './password/password.service.js';
 
 const VALID_EMAIL = 'ada.lovelace@example.com';
@@ -26,6 +33,7 @@ const buildUser = (overrides: Record<string, unknown> = {}) => ({
   passwordHash: '',
   phone: null,
   status: 'ACTIVE',
+  role: Role.CUSTOMER,
   emailVerifiedAt: null,
   lastLoginAt: null,
   createdAt: new Date('2026-01-01T00:00:00.000Z'),
@@ -36,21 +44,26 @@ const buildUser = (overrides: Record<string, unknown> = {}) => ({
 describe('AuthService', () => {
   let service: AuthService;
   let passwordService: PasswordService;
+  let accessTokenService: AccessTokenService;
   let findByEmail: ReturnType<typeof vi.fn>;
+  let findById: ReturnType<typeof vi.fn>;
   let updateLastLoginAt: ReturnType<typeof vi.fn>;
   let passwordHash: string;
 
   beforeEach(async () => {
     findByEmail = vi.fn();
+    findById = vi.fn();
     updateLastLoginAt = vi.fn();
+    accessTokenService = testAccessTokenService();
 
     const module: TestingModule = await Test.createTestingModule({
       providers: [
         AuthService,
         PasswordService,
+        { provide: AccessTokenService, useValue: accessTokenService },
         {
           provide: UsersRepository,
-          useValue: { findByEmail, updateLastLoginAt },
+          useValue: { findByEmail, findById, updateLastLoginAt },
         },
       ],
     }).compile();
@@ -65,7 +78,7 @@ describe('AuthService', () => {
     expect(service).toBeDefined();
   });
 
-  it('authenticates a valid user and returns a sanitised response', async () => {
+  it('authenticates a valid user and returns a token with a sanitised user', async () => {
     const user = buildUser({ passwordHash });
     const loggedInAt = new Date('2026-02-02T10:00:00.000Z');
     findByEmail.mockResolvedValue(user);
@@ -75,12 +88,39 @@ describe('AuthService', () => {
 
     const result = await service.login(buildLoginDto());
 
-    expect(result).toBeInstanceOf(UserResponseDto);
-    expect(result.id).toBe(user.id);
-    expect(result.email).toBe(VALID_EMAIL);
-    expect(result.lastLoginAt).toEqual(loggedInAt);
+    expect(result).toBeInstanceOf(LoginResponseDto);
+    expect(result.user).toBeInstanceOf(UserResponseDto);
+    expect(result.user.id).toBe(user.id);
+    expect(result.user.email).toBe(VALID_EMAIL);
+    expect(result.user.lastLoginAt).toEqual(loggedInAt);
+    expect(result.expiresIn).toBe(TEST_JWT_SETTINGS.expiresIn);
     expect(updateLastLoginAt).toHaveBeenCalledTimes(1);
     expect(updateLastLoginAt).toHaveBeenCalledWith(user.id, expect.any(Date));
+  });
+
+  it('returns a token that verifies and names the user who logged in', async () => {
+    const user = buildUser({ passwordHash });
+    findByEmail.mockResolvedValue(user);
+    updateLastLoginAt.mockResolvedValue(user);
+
+    const result = await service.login(buildLoginDto());
+    const payload = await accessTokenService.verify(result.accessToken);
+
+    expect(payload.sub).toBe(user.id);
+    expect(payload.role).toBe(Role.CUSTOMER);
+  });
+
+  it('signs the role the database holds, not one the client could claim', async () => {
+    const user = buildUser({ passwordHash, role: Role.ADMIN });
+    findByEmail.mockResolvedValue(user);
+    updateLastLoginAt.mockResolvedValue(user);
+
+    const result = await service.login(buildLoginDto());
+
+    await expect(
+      accessTokenService.verify(result.accessToken),
+    ).resolves.toMatchObject({ role: Role.ADMIN });
+    expect(result.user.role).toBe(Role.ADMIN);
   });
 
   it('looks the user up by the normalised email', async () => {
@@ -163,14 +203,26 @@ describe('AuthService', () => {
 
     const result = await service.login(buildLoginDto());
 
-    expect(result).not.toHaveProperty('passwordHash');
-    expect(Object.keys(result)).not.toContain('passwordHash');
+    expect(result.user).not.toHaveProperty('passwordHash');
+    expect(Object.keys(result.user)).not.toContain('passwordHash');
 
     const serialised = JSON.stringify(result);
     expect(serialised).not.toContain('passwordHash');
     expect(serialised).not.toContain('$argon2id$');
     expect(serialised).not.toContain(VALID_PASSWORD);
     expect(serialised).not.toContain(passwordHash);
+  });
+
+  it('never exposes the signing secret alongside the token', async () => {
+    findByEmail.mockResolvedValue(buildUser({ passwordHash }));
+    updateLastLoginAt.mockResolvedValue(buildUser({ passwordHash }));
+
+    const result = await service.login(buildLoginDto());
+
+    expect(Object.keys(result).sort()).toEqual(
+      ['accessToken', 'expiresIn', 'user'].sort(),
+    );
+    expect(JSON.stringify(result)).not.toContain(TEST_JWT_SETTINGS.secret);
   });
 
   it('does not swallow repository failures while looking the user up', async () => {
@@ -187,5 +239,27 @@ describe('AuthService', () => {
     updateLastLoginAt.mockRejectedValue(failure);
 
     await expect(service.login(buildLoginDto())).rejects.toBe(failure);
+  });
+
+  describe('currentUser', () => {
+    it('returns the row as the database currently has it', async () => {
+      const user = buildUser({ passwordHash, role: Role.ADMIN, status: 'ACTIVE' });
+      findById.mockResolvedValue(user);
+
+      const result = await service.currentUser(user.id);
+
+      expect(result).toBeInstanceOf(UserResponseDto);
+      expect(result.id).toBe(user.id);
+      expect(result.role).toBe(Role.ADMIN);
+      expect(findById).toHaveBeenCalledWith(user.id);
+    });
+
+    it('404s when the user has since been deleted', async () => {
+      findById.mockResolvedValue(null);
+
+      await expect(
+        service.currentUser('3f2504e0-4f89-41d3-9a0c-0305e82c3301'),
+      ).rejects.toBeInstanceOf(NotFoundException);
+    });
   });
 });

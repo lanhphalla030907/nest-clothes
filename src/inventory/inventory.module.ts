@@ -16,18 +16,20 @@ import { InventoryRepository } from './repositories/inventory.repository.js';
  * module graph stays acyclic. Neither parent imports this module: inventory is
  * reached through the nested route, not by injecting an inventory service upward.
  *
- * Exports `InventoryRepository` — and only the repository — so `CartModule` can
- * read the stock counters a cart write must be validated against without
- * duplicating any SQL for `inventory`. `InventoryService` itself is
- * deliberately *not* exported: stock business rules (counter invariants,
- * duplicate detection) belong to the inventory feature, and no other module has
- * a reason to run them.
+ * Exports `InventoryRepository` — so `CartModule` can read the stock counters a
+ * cart write must be validated against without duplicating any SQL for
+ * `inventory`.
  *
- * Note that the repository carries no reservation methods yet: reading stock is
- * enough for a cart, which claims nothing. Whoever adds checkout will need a
- * guarded `reserve` on this repository, guarded in SQL rather than by a
- * read-then-write, exactly as `CartRepository.incrementItemQuantityWithinAvailable`
- * guards a cart line.
+ * Also exports `InventoryService`, for `AdminInventoryController`. The admin
+ * routes move stock, and the rules that govern moving it — both counters
+ * non-negative, `reservedQuantity <= quantity`, the read-merge-write performed
+ * *inside a transaction* so a concurrent checkout reservation cannot be clobbered —
+ * are only correct in one place. An admin service of its own would be a second
+ * place for them to be wrong, and a read-modify-write outside the transaction
+ * would reintroduce exactly the race the repository's `reserve` exists to close.
+ * So the admin route delegates, and the counter invariants are enforced by the
+ * same code whether the caller is a customer checking out or an administrator
+ * correcting a stock count.
  *
  * `PrismaService` arrives without an explicit import because `PrismaModule` is
  * `@Global`.
@@ -36,6 +38,6 @@ import { InventoryRepository } from './repositories/inventory.repository.js';
   imports: [ProductsModule, ProductVariantsModule],
   controllers: [InventoryController],
   providers: [InventoryService, InventoryRepository],
-  exports: [InventoryRepository],
+  exports: [InventoryRepository, InventoryService],
 })
 export class InventoryModule {}
