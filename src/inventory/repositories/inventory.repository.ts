@@ -105,6 +105,31 @@ export class InventoryRepository {
   }
 
   /**
+   * Returns the inventory rows for `variantIds` in one query.
+   *
+   * The order-level release and commit operations need to know which variants have
+   * no inventory row at all *before* they start moving counters, so they can fail
+   * fast on a missing row instead of discovering it halfway through a multi-line
+   * order. One `IN` query does that for the whole order; a lookup per line would be
+   * N+1 and would still need the same validation.
+   *
+   * An unknown id is simply absent from the result. The caller decides what that
+   * means; this repository method does not invent a row.
+   */
+  findByVariantIds(
+    variantIds: string[],
+    client: InventoryTransactionClient = this.prisma,
+  ): Promise<Inventory[]> {
+    if (variantIds.length === 0) {
+      return Promise.resolve([]);
+    }
+
+    return client.inventory.findMany({
+      where: { variantId: { in: variantIds } },
+    });
+  }
+
+  /**
    * Writes only the counters present in `data`, so an update can never
    * accidentally overwrite the other counter with an undefined value.
    *
@@ -196,5 +221,113 @@ export class InventoryRepository {
        WHERE "variant_id" = ${variantId}::uuid
          AND "quantity" - "reserved_quantity" >= ${quantity}
     `;
+  }
+
+  /**
+   * Atomically releases `quantity` units of a variant's reservation, returning how
+   * many rows changed: `1` when the release happened, `0` when it was refused.
+   *
+   * The mirror image of {@link reserve}. The guard and the decrement are the same
+   * statement, so PostgreSQL evaluates `reserved_quantity >= n` against the row it
+   * has locked and a concurrent release cannot drive the counter below zero:
+   *
+   * ```sql
+   * UPDATE inventory
+   *    SET reserved_quantity = reserved_quantity - n
+   *  WHERE variant_id = $1
+   *    AND reserved_quantity >= n
+   * ```
+   *
+   * `quantity` is untouched because releasing a hold does not change how much stock
+   * physically exists. A `0` means either "no such inventory row" or "not that much
+   * is reserved"; the caller distinguishes the two with a read, exactly as checkout
+   * distinguishes "not stocked" from "not enough". The guarded update remains the
+   * authoritative decision in both cases.
+   *
+   * `updated_at` is set explicitly because Prisma's `@updatedAt` is client-side and
+   * raw SQL does not receive it. Negative and zero quantities are rejected before
+   * the statement: without that, `reserved_quantity >= -n` would match every row and
+   * a negative `n` would *increase* the reservation.
+   */
+  async releaseReserved(
+    variantId: string,
+    quantity: number,
+    client: InventoryTransactionClient = this.prisma,
+  ): Promise<number> {
+    assertPositiveWholeUnits(quantity);
+
+    return client.$executeRaw`
+      UPDATE "inventory"
+         SET "reserved_quantity" = "reserved_quantity" - ${quantity},
+             "updated_at" = now()
+       WHERE "variant_id" = ${variantId}::uuid
+         AND "reserved_quantity" >= ${quantity}
+    `;
+  }
+
+  /**
+   * Atomically commits `quantity` reserved units when stock leaves the warehouse,
+   * returning how many rows changed: `1` when the commitment happened, `0` when it
+   * was refused.
+   *
+   * A shipment consumes both counters, so both are decremented in the same guarded
+   * statement:
+   *
+   * ```sql
+   * UPDATE inventory
+   *    SET quantity = quantity - n,
+   *        reserved_quantity = reserved_quantity - n
+   *  WHERE variant_id = $1
+   *    AND quantity >= n
+   *    AND reserved_quantity >= n
+   * ```
+   *
+   * Requiring both guards is what makes negative counters unrepresentable even if
+   * the two values were inconsistent before the write, and the table's
+   * `CHECK (reserved_quantity <= quantity)` remains the final backstop. Nothing is
+   * clamped or repaired: a row that cannot satisfy the guards is left exactly as it
+   * was and the caller receives `0`.
+   *
+   * A row with a coherent pair (`reserved_quantity <= quantity`) cannot have
+   * `reserved_quantity >= n` and `quantity < n`, so the second guard is defence in
+   * depth rather than a state the normal ledger can reach. It still belongs in the
+   * statement: the database must refuse a physically impossible commitment, not
+   * assume an invariant held a moment earlier.
+   *
+   * Negative and zero quantities are rejected before the statement, because a
+   * negative `n` would otherwise *increase* both counters.
+   */
+  async commitReserved(
+    variantId: string,
+    quantity: number,
+    client: InventoryTransactionClient = this.prisma,
+  ): Promise<number> {
+    assertPositiveWholeUnits(quantity);
+
+    return client.$executeRaw`
+      UPDATE "inventory"
+         SET "quantity" = "quantity" - ${quantity},
+             "reserved_quantity" = "reserved_quantity" - ${quantity},
+             "updated_at" = now()
+       WHERE "variant_id" = ${variantId}::uuid
+         AND "quantity" >= ${quantity}
+         AND "reserved_quantity" >= ${quantity}
+    `;
+  }
+}
+
+/**
+ * Rejects a stock movement that is not a positive whole number of units.
+ *
+ * The guarded statements are arithmetic on the stored counters, so a zero would be
+ * a no-op that still reports a changed row, a fraction would not fit the integer
+ * columns, and a negative value would invert the movement. All three are programmer
+ * errors rather than business conflicts, so they fail before any SQL is issued.
+ */
+function assertPositiveWholeUnits(quantity: number): void {
+  if (!Number.isInteger(quantity) || quantity <= 0) {
+    throw new RangeError(
+      'Stock movement quantity must be a positive whole number',
+    );
   }
 }

@@ -12,6 +12,8 @@ import type { AuthenticatedUser } from '../auth/types/authenticated-user.js';
 import { CheckoutService } from './checkout.service.js';
 import { CheckoutResponseDto } from './dto/checkout-response.dto.js';
 import { CheckoutDto } from './dto/checkout.dto.js';
+import { CreateCheckoutQuoteDto } from './dto/create-checkout-quote.dto.js';
+import { CheckoutQuoteResponseDto } from './dto/checkout-quote-response.dto.js';
 
 /**
  * HTTP routing only: validate the request through the DTO and pipe, delegate to
@@ -34,13 +36,12 @@ import { CheckoutDto } from './dto/checkout.dto.js';
  * cannot ask to check out somebody else's cart — the cart is found by the authenticated
  * identity, and there is exactly one per user.
  *
- * ## The address is the only input
+ * ## The request cannot state order values
  *
- * `@Body() dto: CheckoutDto` under a global `ValidationPipe` running with
- * `forbidNonWhitelisted` means `{}`, a missing `addressId`, a malformed UUID and any
- * attempt to smuggle in a price, a total or a status are all 400s before the service
- * is reached. 404 is therefore free to mean only "that address is not yours, or does
- * not exist", and 409 to mean only "not enough stock".
+ * The quote endpoint accepts only address/provider/payment selection. Checkout
+ * accepts either the legacy address id or a quote id plus idempotency key. A global
+ * `ValidationPipe` with `forbidNonWhitelisted` rejects prices, fees and totals before
+ * the service is reached; quote ownership and current values are rechecked there.
  *
  * ## Status code
  *
@@ -52,6 +53,15 @@ import { CheckoutDto } from './dto/checkout.dto.js';
 @Controller('checkout')
 export class CheckoutController {
   constructor(private readonly checkoutService: CheckoutService) {}
+
+  @Post('quote')
+  @HttpCode(HttpStatus.CREATED)
+  createQuote(
+    @CurrentUser() user: AuthenticatedUser,
+    @Body() dto: CreateCheckoutQuoteDto,
+  ): Promise<CheckoutQuoteResponseDto> {
+    return this.checkoutService.createQuote(user.id, dto);
+  }
 
   @Post()
   @HttpCode(HttpStatus.CREATED)

@@ -64,7 +64,11 @@ export const ModelName = {
   Wishlist: 'Wishlist',
   WishlistItem: 'WishlistItem',
   Address: 'Address',
+  AdministrativeLocation: 'AdministrativeLocation',
+  ShippingProvider: 'ShippingProvider',
+  CodArea: 'CodArea',
   Order: 'Order',
+  CheckoutQuote: 'CheckoutQuote',
   OrderItem: 'OrderItem',
   Payment: 'Payment'
 } as const
@@ -249,6 +253,7 @@ export const AddressScalarFieldEnum = {
   addressLine2: 'addressLine2',
   city: 'city',
   stateProvince: 'stateProvince',
+  administrativeLocationPcode: 'administrativeLocationPcode',
   postalCode: 'postalCode',
   countryCode: 'countryCode',
   isDefault: 'isDefault',
@@ -257,6 +262,46 @@ export const AddressScalarFieldEnum = {
 } as const
 
 export type AddressScalarFieldEnum = (typeof AddressScalarFieldEnum)[keyof typeof AddressScalarFieldEnum]
+
+
+export const AdministrativeLocationScalarFieldEnum = {
+  pcode: 'pcode',
+  parentPcode: 'parentPcode',
+  adminLevel: 'adminLevel',
+  nameEn: 'nameEn',
+  nameKm: 'nameKm',
+  datasetVersion: 'datasetVersion',
+  codEnabledOverride: 'codEnabledOverride'
+} as const
+
+export type AdministrativeLocationScalarFieldEnum = (typeof AdministrativeLocationScalarFieldEnum)[keyof typeof AdministrativeLocationScalarFieldEnum]
+
+
+export const ShippingProviderScalarFieldEnum = {
+  id: 'id',
+  code: 'code',
+  name: 'name',
+  description: 'description',
+  baseFee: 'baseFee',
+  isActive: 'isActive',
+  supportsCod: 'supportsCod',
+  createdAt: 'createdAt',
+  updatedAt: 'updatedAt'
+} as const
+
+export type ShippingProviderScalarFieldEnum = (typeof ShippingProviderScalarFieldEnum)[keyof typeof ShippingProviderScalarFieldEnum]
+
+
+export const CodAreaScalarFieldEnum = {
+  id: 'id',
+  code: 'code',
+  name: 'name',
+  codEnabled: 'codEnabled',
+  createdAt: 'createdAt',
+  updatedAt: 'updatedAt'
+} as const
+
+export type CodAreaScalarFieldEnum = (typeof CodAreaScalarFieldEnum)[keyof typeof CodAreaScalarFieldEnum]
 
 
 export const OrderScalarFieldEnum = {
@@ -269,12 +314,21 @@ export const OrderScalarFieldEnum = {
   discountAmount: 'discountAmount',
   totalAmount: 'totalAmount',
   currency: 'currency',
+  paymentMethod: 'paymentMethod',
+  shippingProviderId: 'shippingProviderId',
+  shippingProviderCode: 'shippingProviderCode',
+  shippingProviderName: 'shippingProviderName',
+  codAreaId: 'codAreaId',
+  codAreaCode: 'codAreaCode',
+  codAreaName: 'codAreaName',
   shippingRecipientName: 'shippingRecipientName',
   shippingPhone: 'shippingPhone',
   shippingAddressLine1: 'shippingAddressLine1',
   shippingAddressLine2: 'shippingAddressLine2',
   shippingCity: 'shippingCity',
   shippingStateProvince: 'shippingStateProvince',
+  shippingLocationPcode: 'shippingLocationPcode',
+  shippingLocationSnapshot: 'shippingLocationSnapshot',
   shippingPostalCode: 'shippingPostalCode',
   shippingCountryCode: 'shippingCountryCode',
   createdAt: 'createdAt',
@@ -282,6 +336,35 @@ export const OrderScalarFieldEnum = {
 } as const
 
 export type OrderScalarFieldEnum = (typeof OrderScalarFieldEnum)[keyof typeof OrderScalarFieldEnum]
+
+
+export const CheckoutQuoteScalarFieldEnum = {
+  id: 'id',
+  userId: 'userId',
+  addressId: 'addressId',
+  addressSnapshot: 'addressSnapshot',
+  shippingProviderId: 'shippingProviderId',
+  shippingProviderCode: 'shippingProviderCode',
+  shippingProviderName: 'shippingProviderName',
+  codAreaId: 'codAreaId',
+  codAreaCode: 'codAreaCode',
+  codAreaName: 'codAreaName',
+  paymentMethod: 'paymentMethod',
+  cartSnapshot: 'cartSnapshot',
+  subtotal: 'subtotal',
+  shippingFee: 'shippingFee',
+  discountAmount: 'discountAmount',
+  totalAmount: 'totalAmount',
+  currency: 'currency',
+  expiresAt: 'expiresAt',
+  consumedAt: 'consumedAt',
+  idempotencyKey: 'idempotencyKey',
+  orderId: 'orderId',
+  createdAt: 'createdAt',
+  updatedAt: 'updatedAt'
+} as const
+
+export type CheckoutQuoteScalarFieldEnum = (typeof CheckoutQuoteScalarFieldEnum)[keyof typeof CheckoutQuoteScalarFieldEnum]
 
 
 export const OrderItemScalarFieldEnum = {
@@ -327,19 +410,19 @@ export const SortOrder = {
 export type SortOrder = (typeof SortOrder)[keyof typeof SortOrder]
 
 
-export const JsonNullValueInput = {
-  JsonNull: JsonNull
-} as const
-
-export type JsonNullValueInput = (typeof JsonNullValueInput)[keyof typeof JsonNullValueInput]
-
-
 export const NullableJsonNullValueInput = {
   DbNull: DbNull,
   JsonNull: JsonNull
 } as const
 
 export type NullableJsonNullValueInput = (typeof NullableJsonNullValueInput)[keyof typeof NullableJsonNullValueInput]
+
+
+export const JsonNullValueInput = {
+  JsonNull: JsonNull
+} as const
+
+export type JsonNullValueInput = (typeof JsonNullValueInput)[keyof typeof JsonNullValueInput]
 
 
 export const QueryMode = {

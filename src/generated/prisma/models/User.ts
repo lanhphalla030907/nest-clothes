@@ -242,6 +242,7 @@ export type UserWhereInput = {
   cart?: Prisma.XOR<Prisma.CartNullableScalarRelationFilter, Prisma.CartWhereInput> | null
   wishlist?: Prisma.XOR<Prisma.WishlistNullableScalarRelationFilter, Prisma.WishlistWhereInput> | null
   orders?: Prisma.OrderListRelationFilter
+  checkoutQuotes?: Prisma.CheckoutQuoteListRelationFilter
 }
 
 export type UserOrderByWithRelationInput = {
@@ -261,6 +262,7 @@ export type UserOrderByWithRelationInput = {
   cart?: Prisma.CartOrderByWithRelationInput
   wishlist?: Prisma.WishlistOrderByWithRelationInput
   orders?: Prisma.OrderOrderByRelationAggregateInput
+  checkoutQuotes?: Prisma.CheckoutQuoteOrderByRelationAggregateInput
 }
 
 export type UserWhereUniqueInput = Prisma.AtLeast<{
@@ -283,6 +285,7 @@ export type UserWhereUniqueInput = Prisma.AtLeast<{
   cart?: Prisma.XOR<Prisma.CartNullableScalarRelationFilter, Prisma.CartWhereInput> | null
   wishlist?: Prisma.XOR<Prisma.WishlistNullableScalarRelationFilter, Prisma.WishlistWhereInput> | null
   orders?: Prisma.OrderListRelationFilter
+  checkoutQuotes?: Prisma.CheckoutQuoteListRelationFilter
 }, "id" | "email">
 
 export type UserOrderByWithAggregationInput = {
@@ -338,6 +341,7 @@ export type UserCreateInput = {
   cart?: Prisma.CartCreateNestedOneWithoutUserInput
   wishlist?: Prisma.WishlistCreateNestedOneWithoutUserInput
   orders?: Prisma.OrderCreateNestedManyWithoutUserInput
+  checkoutQuotes?: Prisma.CheckoutQuoteCreateNestedManyWithoutUserInput
 }
 
 export type UserUncheckedCreateInput = {
@@ -357,6 +361,7 @@ export type UserUncheckedCreateInput = {
   cart?: Prisma.CartUncheckedCreateNestedOneWithoutUserInput
   wishlist?: Prisma.WishlistUncheckedCreateNestedOneWithoutUserInput
   orders?: Prisma.OrderUncheckedCreateNestedManyWithoutUserInput
+  checkoutQuotes?: Prisma.CheckoutQuoteUncheckedCreateNestedManyWithoutUserInput
 }
 
 export type UserUpdateInput = {
@@ -376,6 +381,7 @@ export type UserUpdateInput = {
   cart?: Prisma.CartUpdateOneWithoutUserNestedInput
   wishlist?: Prisma.WishlistUpdateOneWithoutUserNestedInput
   orders?: Prisma.OrderUpdateManyWithoutUserNestedInput
+  checkoutQuotes?: Prisma.CheckoutQuoteUpdateManyWithoutUserNestedInput
 }
 
 export type UserUncheckedUpdateInput = {
@@ -395,6 +401,7 @@ export type UserUncheckedUpdateInput = {
   cart?: Prisma.CartUncheckedUpdateOneWithoutUserNestedInput
   wishlist?: Prisma.WishlistUncheckedUpdateOneWithoutUserNestedInput
   orders?: Prisma.OrderUncheckedUpdateManyWithoutUserNestedInput
+  checkoutQuotes?: Prisma.CheckoutQuoteUncheckedUpdateManyWithoutUserNestedInput
 }
 
 export type UserCreateManyInput = {
@@ -568,6 +575,20 @@ export type UserUpdateOneRequiredWithoutOrdersNestedInput = {
   update?: Prisma.XOR<Prisma.XOR<Prisma.UserUpdateToOneWithWhereWithoutOrdersInput, Prisma.UserUpdateWithoutOrdersInput>, Prisma.UserUncheckedUpdateWithoutOrdersInput>
 }
 
+export type UserCreateNestedOneWithoutCheckoutQuotesInput = {
+  create?: Prisma.XOR<Prisma.UserCreateWithoutCheckoutQuotesInput, Prisma.UserUncheckedCreateWithoutCheckoutQuotesInput>
+  connectOrCreate?: Prisma.UserCreateOrConnectWithoutCheckoutQuotesInput
+  connect?: Prisma.UserWhereUniqueInput
+}
+
+export type UserUpdateOneRequiredWithoutCheckoutQuotesNestedInput = {
+  create?: Prisma.XOR<Prisma.UserCreateWithoutCheckoutQuotesInput, Prisma.UserUncheckedCreateWithoutCheckoutQuotesInput>
+  connectOrCreate?: Prisma.UserCreateOrConnectWithoutCheckoutQuotesInput
+  upsert?: Prisma.UserUpsertWithoutCheckoutQuotesInput
+  connect?: Prisma.UserWhereUniqueInput
+  update?: Prisma.XOR<Prisma.XOR<Prisma.UserUpdateToOneWithWhereWithoutCheckoutQuotesInput, Prisma.UserUpdateWithoutCheckoutQuotesInput>, Prisma.UserUncheckedUpdateWithoutCheckoutQuotesInput>
+}
+
 export type UserCreateWithoutCartInput = {
   id?: string
   firstName: string
@@ -584,6 +605,7 @@ export type UserCreateWithoutCartInput = {
   addresses?: Prisma.AddressCreateNestedManyWithoutUserInput
   wishlist?: Prisma.WishlistCreateNestedOneWithoutUserInput
   orders?: Prisma.OrderCreateNestedManyWithoutUserInput
+  checkoutQuotes?: Prisma.CheckoutQuoteCreateNestedManyWithoutUserInput
 }
 
 export type UserUncheckedCreateWithoutCartInput = {
@@ -602,6 +624,7 @@ export type UserUncheckedCreateWithoutCartInput = {
   addresses?: Prisma.AddressUncheckedCreateNestedManyWithoutUserInput
   wishlist?: Prisma.WishlistUncheckedCreateNestedOneWithoutUserInput
   orders?: Prisma.OrderUncheckedCreateNestedManyWithoutUserInput
+  checkoutQuotes?: Prisma.CheckoutQuoteUncheckedCreateNestedManyWithoutUserInput
 }
 
 export type UserCreateOrConnectWithoutCartInput = {
@@ -636,6 +659,7 @@ export type UserUpdateWithoutCartInput = {
   addresses?: Prisma.AddressUpdateManyWithoutUserNestedInput
   wishlist?: Prisma.WishlistUpdateOneWithoutUserNestedInput
   orders?: Prisma.OrderUpdateManyWithoutUserNestedInput
+  checkoutQuotes?: Prisma.CheckoutQuoteUpdateManyWithoutUserNestedInput
 }
 
 export type UserUncheckedUpdateWithoutCartInput = {
@@ -654,6 +678,7 @@ export type UserUncheckedUpdateWithoutCartInput = {
   addresses?: Prisma.AddressUncheckedUpdateManyWithoutUserNestedInput
   wishlist?: Prisma.WishlistUncheckedUpdateOneWithoutUserNestedInput
   orders?: Prisma.OrderUncheckedUpdateManyWithoutUserNestedInput
+  checkoutQuotes?: Prisma.CheckoutQuoteUncheckedUpdateManyWithoutUserNestedInput
 }
 
 export type UserCreateWithoutWishlistInput = {
@@ -672,6 +697,7 @@ export type UserCreateWithoutWishlistInput = {
   addresses?: Prisma.AddressCreateNestedManyWithoutUserInput
   cart?: Prisma.CartCreateNestedOneWithoutUserInput
   orders?: Prisma.OrderCreateNestedManyWithoutUserInput
+  checkoutQuotes?: Prisma.CheckoutQuoteCreateNestedManyWithoutUserInput
 }
 
 export type UserUncheckedCreateWithoutWishlistInput = {
@@ -690,6 +716,7 @@ export type UserUncheckedCreateWithoutWishlistInput = {
   addresses?: Prisma.AddressUncheckedCreateNestedManyWithoutUserInput
   cart?: Prisma.CartUncheckedCreateNestedOneWithoutUserInput
   orders?: Prisma.OrderUncheckedCreateNestedManyWithoutUserInput
+  checkoutQuotes?: Prisma.CheckoutQuoteUncheckedCreateNestedManyWithoutUserInput
 }
 
 export type UserCreateOrConnectWithoutWishlistInput = {
@@ -724,6 +751,7 @@ export type UserUpdateWithoutWishlistInput = {
   addresses?: Prisma.AddressUpdateManyWithoutUserNestedInput
   cart?: Prisma.CartUpdateOneWithoutUserNestedInput
   orders?: Prisma.OrderUpdateManyWithoutUserNestedInput
+  checkoutQuotes?: Prisma.CheckoutQuoteUpdateManyWithoutUserNestedInput
 }
 
 export type UserUncheckedUpdateWithoutWishlistInput = {
@@ -742,6 +770,7 @@ export type UserUncheckedUpdateWithoutWishlistInput = {
   addresses?: Prisma.AddressUncheckedUpdateManyWithoutUserNestedInput
   cart?: Prisma.CartUncheckedUpdateOneWithoutUserNestedInput
   orders?: Prisma.OrderUncheckedUpdateManyWithoutUserNestedInput
+  checkoutQuotes?: Prisma.CheckoutQuoteUncheckedUpdateManyWithoutUserNestedInput
 }
 
 export type UserCreateWithoutAddressesInput = {
@@ -760,6 +789,7 @@ export type UserCreateWithoutAddressesInput = {
   cart?: Prisma.CartCreateNestedOneWithoutUserInput
   wishlist?: Prisma.WishlistCreateNestedOneWithoutUserInput
   orders?: Prisma.OrderCreateNestedManyWithoutUserInput
+  checkoutQuotes?: Prisma.CheckoutQuoteCreateNestedManyWithoutUserInput
 }
 
 export type UserUncheckedCreateWithoutAddressesInput = {
@@ -778,6 +808,7 @@ export type UserUncheckedCreateWithoutAddressesInput = {
   cart?: Prisma.CartUncheckedCreateNestedOneWithoutUserInput
   wishlist?: Prisma.WishlistUncheckedCreateNestedOneWithoutUserInput
   orders?: Prisma.OrderUncheckedCreateNestedManyWithoutUserInput
+  checkoutQuotes?: Prisma.CheckoutQuoteUncheckedCreateNestedManyWithoutUserInput
 }
 
 export type UserCreateOrConnectWithoutAddressesInput = {
@@ -812,6 +843,7 @@ export type UserUpdateWithoutAddressesInput = {
   cart?: Prisma.CartUpdateOneWithoutUserNestedInput
   wishlist?: Prisma.WishlistUpdateOneWithoutUserNestedInput
   orders?: Prisma.OrderUpdateManyWithoutUserNestedInput
+  checkoutQuotes?: Prisma.CheckoutQuoteUpdateManyWithoutUserNestedInput
 }
 
 export type UserUncheckedUpdateWithoutAddressesInput = {
@@ -830,6 +862,7 @@ export type UserUncheckedUpdateWithoutAddressesInput = {
   cart?: Prisma.CartUncheckedUpdateOneWithoutUserNestedInput
   wishlist?: Prisma.WishlistUncheckedUpdateOneWithoutUserNestedInput
   orders?: Prisma.OrderUncheckedUpdateManyWithoutUserNestedInput
+  checkoutQuotes?: Prisma.CheckoutQuoteUncheckedUpdateManyWithoutUserNestedInput
 }
 
 export type UserCreateWithoutOrdersInput = {
@@ -848,6 +881,7 @@ export type UserCreateWithoutOrdersInput = {
   addresses?: Prisma.AddressCreateNestedManyWithoutUserInput
   cart?: Prisma.CartCreateNestedOneWithoutUserInput
   wishlist?: Prisma.WishlistCreateNestedOneWithoutUserInput
+  checkoutQuotes?: Prisma.CheckoutQuoteCreateNestedManyWithoutUserInput
 }
 
 export type UserUncheckedCreateWithoutOrdersInput = {
@@ -866,6 +900,7 @@ export type UserUncheckedCreateWithoutOrdersInput = {
   addresses?: Prisma.AddressUncheckedCreateNestedManyWithoutUserInput
   cart?: Prisma.CartUncheckedCreateNestedOneWithoutUserInput
   wishlist?: Prisma.WishlistUncheckedCreateNestedOneWithoutUserInput
+  checkoutQuotes?: Prisma.CheckoutQuoteUncheckedCreateNestedManyWithoutUserInput
 }
 
 export type UserCreateOrConnectWithoutOrdersInput = {
@@ -900,6 +935,7 @@ export type UserUpdateWithoutOrdersInput = {
   addresses?: Prisma.AddressUpdateManyWithoutUserNestedInput
   cart?: Prisma.CartUpdateOneWithoutUserNestedInput
   wishlist?: Prisma.WishlistUpdateOneWithoutUserNestedInput
+  checkoutQuotes?: Prisma.CheckoutQuoteUpdateManyWithoutUserNestedInput
 }
 
 export type UserUncheckedUpdateWithoutOrdersInput = {
@@ -918,6 +954,99 @@ export type UserUncheckedUpdateWithoutOrdersInput = {
   addresses?: Prisma.AddressUncheckedUpdateManyWithoutUserNestedInput
   cart?: Prisma.CartUncheckedUpdateOneWithoutUserNestedInput
   wishlist?: Prisma.WishlistUncheckedUpdateOneWithoutUserNestedInput
+  checkoutQuotes?: Prisma.CheckoutQuoteUncheckedUpdateManyWithoutUserNestedInput
+}
+
+export type UserCreateWithoutCheckoutQuotesInput = {
+  id?: string
+  firstName: string
+  lastName: string
+  email: string
+  passwordHash: string
+  phone?: string | null
+  status: string
+  role?: $Enums.Role
+  emailVerifiedAt?: Date | string | null
+  lastLoginAt?: Date | string | null
+  createdAt?: Date | string
+  updatedAt?: Date | string
+  addresses?: Prisma.AddressCreateNestedManyWithoutUserInput
+  cart?: Prisma.CartCreateNestedOneWithoutUserInput
+  wishlist?: Prisma.WishlistCreateNestedOneWithoutUserInput
+  orders?: Prisma.OrderCreateNestedManyWithoutUserInput
+}
+
+export type UserUncheckedCreateWithoutCheckoutQuotesInput = {
+  id?: string
+  firstName: string
+  lastName: string
+  email: string
+  passwordHash: string
+  phone?: string | null
+  status: string
+  role?: $Enums.Role
+  emailVerifiedAt?: Date | string | null
+  lastLoginAt?: Date | string | null
+  createdAt?: Date | string
+  updatedAt?: Date | string
+  addresses?: Prisma.AddressUncheckedCreateNestedManyWithoutUserInput
+  cart?: Prisma.CartUncheckedCreateNestedOneWithoutUserInput
+  wishlist?: Prisma.WishlistUncheckedCreateNestedOneWithoutUserInput
+  orders?: Prisma.OrderUncheckedCreateNestedManyWithoutUserInput
+}
+
+export type UserCreateOrConnectWithoutCheckoutQuotesInput = {
+  where: Prisma.UserWhereUniqueInput
+  create: Prisma.XOR<Prisma.UserCreateWithoutCheckoutQuotesInput, Prisma.UserUncheckedCreateWithoutCheckoutQuotesInput>
+}
+
+export type UserUpsertWithoutCheckoutQuotesInput = {
+  update: Prisma.XOR<Prisma.UserUpdateWithoutCheckoutQuotesInput, Prisma.UserUncheckedUpdateWithoutCheckoutQuotesInput>
+  create: Prisma.XOR<Prisma.UserCreateWithoutCheckoutQuotesInput, Prisma.UserUncheckedCreateWithoutCheckoutQuotesInput>
+  where?: Prisma.UserWhereInput
+}
+
+export type UserUpdateToOneWithWhereWithoutCheckoutQuotesInput = {
+  where?: Prisma.UserWhereInput
+  data: Prisma.XOR<Prisma.UserUpdateWithoutCheckoutQuotesInput, Prisma.UserUncheckedUpdateWithoutCheckoutQuotesInput>
+}
+
+export type UserUpdateWithoutCheckoutQuotesInput = {
+  id?: Prisma.StringFieldUpdateOperationsInput | string
+  firstName?: Prisma.StringFieldUpdateOperationsInput | string
+  lastName?: Prisma.StringFieldUpdateOperationsInput | string
+  email?: Prisma.StringFieldUpdateOperationsInput | string
+  passwordHash?: Prisma.StringFieldUpdateOperationsInput | string
+  phone?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  status?: Prisma.StringFieldUpdateOperationsInput | string
+  role?: Prisma.EnumRoleFieldUpdateOperationsInput | $Enums.Role
+  emailVerifiedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  lastLoginAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  addresses?: Prisma.AddressUpdateManyWithoutUserNestedInput
+  cart?: Prisma.CartUpdateOneWithoutUserNestedInput
+  wishlist?: Prisma.WishlistUpdateOneWithoutUserNestedInput
+  orders?: Prisma.OrderUpdateManyWithoutUserNestedInput
+}
+
+export type UserUncheckedUpdateWithoutCheckoutQuotesInput = {
+  id?: Prisma.StringFieldUpdateOperationsInput | string
+  firstName?: Prisma.StringFieldUpdateOperationsInput | string
+  lastName?: Prisma.StringFieldUpdateOperationsInput | string
+  email?: Prisma.StringFieldUpdateOperationsInput | string
+  passwordHash?: Prisma.StringFieldUpdateOperationsInput | string
+  phone?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  status?: Prisma.StringFieldUpdateOperationsInput | string
+  role?: Prisma.EnumRoleFieldUpdateOperationsInput | $Enums.Role
+  emailVerifiedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  lastLoginAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  addresses?: Prisma.AddressUncheckedUpdateManyWithoutUserNestedInput
+  cart?: Prisma.CartUncheckedUpdateOneWithoutUserNestedInput
+  wishlist?: Prisma.WishlistUncheckedUpdateOneWithoutUserNestedInput
+  orders?: Prisma.OrderUncheckedUpdateManyWithoutUserNestedInput
 }
 
 
@@ -928,11 +1057,13 @@ export type UserUncheckedUpdateWithoutOrdersInput = {
 export type UserCountOutputType = {
   addresses: number
   orders: number
+  checkoutQuotes: number
 }
 
 export type UserCountOutputTypeSelect<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
   addresses?: boolean | UserCountOutputTypeCountAddressesArgs
   orders?: boolean | UserCountOutputTypeCountOrdersArgs
+  checkoutQuotes?: boolean | UserCountOutputTypeCountCheckoutQuotesArgs
 }
 
 /**
@@ -959,6 +1090,13 @@ export type UserCountOutputTypeCountOrdersArgs<ExtArgs extends runtime.Types.Ext
   where?: Prisma.OrderWhereInput
 }
 
+/**
+ * UserCountOutputType without action
+ */
+export type UserCountOutputTypeCountCheckoutQuotesArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
+  where?: Prisma.CheckoutQuoteWhereInput
+}
+
 
 export type UserSelect<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetSelect<{
   id?: boolean
@@ -977,6 +1115,7 @@ export type UserSelect<ExtArgs extends runtime.Types.Extensions.InternalArgs = r
   cart?: boolean | Prisma.User$cartArgs<ExtArgs>
   wishlist?: boolean | Prisma.User$wishlistArgs<ExtArgs>
   orders?: boolean | Prisma.User$ordersArgs<ExtArgs>
+  checkoutQuotes?: boolean | Prisma.User$checkoutQuotesArgs<ExtArgs>
   _count?: boolean | Prisma.UserCountOutputTypeDefaultArgs<ExtArgs>
 }, ExtArgs["result"]["user"]>
 
@@ -1031,6 +1170,7 @@ export type UserInclude<ExtArgs extends runtime.Types.Extensions.InternalArgs = 
   cart?: boolean | Prisma.User$cartArgs<ExtArgs>
   wishlist?: boolean | Prisma.User$wishlistArgs<ExtArgs>
   orders?: boolean | Prisma.User$ordersArgs<ExtArgs>
+  checkoutQuotes?: boolean | Prisma.User$checkoutQuotesArgs<ExtArgs>
   _count?: boolean | Prisma.UserCountOutputTypeDefaultArgs<ExtArgs>
 }
 export type UserIncludeCreateManyAndReturn<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {}
@@ -1043,6 +1183,7 @@ export type $UserPayload<ExtArgs extends runtime.Types.Extensions.InternalArgs =
     cart: Prisma.$CartPayload<ExtArgs> | null
     wishlist: Prisma.$WishlistPayload<ExtArgs> | null
     orders: Prisma.$OrderPayload<ExtArgs>[]
+    checkoutQuotes: Prisma.$CheckoutQuotePayload<ExtArgs>[]
   }
   scalars: runtime.Types.Extensions.GetPayloadResult<{
     id: string
@@ -1455,6 +1596,7 @@ export interface Prisma__UserClient<T, Null = never, ExtArgs extends runtime.Typ
   cart<T extends Prisma.User$cartArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.User$cartArgs<ExtArgs>>): Prisma.Prisma__CartClient<runtime.Types.Result.GetResult<Prisma.$CartPayload<ExtArgs>, T, "findUniqueOrThrow", GlobalOmitOptions> | null, null, ExtArgs, GlobalOmitOptions>
   wishlist<T extends Prisma.User$wishlistArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.User$wishlistArgs<ExtArgs>>): Prisma.Prisma__WishlistClient<runtime.Types.Result.GetResult<Prisma.$WishlistPayload<ExtArgs>, T, "findUniqueOrThrow", GlobalOmitOptions> | null, null, ExtArgs, GlobalOmitOptions>
   orders<T extends Prisma.User$ordersArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.User$ordersArgs<ExtArgs>>): Prisma.PrismaPromise<runtime.Types.Result.GetResult<Prisma.$OrderPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
+  checkoutQuotes<T extends Prisma.User$checkoutQuotesArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.User$checkoutQuotesArgs<ExtArgs>>): Prisma.PrismaPromise<runtime.Types.Result.GetResult<Prisma.$CheckoutQuotePayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
   /**
    * Attaches callbacks for the resolution and/or rejection of the Promise.
    * @param onfulfilled The callback to execute when the Promise is resolved.
@@ -1972,6 +2114,30 @@ export type User$ordersArgs<ExtArgs extends runtime.Types.Extensions.InternalArg
   take?: number
   skip?: number
   distinct?: Prisma.OrderScalarFieldEnum | Prisma.OrderScalarFieldEnum[]
+}
+
+/**
+ * User.checkoutQuotes
+ */
+export type User$checkoutQuotesArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
+  /**
+   * Select specific fields to fetch from the CheckoutQuote
+   */
+  select?: Prisma.CheckoutQuoteSelect<ExtArgs> | null
+  /**
+   * Omit specific fields from the CheckoutQuote
+   */
+  omit?: Prisma.CheckoutQuoteOmit<ExtArgs> | null
+  /**
+   * Choose, which related nodes to fetch as well
+   */
+  include?: Prisma.CheckoutQuoteInclude<ExtArgs> | null
+  where?: Prisma.CheckoutQuoteWhereInput
+  orderBy?: Prisma.CheckoutQuoteOrderByWithRelationInput | Prisma.CheckoutQuoteOrderByWithRelationInput[]
+  cursor?: Prisma.CheckoutQuoteWhereUniqueInput
+  take?: number
+  skip?: number
+  distinct?: Prisma.CheckoutQuoteScalarFieldEnum | Prisma.CheckoutQuoteScalarFieldEnum[]
 }
 
 /**

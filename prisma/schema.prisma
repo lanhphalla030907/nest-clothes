@@ -29,10 +29,11 @@ model User {
   createdAt       DateTime  @default(now()) @map("created_at") @db.Timestamptz
   updatedAt       DateTime  @updatedAt @map("updated_at") @db.Timestamptz
 
-  addresses Address[]
-  cart      Cart?
-  wishlist  Wishlist?
-  orders    Order[]
+  addresses      Address[]
+  cart           Cart?
+  wishlist       Wishlist?
+  orders         Order[]
+  checkoutQuotes CheckoutQuote[]
 
   @@index([status])
   @@index([role])
@@ -526,8 +527,9 @@ model Address {
   phone         String   @db.VarChar(30)
   addressLine1  String   @map("address_line1") @db.VarChar(255)
   addressLine2  String?  @map("address_line2") @db.VarChar(255)
-  city          String   @db.VarChar(100)
+  city          String?  @db.VarChar(100)
   stateProvince String?  @map("state_province") @db.VarChar(100)
+  administrativeLocationPcode String? @map("administrative_location_pcode") @db.VarChar(8)
   postalCode    String?  @map("postal_code") @db.VarChar(20)
   countryCode   String   @map("country_code") @db.Char(2)
   isDefault     Boolean  @default(false) @map("is_default")
@@ -535,6 +537,7 @@ model Address {
   updatedAt     DateTime @updatedAt @map("updated_at") @db.Timestamptz
 
   user User @relation(fields: [userId], references: [id], onDelete: Cascade, onUpdate: Cascade)
+  administrativeLocation AdministrativeLocation? @relation(fields: [administrativeLocationPcode], references: [pcode], onDelete: Restrict, onUpdate: Cascade, map: "addresses_administrative_location_fkey")
 
   // Serves the address book listing ("every address for this user"), the FK check
   // on user deletion, and the demote/promote scans that move the default around.
@@ -543,7 +546,66 @@ model Address {
   // covers every lookup of the form "this user's default address", and a listing
   // touches a user's handful of rows regardless of how they are ordered.
   @@index([userId])
+  @@index([administrativeLocationPcode])
   @@map("addresses")
+}
+
+/// Canonical Cambodia administrative locations sourced from the OCHA/HDX COD-AB
+/// KHM v01 dataset. P-codes are stable source identifiers; the nullable COD flag
+/// is an override, not part of the location's identity.
+model AdministrativeLocation {
+  pcode               String   @id @db.VarChar(8)
+  parentPcode         String?  @map("parent_pcode") @db.VarChar(8)
+  adminLevel          Int      @map("admin_level") @db.SmallInt
+  nameEn              String   @map("name_en") @db.VarChar(120)
+  nameKm              String?  @map("name_km") @db.VarChar(120)
+  datasetVersion      String   @map("dataset_version") @db.VarChar(10)
+  codEnabledOverride  Boolean? @map("cod_enabled_override")
+
+  parent   AdministrativeLocation?  @relation("AdministrativeLocationTree", fields: [parentPcode], references: [pcode], onDelete: Restrict, onUpdate: Cascade, map: "administrative_locations_parent_fkey")
+  children AdministrativeLocation[] @relation("AdministrativeLocationTree")
+  addresses Address[]
+  orders    Order[]
+
+  @@index([parentPcode, nameEn], map: "administrative_locations_parent_name_idx")
+  @@index([adminLevel, nameEn], map: "administrative_locations_level_name_idx")
+  @@map("administrative_locations")
+}
+
+/// A configurable delivery provider. Providers are deactivated rather than deleted
+/// so future order snapshots can continue to refer to the provider that was chosen.
+model ShippingProvider {
+  id          String   @id @default(uuid()) @db.Uuid
+  code        String   @unique @db.VarChar(50)
+  name        String   @db.VarChar(120)
+  description String?  @db.VarChar(500)
+  baseFee     Decimal  @map("base_fee") @db.Decimal(12, 2)
+  isActive    Boolean  @default(true) @map("is_active")
+  supportsCod Boolean  @default(false) @map("supports_cod")
+  createdAt   DateTime @default(now()) @map("created_at") @db.Timestamptz
+  updatedAt   DateTime @updatedAt @map("updated_at") @db.Timestamptz
+
+  orders Order[]
+
+  @@index([isActive, name])
+  @@map("shipping_providers")
+}
+
+/// An explicitly configured geographic area where cash on delivery is allowed.
+/// The code is a separate canonical identifier; it is not inferred from the
+/// free-form city or state/province values on saved addresses.
+model CodArea {
+  id         String   @id @default(uuid()) @db.Uuid
+  code       String   @unique @db.VarChar(50)
+  name       String   @db.VarChar(120)
+  codEnabled Boolean  @default(false) @map("cod_enabled")
+  createdAt  DateTime @default(now()) @map("created_at") @db.Timestamptz
+  updatedAt  DateTime @updatedAt @map("updated_at") @db.Timestamptz
+
+  orders Order[]
+
+  @@index([codEnabled, name])
+  @@map("cod_areas")
 }
 
 /// A confirmed purchase by one user.
@@ -575,14 +637,16 @@ model Address {
 /// non-negative. There is deliberately **no tax column yet**: adding one later is
 /// additive, whereas a wrong tax figure baked into an immutable total would not
 /// be.
-/// ## 3. Everything it points at is copied, not referenced
+/// ## 3. Customer-visible details are copied, not read live
 ///
 /// The shipping address is a **snapshot**, not a foreign key to {@link Address}.
 /// Editing or deleting an address must not change where a past parcel went, so
 /// the seven `shipping_*` columns duplicate the address fields on purpose. The
 /// same reasoning drives {@link OrderItem}, which snapshots the product name,
 /// SKU, options and price. This is the one place in the schema where
-/// denormalising is the correct choice.
+/// denormalising is the correct choice. Provider and COD-area IDs are retained
+/// only as optional administrative references; the code and display-name snapshots
+/// remain the historical record if configuration changes.
 ///
 /// ## Status is extensible, mutation is not
 ///
@@ -605,10 +669,9 @@ model Address {
 /// Deleting an order cascades to its items: a line is meaningless without the
 /// order it belongs to, and the order is the only thing that makes it.
 ///
-/// There is **no public route that mutates an order**. `GET /orders` and
-/// `GET /orders/:id` are the entire HTTP surface of this feature. Prices,
-/// totals, status and snapshots are written exactly once, by the checkout phase
-/// that does not exist yet, and never by a client.
+/// Customer order reads are `GET /orders` and `GET /orders/:id`; creation is the
+/// authenticated checkout operation. Prices, totals, status and snapshots are
+/// written by server-side order services, never accepted from a client.
 model Order {
   id                    String   @id @default(uuid()) @db.Uuid
   userId                String   @map("user_id") @db.Uuid
@@ -619,20 +682,33 @@ model Order {
   discountAmount        Decimal  @default(0) @map("discount_amount") @db.Decimal(12, 2)
   totalAmount           Decimal  @map("total_amount") @db.Decimal(12, 2)
   currency              String   @default("USD") @db.Char(3)
+  paymentMethod         String?  @map("payment_method") @db.VarChar(30)
+  shippingProviderId    String?  @map("shipping_provider_id") @db.Uuid
+  shippingProviderCode  String?  @map("shipping_provider_code") @db.VarChar(50)
+  shippingProviderName  String?  @map("shipping_provider_name") @db.VarChar(120)
+  codAreaId             String?  @map("cod_area_id") @db.Uuid
+  codAreaCode           String?  @map("cod_area_code") @db.VarChar(50)
+  codAreaName           String?  @map("cod_area_name") @db.VarChar(120)
   shippingRecipientName String   @map("shipping_recipient_name") @db.VarChar(150)
   shippingPhone         String   @map("shipping_phone") @db.VarChar(30)
   shippingAddressLine1  String   @map("shipping_address_line1") @db.VarChar(255)
   shippingAddressLine2  String?  @map("shipping_address_line2") @db.VarChar(255)
-  shippingCity          String   @map("shipping_city") @db.VarChar(100)
+  shippingCity          String?  @map("shipping_city") @db.VarChar(100)
   shippingStateProvince String?  @map("shipping_state_province") @db.VarChar(100)
+  shippingLocationPcode String?  @map("shipping_location_pcode") @db.VarChar(8)
+  shippingLocationSnapshot Json? @map("shipping_location_snapshot") @db.JsonB
   shippingPostalCode    String?  @map("shipping_postal_code") @db.VarChar(20)
   shippingCountryCode   String   @map("shipping_country_code") @db.Char(2)
   createdAt             DateTime @default(now()) @map("created_at") @db.Timestamptz
   updatedAt             DateTime @updatedAt @map("updated_at") @db.Timestamptz
 
-  user     User        @relation(fields: [userId], references: [id], onDelete: Restrict, onUpdate: Cascade)
-  items    OrderItem[]
-  payments Payment[]
+  user             User              @relation(fields: [userId], references: [id], onDelete: Restrict, onUpdate: Cascade)
+  items            OrderItem[]
+  payments         Payment[]
+  shippingProvider ShippingProvider? @relation(fields: [shippingProviderId], references: [id], onDelete: Restrict, onUpdate: Cascade)
+  codArea          CodArea?          @relation(fields: [codAreaId], references: [id], onDelete: Restrict, onUpdate: Cascade)
+  shippingLocation AdministrativeLocation? @relation(fields: [shippingLocationPcode], references: [pcode], onDelete: Restrict, onUpdate: Cascade, map: "orders_shipping_location_fkey")
+  checkoutQuote    CheckoutQuote?
 
   // Serves `GET /orders` — "this user's orders, newest first" — and matches the
   // query's `ORDER BY` column for column, so the listing walks the index instead
@@ -640,14 +716,56 @@ model Order {
   // applied afterwards because it is the deterministic tiebreak for rows sharing
   // a `created_at`, and a tiebreak done outside the index is one Postgres may
   // resolve differently between requests.
-  //
-  // There is deliberately NO index on `status` alone. A status lookup is not an
-  // access pattern this phase performs — no route filters by status, and this
-  // feature has no operator surface — so an index on it would be speculative
-  // write amplification. It is a one-line addition to whichever migration first
-  // ships an endpoint that queries it.
   @@index([userId, createdAt(sort: Desc), id(sort: Desc)])
+  // Serves the administrative listing `GET /admin/orders`, which is global rather
+  // than scoped to one customer and is ordered newest first. The existing
+  // `(user_id, created_at, id)` index cannot satisfy it: `user_id` has no equality
+  // predicate, so it cannot be used as a prefix for a global `created_at` order.
+  @@index([createdAt(sort: Desc), id(sort: Desc)])
+  // Serves the same listing when it is narrowed by status. `status` is the
+  // equality column, followed by the exact global ordering, so the page is read
+  // from the index rather than filtered and sorted. A status-only index is not
+  // declared separately because this compound index already serves it.
+  @@index([status, createdAt(sort: Desc), id(sort: Desc)])
+  @@index([shippingProviderId])
+  @@index([codAreaId])
+  @@index([shippingLocationPcode])
   @@map("orders")
+}
+
+/// A short-lived, server-calculated checkout offer. The immutable snapshots bind
+/// the accepted amount to the cart, address, provider, and delivery eligibility.
+model CheckoutQuote {
+  id                   String    @id @default(uuid()) @db.Uuid
+  userId               String    @map("user_id") @db.Uuid
+  addressId            String    @map("address_id") @db.Uuid
+  addressSnapshot      Json      @map("address_snapshot") @db.JsonB
+  shippingProviderId   String    @map("shipping_provider_id") @db.Uuid
+  shippingProviderCode String    @map("shipping_provider_code") @db.VarChar(50)
+  shippingProviderName String    @map("shipping_provider_name") @db.VarChar(120)
+  codAreaId            String?   @map("cod_area_id") @db.Uuid
+  codAreaCode          String?   @map("cod_area_code") @db.VarChar(50)
+  codAreaName          String?   @map("cod_area_name") @db.VarChar(120)
+  paymentMethod        String    @map("payment_method") @db.VarChar(30)
+  cartSnapshot         Json      @map("cart_snapshot") @db.JsonB
+  subtotal             Decimal   @db.Decimal(12, 2)
+  shippingFee          Decimal   @map("shipping_fee") @db.Decimal(12, 2)
+  discountAmount       Decimal   @default(0) @map("discount_amount") @db.Decimal(12, 2)
+  totalAmount          Decimal   @map("total_amount") @db.Decimal(12, 2)
+  currency             String    @default("USD") @db.Char(3)
+  expiresAt            DateTime  @map("expires_at") @db.Timestamptz
+  consumedAt           DateTime? @map("consumed_at") @db.Timestamptz
+  idempotencyKey       String?   @map("idempotency_key") @db.VarChar(100)
+  orderId              String?   @unique @map("order_id") @db.Uuid
+  createdAt            DateTime  @default(now()) @map("created_at") @db.Timestamptz
+  updatedAt            DateTime  @updatedAt @map("updated_at") @db.Timestamptz
+
+  user  User   @relation(fields: [userId], references: [id], onDelete: Cascade, onUpdate: Cascade)
+  order Order? @relation(fields: [orderId], references: [id], onDelete: Restrict, onUpdate: Cascade)
+
+  @@unique([userId, idempotencyKey])
+  @@index([userId, expiresAt])
+  @@map("checkout_quotes")
 }
 
 /// One line of an order: a quantity of one variant, as it was sold.

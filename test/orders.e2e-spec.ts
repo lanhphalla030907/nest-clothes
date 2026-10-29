@@ -1228,12 +1228,14 @@ describe('Orders (PostgreSQL)', () => {
         `select indexname from pg_indexes where tablename = 'orders'`,
       );
 
-      // The primary key, the order-number uniqueness guarantee, and the one
-      // composite that serves "this user's orders, newest first". No index on
-      // `status`: nothing in this phase filters by it.
+      // The primary key, the order-number uniqueness guarantee, the customer
+      // listing, and the two indexes that serve the administrative listing:
+      // global newest-first, and the same order narrowed by status.
       expect(orders.map((row) => row.indexname).sort()).toEqual([
+        'orders_created_at_id_idx',
         'orders_order_number_key',
         'orders_pkey',
+        'orders_status_created_at_id_idx',
         'orders_user_id_created_at_id_idx',
       ]);
 
@@ -1255,6 +1257,23 @@ describe('Orders (PostgreSQL)', () => {
       );
 
       expect(definition[0].indexdef).toContain('user_id, created_at DESC, id DESC');
+    });
+
+    it('makes the administrative indexes match the global listing and status filter', async () => {
+      const definitions = await prisma.$queryRawUnsafe<
+        { indexname: string; indexdef: string }[]
+      >(
+        `select indexname, indexdef
+           from pg_indexes
+          where indexname in ('orders_created_at_id_idx', 'orders_status_created_at_id_idx')
+          order by indexname`,
+      );
+
+      expect(definitions).toHaveLength(2);
+      expect(definitions[0].indexdef).toContain('created_at DESC, id DESC');
+      expect(definitions[1].indexdef).toContain(
+        'status, created_at DESC, id DESC',
+      );
     });
 
     it('gives order_items no updated_at and orders a free-form status', async () => {

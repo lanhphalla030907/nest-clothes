@@ -46,6 +46,8 @@ const buildAddressResponse = (
     addressLine2: null,
     city: 'Bristol',
     stateProvince: null,
+    district: null,
+    commune: null,
     postalCode: null,
     countryCode: 'GB',
     isDefault: true,
@@ -201,8 +203,10 @@ describe('AddressesController (HTTP)', () => {
           'addressLine1',
           'addressLine2',
           'city',
+          'commune',
           'countryCode',
           'createdAt',
+          'district',
           'id',
           'isDefault',
           'label',
@@ -282,6 +286,32 @@ describe('AddressesController (HTTP)', () => {
       expect(service.create.mock.calls[0][1].countryCode).toBe('GB');
     });
 
+    it('preserves Cambodia district and commune text without trimming or converting it', async () => {
+      service.create.mockResolvedValue(buildAddressResponse());
+      const body = {
+        label: 'Home',
+        recipientName: 'Ada Lovelace',
+        phone: '+85512345678',
+        addressLine1: 'Street 1',
+        countryCode: 'KH',
+        administrativeLocationPcode: 'KH12',
+        district: ' Khan Chamkar Mon ',
+        commune: ' ស្រះចក ',
+      };
+
+      const res = await request('POST', '/addresses', {
+        user: USER_ID,
+        body,
+      });
+
+      expect(res.status).toBe(HttpStatus.CREATED);
+      expect(service.create.mock.calls[0][1]).toMatchObject({
+        administrativeLocationPcode: 'KH12',
+        district: ' Khan Chamkar Mon ',
+        commune: ' ស្រះចក ',
+      });
+    });
+
     it('treats a blank optional field as absent rather than an empty string', async () => {
       service.create.mockResolvedValue(buildAddressResponse());
 
@@ -312,6 +342,15 @@ describe('AddressesController (HTTP)', () => {
       ],
       ['a phone longer than the column', { phone: '9'.repeat(31) }],
       ['a city longer than the column', { city: 'x'.repeat(101) }],
+      [
+        'a Cambodia province code that names a subarea',
+        {
+          countryCode: 'KH',
+          administrativeLocationPcode: 'KH120101',
+          district: 'Chamkar Mon',
+          commune: 'Tonle Bassac',
+        },
+      ],
       [
         'an address line longer than the column',
         { addressLine1: 'x'.repeat(256) },

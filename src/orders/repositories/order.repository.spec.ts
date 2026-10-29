@@ -2,10 +2,7 @@ import { Test, TestingModule } from '@nestjs/testing';
 import type { Mock } from 'vitest';
 import { Prisma } from '../../generated/prisma/client.js';
 import { PrismaService } from '../../prisma/prisma.service.js';
-import {
-  OrderRepository,
-  type CreateOrderData,
-} from './order.repository.js';
+import { OrderRepository, type CreateOrderData } from './order.repository.js';
 
 const USER_ID = 'a1b2c3d4-e5f6-4f70-8a9b-0c1d2e3f4a5b';
 const ORDER_ID = 'c3d4e5f6-a7b8-4c92-8d1e-2f3a4b5c6d7e';
@@ -38,9 +35,7 @@ const buildCreateData = (
         variantId: VARIANT_ID,
         productName: 'Wool Peacoat',
         sku: 'COAT-NAVY-M',
-        variantOptionsSnapshot: [
-          { optionName: 'Color', optionValue: 'Navy' },
-        ],
+        variantOptionsSnapshot: [{ optionName: 'Color', optionValue: 'Navy' }],
         unitPrice: '129.00',
         quantity: 1,
         lineTotal: '129.00',
@@ -60,11 +55,19 @@ const buildCreateData = (
 describe('OrderRepository', () => {
   let repository: OrderRepository;
   let prisma: {
-    order: { findUnique: Mock; findMany: Mock; create: Mock };
+    order: {
+      findUnique: Mock;
+      findMany: Mock;
+      create: Mock;
+      count: Mock;
+      updateMany: Mock;
+    };
+    orderItem: { findMany: Mock };
     productVariant: { findUnique: Mock };
     product: { findUnique: Mock };
     variantOption: { findMany: Mock };
-    $transaction: Mock<(work: (tx: never) => Promise<unknown>) => Promise<unknown>>;
+    payment: { count: Mock };
+    $transaction: Mock;
   };
 
   beforeEach(async () => {
@@ -73,11 +76,15 @@ describe('OrderRepository', () => {
         findUnique: vi.fn().mockResolvedValue(null),
         findMany: vi.fn().mockResolvedValue([]),
         create: vi.fn().mockResolvedValue(null),
+        count: vi.fn().mockResolvedValue(0),
+        updateMany: vi.fn().mockResolvedValue({ count: 0 }),
       },
+      orderItem: { findMany: vi.fn().mockResolvedValue([]) },
       productVariant: { findUnique: vi.fn().mockResolvedValue(null) },
       product: { findUnique: vi.fn().mockResolvedValue(null) },
       variantOption: { findMany: vi.fn().mockResolvedValue([]) },
-      $transaction: vi.fn<(work: (tx: never) => Promise<unknown>) => Promise<unknown>>(),
+      payment: { count: vi.fn().mockResolvedValue(0) },
+      $transaction: vi.fn(),
     };
 
     const module: TestingModule = await Test.createTestingModule({
@@ -88,8 +95,9 @@ describe('OrderRepository', () => {
     }).compile();
 
     repository = module.get(OrderRepository);
-    prisma.$transaction.mockImplementation((work) =>
-      (work as (tx: unknown) => Promise<unknown>)(TRANSACTION),
+    prisma.$transaction.mockImplementation(
+      (input: ((tx: unknown) => Promise<unknown>) | Promise<unknown>[]) =>
+        typeof input === 'function' ? input(TRANSACTION) : Promise.all(input),
     );
   });
 
@@ -156,6 +164,32 @@ describe('OrderRepository', () => {
     });
   });
 
+  describe('findStatusById', () => {
+    it('selects only the key and current status', async () => {
+      prisma.order.findUnique.mockResolvedValue({
+        id: ORDER_ID,
+        status: 'PENDING',
+      });
+
+      const result = await repository.findStatusById(ORDER_ID);
+
+      expect(prisma.order.findUnique).toHaveBeenCalledWith({
+        where: { id: ORDER_ID },
+        select: { id: true, status: true },
+      });
+      expect(result).toEqual({ id: ORDER_ID, status: 'PENDING' });
+    });
+
+    it('uses the supplied transaction client', async () => {
+      const client = { order: { findUnique: vi.fn().mockResolvedValue(null) } };
+
+      await repository.findStatusById(ORDER_ID, client as never);
+
+      expect(client.order.findUnique).toHaveBeenCalledTimes(1);
+      expect(prisma.order.findUnique).not.toHaveBeenCalled();
+    });
+  });
+
   describe('findByUserId', () => {
     it('scopes to the user and orders newest first', async () => {
       await repository.findByUserId(USER_ID);
@@ -182,6 +216,31 @@ describe('OrderRepository', () => {
       expect(call).not.toHaveProperty('take');
       expect(call).not.toHaveProperty('cursor');
       expect(call).not.toHaveProperty('skip');
+    });
+  });
+
+  describe('findItemQuantitiesByOrderId', () => {
+    it('reads only the persisted variant/quantity pairs for the order', async () => {
+      prisma.orderItem.findMany.mockResolvedValue([
+        { variantId: VARIANT_ID, quantity: 2 },
+      ]);
+
+      const result = await repository.findItemQuantitiesByOrderId(ORDER_ID);
+
+      expect(prisma.orderItem.findMany).toHaveBeenCalledWith({
+        where: { orderId: ORDER_ID },
+        select: { variantId: true, quantity: true },
+      });
+      expect(result).toEqual([{ variantId: VARIANT_ID, quantity: 2 }]);
+    });
+
+    it('uses the supplied transaction client, never the default one', async () => {
+      const client = { orderItem: { findMany: vi.fn().mockResolvedValue([]) } };
+
+      await repository.findItemQuantitiesByOrderId(ORDER_ID, client as never);
+
+      expect(client.orderItem.findMany).toHaveBeenCalledTimes(1);
+      expect(prisma.orderItem.findMany).not.toHaveBeenCalled();
     });
   });
 
@@ -219,6 +278,74 @@ describe('OrderRepository', () => {
         where: { orderNumber: 'ORD-1' },
         select: { id: true },
       });
+    });
+  });
+
+  describe('transitionStatus', () => {
+    it('guards the source status in the WHERE clause and reports a claim', async () => {
+      prisma.order.updateMany.mockResolvedValue({ count: 1 });
+
+      const result = await repository.transitionStatus(
+        ORDER_ID,
+        'PENDING',
+        'CANCELLED',
+      );
+
+      expect(result).toBe(true);
+      expect(prisma.order.updateMany).toHaveBeenCalledWith({
+        where: { id: ORDER_ID, status: 'PENDING' },
+        data: { status: 'CANCELLED' },
+      });
+    });
+
+    it('reports a lost race when no row still has the expected status', async () => {
+      prisma.order.updateMany.mockResolvedValue({ count: 0 });
+
+      await expect(
+        repository.transitionStatus(ORDER_ID, 'PENDING', 'CANCELLED'),
+      ).resolves.toBe(false);
+    });
+
+    it('uses the supplied transaction client', async () => {
+      const client = {
+        order: { updateMany: vi.fn().mockResolvedValue({ count: 1 }) },
+      };
+
+      await repository.transitionStatus(
+        ORDER_ID,
+        'CONFIRMED',
+        'SHIPPED',
+        client as never,
+      );
+
+      expect(client.order.updateMany).toHaveBeenCalledTimes(1);
+      expect(prisma.order.updateMany).not.toHaveBeenCalled();
+    });
+  });
+
+  describe('hasPaidPayment', () => {
+    it('counts only verified PAID attempts for the order', async () => {
+      prisma.payment.count.mockResolvedValue(1);
+
+      await expect(repository.hasPaidPayment(ORDER_ID)).resolves.toBe(true);
+      expect(prisma.payment.count).toHaveBeenCalledWith({
+        where: { orderId: ORDER_ID, status: 'PAID' },
+      });
+    });
+
+    it('reports false when no attempt has been verified', async () => {
+      prisma.payment.count.mockResolvedValue(0);
+
+      await expect(repository.hasPaidPayment(ORDER_ID)).resolves.toBe(false);
+    });
+
+    it('uses the supplied transaction client', async () => {
+      const client = { payment: { count: vi.fn().mockResolvedValue(1) } };
+
+      await expect(
+        repository.hasPaidPayment(ORDER_ID, client as never),
+      ).resolves.toBe(true);
+      expect(prisma.payment.count).not.toHaveBeenCalled();
     });
   });
 
@@ -269,13 +396,17 @@ describe('OrderRepository', () => {
     it('forwards a unique violation so the caller can regenerate', async () => {
       const violation = new Prisma.PrismaClientKnownRequestError(
         'Unique constraint failed',
-        { code: 'P2002', clientVersion: '7.10.0', meta: { modelName: 'Order' } },
+        {
+          code: 'P2002',
+          clientVersion: '7.10.0',
+          meta: { modelName: 'Order' },
+        },
       );
       prisma.order.create.mockRejectedValue(violation);
 
-      await expect(
-        repository.createOrder(buildCreateData()),
-      ).rejects.toBe(violation);
+      await expect(repository.createOrder(buildCreateData())).rejects.toBe(
+        violation,
+      );
     });
 
     it('writes through a supplied transaction client when given one', async () => {
@@ -331,13 +462,200 @@ describe('OrderRepository', () => {
 
   describe('findVariantOptionsForSnapshot', () => {
     it('orders options deterministically, so two snapshots are identical', async () => {
-      await repository.findVariantOptionsForSnapshot(VARIANT_ID, prisma as never);
+      await repository.findVariantOptionsForSnapshot(
+        VARIANT_ID,
+        prisma as never,
+      );
 
       expect(prisma.variantOption.findMany).toHaveBeenCalledWith({
         where: { variantId: VARIANT_ID },
         orderBy: [{ optionName: 'asc' }, { id: 'asc' }],
         select: { optionName: true, optionValue: true },
       });
+    });
+  });
+
+  describe('findAdminPage', () => {
+    beforeEach(() => {
+      prisma.order.findMany.mockResolvedValue([{ id: ORDER_ID }]);
+      prisma.order.count.mockResolvedValue(1);
+    });
+
+    it('pages globally, newest first, and reads the total in the same transaction', async () => {
+      const result = await repository.findAdminPage({ page: 3, limit: 10 });
+
+      expect(prisma.$transaction).toHaveBeenCalledTimes(1);
+      expect(prisma.order.findMany).toHaveBeenCalledWith({
+        where: {},
+        select: expect.objectContaining({
+          id: true,
+          orderNumber: true,
+          status: true,
+          user: {
+            select: {
+              id: true,
+              firstName: true,
+              lastName: true,
+              email: true,
+            },
+          },
+        }),
+        orderBy: [{ createdAt: 'desc' }, { id: 'desc' }],
+        skip: 20,
+        take: 10,
+      });
+      // The count must describe exactly the page's filters.
+      expect(prisma.order.count).toHaveBeenCalledWith({ where: {} });
+      expect(result).toEqual({ items: [{ id: ORDER_ID }], total: 1 });
+    });
+
+    it('combines status and inclusive date bounds in one where clause', async () => {
+      const createdFrom = new Date('2026-01-01T00:00:00.000Z');
+      const createdTo = new Date('2026-01-31T23:59:59.000Z');
+
+      await repository.findAdminPage({
+        page: 1,
+        limit: 20,
+        status: 'CONFIRMED',
+        createdFrom,
+        createdTo,
+      });
+
+      const expected = {
+        status: 'CONFIRMED',
+        createdAt: { gte: createdFrom, lte: createdTo },
+      };
+
+      expect(prisma.order.findMany.mock.calls[0][0].where).toEqual(expected);
+      expect(prisma.order.count).toHaveBeenCalledWith({ where: expected });
+    });
+
+    it('searches the order number prefix and the customer fields', async () => {
+      await repository.findAdminPage({
+        page: 1,
+        limit: 20,
+        search: 'ada',
+      });
+
+      expect(prisma.order.findMany.mock.calls[0][0].where).toEqual({
+        OR: [
+          {
+            orderNumber: {
+              startsWith: 'ada',
+              mode: 'insensitive',
+            },
+          },
+          {
+            user: {
+              is: {
+                firstName: { contains: 'ada', mode: 'insensitive' },
+              },
+            },
+          },
+          {
+            user: {
+              is: {
+                lastName: { contains: 'ada', mode: 'insensitive' },
+              },
+            },
+          },
+          {
+            user: {
+              is: {
+                email: { contains: 'ada', mode: 'insensitive' },
+              },
+            },
+          },
+        ],
+      });
+    });
+
+    it('escapes LIKE wildcards so search matches them literally', async () => {
+      await repository.findAdminPage({
+        page: 1,
+        limit: 20,
+        search: 'a%b_c\\d',
+      });
+
+      const where = prisma.order.findMany.mock.calls[0][0].where as {
+        OR: Array<{ orderNumber: { startsWith: string } }>;
+      };
+
+      expect(where.OR[0].orderNumber.startsWith).toBe('a\\%b\\_c\\\\d');
+    });
+
+    it('never selects credential or QR columns', async () => {
+      await repository.findAdminPage({ page: 1, limit: 20 });
+
+      const select = prisma.order.findMany.mock.calls[0][0].select as {
+        user: { select: Record<string, boolean> };
+        payments: { select: Record<string, boolean> };
+      };
+
+      expect(select.user.select).not.toHaveProperty('passwordHash');
+      expect(select.payments.select).not.toHaveProperty('qrPayload');
+      // The listing reads only quantities from the lines, not live catalogue data.
+      expect(prisma.order.findMany.mock.calls[0][0].select.items).toEqual({
+        select: { quantity: true },
+      });
+    });
+  });
+
+  describe('findAdminById', () => {
+    it('reads one order with safe customer, snapshot items and safe payments', async () => {
+      prisma.order.findUnique.mockResolvedValue({ id: ORDER_ID });
+
+      const result = await repository.findAdminById(ORDER_ID);
+
+      expect(result).toEqual({ id: ORDER_ID });
+      expect(prisma.order.findUnique).toHaveBeenCalledWith({
+        where: { id: ORDER_ID },
+        select: expect.objectContaining({
+          id: true,
+          userId: true,
+          shippingAddressLine1: true,
+          user: {
+            select: {
+              id: true,
+              firstName: true,
+              lastName: true,
+              email: true,
+            },
+          },
+        }),
+      });
+
+      const call = prisma.order.findUnique.mock.calls[0][0] as {
+        select: {
+          user: { select: Record<string, boolean> };
+          payments: { select: Record<string, boolean> };
+          items: { select: Record<string, boolean> };
+          variant?: unknown;
+        };
+      };
+
+      expect(call.select.user.select).not.toHaveProperty('passwordHash');
+      expect(call.select.payments.select).not.toHaveProperty('qrPayload');
+      // Items are read from their own snapshot columns; no `variant` relation is
+      // joined, so a later rename cannot rewrite the receipt.
+      expect(call.select.variant).toBeUndefined();
+      expect(call.select.items.select.productName).toBe(true);
+      expect(call.select.items.select.unitPrice).toBe(true);
+    });
+
+    it('returns null for an unknown order', async () => {
+      prisma.order.findUnique.mockResolvedValue(null);
+
+      await expect(repository.findAdminById(ORDER_ID)).resolves.toBeNull();
+    });
+
+    it('can read through a transaction client for a post-write response', async () => {
+      const client = { order: { findUnique: vi.fn().mockResolvedValue(null) } };
+
+      await repository.findAdminById(ORDER_ID, client as never);
+
+      expect(client.order.findUnique).toHaveBeenCalledTimes(1);
+      expect(prisma.order.findUnique).not.toHaveBeenCalled();
     });
   });
 });

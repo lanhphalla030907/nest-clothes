@@ -1,4 +1,5 @@
 import type { Address } from '../repositories/address.repository.js';
+import type { AdministrativeLocationResponseDto } from '../../locations/dto/administrative-location-response.dto.js';
 
 /**
  * Outbound representation of one address.
@@ -37,8 +38,12 @@ export class AddressResponseDto {
   phone: string;
   addressLine1: string;
   addressLine2: string | null;
-  city: string;
+  city: string | null;
   stateProvince: string | null;
+  district: string | null;
+  commune: string | null;
+  administrativeLocationPcode: string | null;
+  administrativeLocationPath: AdministrativeLocationResponseDto[] | null;
   postalCode: string | null;
   /** ISO 3166-1 alpha-2, normalised to uppercase. */
   countryCode: string;
@@ -50,7 +55,10 @@ export class AddressResponseDto {
   createdAt: Date;
   updatedAt: Date;
 
-  static fromEntity(address: Address): AddressResponseDto {
+  static fromEntity(
+    address: Address,
+    administrativeLocationPath: AdministrativeLocationResponseDto[] | null = null,
+  ): AddressResponseDto {
     const dto = new AddressResponseDto();
 
     dto.id = address.id;
@@ -62,6 +70,18 @@ export class AddressResponseDto {
     dto.addressLine2 = address.addressLine2;
     dto.city = address.city;
     dto.stateProvince = address.stateProvince;
+    dto.district =
+      administrativeLocationPath?.length === 1
+        ? address.stateProvince
+        : (administrativeLocationPath?.find((location) => location.adminLevel === 2)
+            ?.nameEn ?? null);
+    dto.commune =
+      administrativeLocationPath?.length === 1
+        ? address.city
+        : (administrativeLocationPath?.find((location) => location.adminLevel === 3)
+            ?.nameEn ?? null);
+    dto.administrativeLocationPcode = address.administrativeLocationPcode;
+    dto.administrativeLocationPath = administrativeLocationPath;
     dto.postalCode = address.postalCode;
     dto.countryCode = address.countryCode;
     dto.isDefault = address.isDefault;

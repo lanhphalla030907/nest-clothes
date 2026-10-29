@@ -112,6 +112,27 @@ export class UpdateAddressDto {
   @MaxLength(STATE_PROVINCE_MAX_LENGTH)
   stateProvince?: string | null;
 
+  @ValidateIf((_, value) => value !== undefined)
+  @IsString()
+  @MinLength(1)
+  @MaxLength(STATE_PROVINCE_MAX_LENGTH)
+  @Matches(/\S/, { message: 'district must contain a non-whitespace character' })
+  district?: string;
+
+  @ValidateIf((_, value) => value !== undefined)
+  @IsString()
+  @MinLength(1)
+  @MaxLength(CITY_MAX_LENGTH)
+  @Matches(/\S/, { message: 'commune must contain a non-whitespace character' })
+  commune?: string;
+
+  @ValidateIf((_, value) => value !== undefined && value !== null)
+  @IsString()
+  @Matches(/^KH[0-9]{2}$/, {
+    message: 'administrativeLocationPcode must identify a Cambodia province or municipality',
+  })
+  administrativeLocationPcode?: string | null;
+
   @Transform(trimOptionalField)
   @IsOptional()
   @IsString()

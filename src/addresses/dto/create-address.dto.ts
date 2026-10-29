@@ -93,16 +93,39 @@ export class CreateAddressDto {
   addressLine2?: string | null;
 
   @Transform(trimRequiredField)
+  @ValidateIf((dto: CreateAddressDto) => dto.countryCode !== 'KH')
   @IsString()
   @MinLength(1)
   @MaxLength(CITY_MAX_LENGTH)
-  city: string;
+  city?: string;
 
   @Transform(trimOptionalField)
+  @ValidateIf((dto: CreateAddressDto, value) => dto.countryCode !== 'KH' && value !== undefined)
   @IsOptional()
   @IsString()
   @MaxLength(STATE_PROVINCE_MAX_LENGTH)
   stateProvince?: string | null;
+
+  @ValidateIf((dto: CreateAddressDto) => dto.countryCode === 'KH')
+  @IsString()
+  @MinLength(1)
+  @MaxLength(STATE_PROVINCE_MAX_LENGTH)
+  @Matches(/\S/, { message: 'district must contain a non-whitespace character' })
+  district?: string;
+
+  @ValidateIf((dto: CreateAddressDto) => dto.countryCode === 'KH')
+  @IsString()
+  @MinLength(1)
+  @MaxLength(CITY_MAX_LENGTH)
+  @Matches(/\S/, { message: 'commune must contain a non-whitespace character' })
+  commune?: string;
+
+  @ValidateIf((dto: CreateAddressDto) => dto.countryCode === 'KH')
+  @IsString()
+  @Matches(/^KH[0-9]{2}$/, {
+    message: 'administrativeLocationPcode must identify a Cambodia province or municipality',
+  })
+  administrativeLocationPcode?: string;
 
   @Transform(trimOptionalField)
   @IsOptional()

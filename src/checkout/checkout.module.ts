@@ -4,9 +4,13 @@ import { JwtAuthModule } from '../auth/jwt/jwt-auth.module.js';
 import { CartModule } from '../cart/cart.module.js';
 import { InventoryModule } from '../inventory/inventory.module.js';
 import { OrderModule } from '../orders/order.module.js';
+import { CodAreasModule } from '../cod-areas/cod-areas.module.js';
+import { ShippingProvidersModule } from '../shipping-providers/shipping-providers.module.js';
 import { UsersModule } from '../users/users.module.js';
+import { LocationsModule } from '../locations/locations.module.js';
 import { CheckoutController } from './checkout.controller.js';
 import { CheckoutService } from './checkout.service.js';
+import { CheckoutQuotesRepository } from './repositories/checkout-quotes.repository.js';
 
 /**
  * Owns the checkout aggregate: the one operation that turns a cart into an order.
@@ -47,8 +51,11 @@ import { CheckoutService } from './checkout.service.js';
     InventoryModule,
     OrderModule,
     AddressesModule,
+    ShippingProvidersModule,
+    CodAreasModule,
+    LocationsModule,
   ],
   controllers: [CheckoutController],
-  providers: [CheckoutService],
+  providers: [CheckoutService, CheckoutQuotesRepository],
 })
 export class CheckoutModule {}

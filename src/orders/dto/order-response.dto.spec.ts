@@ -40,12 +40,21 @@ const buildOrder = (
     discountAmount: new Prisma.Decimal('8.00'),
     totalAmount: new Prisma.Decimal('257.50'),
     currency: 'USD',
+    paymentMethod: null,
+    shippingProviderId: null,
+    shippingProviderCode: null,
+    shippingProviderName: null,
+    codAreaId: null,
+    codAreaCode: null,
+    codAreaName: null,
     shippingRecipientName: 'Ada Lovelace',
     shippingPhone: '+15555550100',
     shippingAddressLine1: '18 Mill Lane',
     shippingAddressLine2: null,
     shippingCity: 'Bristol',
     shippingStateProvince: null,
+    shippingLocationPcode: null,
+    shippingLocationSnapshot: null,
     shippingPostalCode: 'BS1 4TR',
     shippingCountryCode: 'GB',
     createdAt: CREATED_AT,
@@ -77,6 +86,7 @@ describe('order response DTOs', () => {
           'itemCount',
           'items',
           'orderNumber',
+          'paymentMethod',
           'shippingAddressLine1',
           'shippingAddressLine2',
           'shippingCity',
@@ -84,8 +94,15 @@ describe('order response DTOs', () => {
           'shippingFee',
           'shippingPhone',
           'shippingPostalCode',
+          'shippingProviderCode',
+          'shippingProviderId',
+          'shippingProviderName',
           'shippingRecipientName',
           'shippingStateProvince',
+          'shippingLocationPath',
+          'codAreaCode',
+          'codAreaId',
+          'codAreaName',
           'status',
           'subtotal',
           'totalAmount',
@@ -152,6 +169,26 @@ describe('order response DTOs', () => {
       expect(dto.shippingPostalCode).toBe('BS1 4TR');
     });
 
+    it('returns immutable location labels without exposing internal location codes', () => {
+      const dto = OrderResponseDto.fromEntity(
+        buildOrder({
+          shippingLocationSnapshot: [
+            {
+              pcode: 'KH12',
+              adminLevel: 1,
+              nameEn: 'Phnom Penh',
+              nameKm: 'ភ្នំពេញ',
+            },
+          ],
+        }),
+      );
+
+      expect(dto.shippingLocationPath).toEqual([
+        { adminLevel: 1, nameEn: 'Phnom Penh', nameKm: 'ភ្នំពេញ' },
+      ]);
+      expect(JSON.stringify(dto)).not.toContain('KH12');
+    });
+
     it('counts units, not lines', () => {
       const dto = OrderResponseDto.fromEntity(
         buildOrder({
@@ -201,6 +238,7 @@ describe('order response DTOs', () => {
           'lineCount',
           'orderNumber',
           'shippingCity',
+          'shippingLocationPath',
           'shippingCountryCode',
           'shippingFee',
           'shippingRecipientName',

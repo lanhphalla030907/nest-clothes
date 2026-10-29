@@ -9,10 +9,15 @@ import type { Mock } from 'vitest';
 import { Prisma } from '../generated/prisma/client.js';
 import { AddressesService } from '../addresses/addresses.service.js';
 import { CartRepository } from '../cart/repositories/cart.repository.js';
+import { CodAreasRepository } from '../cod-areas/repositories/cod-areas.repository.js';
 import { InventoryRepository } from '../inventory/repositories/inventory.repository.js';
 import { OrderService } from '../orders/order.service.js';
+import { OrderRepository } from '../orders/repositories/order.repository.js';
+import { ShippingProvidersRepository } from '../shipping-providers/repositories/shipping-providers.repository.js';
 import { UsersRepository } from '../users/repositories/users.repository.js';
+import { AdministrativeLocationsService } from '../locations/administrative-locations.service.js';
 import { CheckoutService } from './checkout.service.js';
+import { CheckoutQuotesRepository } from './repositories/checkout-quotes.repository.js';
 
 /**
  * The rules of checkout, with the database replaced by mocks.
@@ -72,6 +77,8 @@ const buildAddress = (overrides: Record<string, unknown> = {}) => ({
   addressLine2: null,
   city: 'Bristol',
   stateProvince: null,
+  administrativeLocationPcode: null,
+  administrativeLocationPath: null,
   postalCode: 'BS1 4TR',
   countryCode: 'GB',
   isDefault: true,
@@ -111,6 +118,8 @@ const buildOrder = (overrides: Record<string, unknown> = {}) =>
     shippingAddressLine2: null,
     shippingCity: 'Bristol',
     shippingStateProvince: null,
+    shippingLocationPcode: null,
+    shippingLocationSnapshot: null,
     shippingPostalCode: 'BS1 4TR',
     shippingCountryCode: 'GB',
     createdAt: new Date('2026-01-04T10:05:00.000Z'),
@@ -142,6 +151,7 @@ describe('CheckoutService', () => {
   let orderIsOrderNumberCollision: Mock;
   let addressesFindOne: Mock;
   let usersFindById: Mock;
+  let orderFindById: Mock;
 
   beforeEach(async () => {
     cartFindByUserId = vi.fn().mockResolvedValue(buildCart());
@@ -161,6 +171,7 @@ describe('CheckoutService', () => {
     orderIsOrderNumberCollision = vi.fn().mockReturnValue(false);
     addressesFindOne = vi.fn().mockResolvedValue(buildAddress());
     usersFindById = vi.fn().mockResolvedValue({ id: USER_ID });
+    orderFindById = vi.fn().mockResolvedValue(null);
 
     const module: TestingModule = await Test.createTestingModule({
       providers: [
@@ -169,6 +180,7 @@ describe('CheckoutService', () => {
           provide: CartRepository,
           useValue: {
             findByUserId: cartFindByUserId,
+            findForCheckout: cartFindByUserId,
             deleteItemsByCart: cartDeleteItemsByCart,
             runInTransaction: cartRunInTransaction,
           },
@@ -190,10 +202,47 @@ describe('CheckoutService', () => {
           },
         },
         {
+          provide: OrderRepository,
+          useValue: {
+            findById: orderFindById,
+            lockCheckoutCatalog: vi.fn(),
+          },
+        },
+        {
+          provide: ShippingProvidersRepository,
+          useValue: {
+            findById: vi.fn(),
+            findForCheckout: vi.fn(),
+          },
+        },
+        {
+          provide: CodAreasRepository,
+          useValue: {
+            findById: vi.fn(),
+            findForCheckout: vi.fn(),
+          },
+        },
+        {
+          provide: CheckoutQuotesRepository,
+          useValue: {
+            create: vi.fn(),
+            findForOwner: vi.fn(),
+            findByIdempotencyKey: vi.fn(),
+            consume: vi.fn(),
+          },
+        },
+        {
           provide: AddressesService,
           useValue: { findOne: addressesFindOne },
         },
         { provide: UsersRepository, useValue: { findById: usersFindById } },
+        {
+          provide: AdministrativeLocationsService,
+          useValue: {
+            assertCodEligible: vi.fn(),
+            getPath: vi.fn().mockResolvedValue(null),
+          },
+        },
       ],
     }).compile();
 

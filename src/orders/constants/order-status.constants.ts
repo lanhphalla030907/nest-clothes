@@ -14,21 +14,28 @@
  *    +-----------+------------+-----------+--> CANCELLED
  * ```
  *
- * `CANCELLED` is reachable from any state before the parcel has left, and is
- * terminal — a cancelled order never resumes. `DELIVERED` is likewise terminal.
+ * `CANCELLED` is terminal — a cancelled order never resumes. `DELIVERED` is
+ * likewise terminal.
  *
- * ## Nothing here is a promise about behaviour
+ * ## Which transitions are actually exposed
  *
- * The status exists so the aggregate is complete; the *transitions* are not
- * implemented in this phase. There is no route that changes a status, no
- * cancellation endpoint and no fulfilment workflow. An order is written once as
- * `PENDING` by the checkout phase that does not exist yet, and this phase only
- * ever reads it.
+ * The lifecycle above documents the aggregate, not a menu of API actions. Two
+ * administrator-only transitions are implemented:
+ *
+ * - `PENDING -> CANCELLED`, releasing the inventory reservation.
+ * - `CONFIRMED -> SHIPPED`, committing the reserved stock.
+ *
+ * Payment is still the only writer of `PENDING -> CONFIRMED`. A `CONFIRMED` order
+ * has a verified `PAID` payment, and this application has no refund workflow, so
+ * cancelling one would keep the customer's money without recording a refund. It is
+ * therefore refused rather than silently treated as unpaid. `PROCESSING` has no
+ * route and is refused for the same reason. There is deliberately no arbitrary
+ * status-assignment endpoint.
  */
 export const ORDER_STATUS = {
   /** Recorded, not yet accepted by the merchant. The only status a new order has. */
   PENDING: 'PENDING',
-  /** The merchant has accepted the order and stock is committed. */
+  /** The merchant has accepted the order and a verified payment exists. */
   CONFIRMED: 'CONFIRMED',
   /** Being picked and packed in the warehouse. */
   PROCESSING: 'PROCESSING',
@@ -43,11 +50,30 @@ export const ORDER_STATUS = {
 export type OrderStatus = (typeof ORDER_STATUS)[keyof typeof ORDER_STATUS];
 
 /**
+ * States from which an administrator may cancel an order.
+ *
+ * Only `PENDING`: it is the unpaid state checkout writes. A `CONFIRMED` order has
+ * a verified payment, and refunds are not part of this application, so the service
+ * refuses that cancellation instead of pretending the money was never captured.
+ */
+export const CANCELLABLE_ORDER_STATUSES: readonly OrderStatus[] = [
+  ORDER_STATUS.PENDING,
+];
+
+/**
+ * The one state from which an administrator may ship an order.
+ *
+ * `CONFIRMED` is written only by the verified payment callback, so the inventory
+ * commitment is tied to an order the payment flow has already accepted.
+ */
+export const SHIPPABLE_ORDER_STATUS = ORDER_STATUS.CONFIRMED;
+
+/**
  * Lifecycle an order starts in when it is written.
  *
  * An order is never implicitly confirmed: promotion past `PENDING` is an
- * explicit, authorised action (payment capture, merchant acceptance) that does
- * not exist yet.
+ * explicit, authorised action — the verified payment callback for `CONFIRMED`,
+ * and the administrator shipment action for `SHIPPED`.
  */
 export const DEFAULT_ORDER_STATUS: OrderStatus = ORDER_STATUS.PENDING;
 

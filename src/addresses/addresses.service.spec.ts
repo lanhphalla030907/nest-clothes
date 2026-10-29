@@ -2,6 +2,7 @@ import { ConflictException, NotFoundException } from '@nestjs/common';
 import { Test, TestingModule } from '@nestjs/testing';
 import { Prisma } from '../generated/prisma/client.js';
 import { UsersRepository } from '../users/repositories/users.repository.js';
+import { AdministrativeLocationsService } from '../locations/administrative-locations.service.js';
 import { AddressesService } from './addresses.service.js';
 import { CreateAddressDto } from './dto/create-address.dto.js';
 import { UpdateAddressDto } from './dto/update-address.dto.js';
@@ -26,6 +27,7 @@ const buildAddress = (overrides: Record<string, unknown> = {}) => ({
   addressLine2: null,
   city: 'Bristol',
   stateProvince: null,
+  administrativeLocationPcode: null,
   postalCode: 'BS1 4DJ',
   countryCode: 'GB',
   isDefault: true,
@@ -166,6 +168,14 @@ describe('AddressesService', () => {
           },
         },
         { provide: UsersRepository, useValue: { findById: userFindById } },
+        {
+          provide: AdministrativeLocationsService,
+          useValue: {
+            getPath: vi.fn().mockResolvedValue(null),
+            requireCommune: vi.fn().mockResolvedValue([]),
+            requireProvince: vi.fn().mockResolvedValue([]),
+          },
+        },
       ],
     }).compile();
 
@@ -203,9 +213,13 @@ describe('AddressesService', () => {
         [
           'addressLine1',
           'addressLine2',
+          'administrativeLocationPath',
+          'administrativeLocationPcode',
           'city',
+          'commune',
           'countryCode',
           'createdAt',
+          'district',
           'id',
           'isDefault',
           'label',
@@ -357,6 +371,39 @@ describe('AddressesService', () => {
       expect(data.postalCode).toBeNull();
     });
 
+    it('stores Cambodia district and commune text verbatim with the province P-code', async () => {
+      addressCountByUserId.mockResolvedValue(1);
+      addressCreate.mockResolvedValue(
+        buildAddress({
+          city: 'ស្រះចក',
+          stateProvince: 'Khan Chamkar Mon',
+          countryCode: 'KH',
+          administrativeLocationPcode: 'KH12',
+        }),
+      );
+
+      await service.create(
+        USER_ID,
+        buildCreateDto({
+          countryCode: 'KH',
+          city: undefined,
+          stateProvince: undefined,
+          administrativeLocationPcode: 'KH12',
+          district: 'Khan Chamkar Mon',
+          commune: 'ស្រះចក',
+        }),
+      );
+
+      expect(addressCreate).toHaveBeenCalledWith(
+        expect.objectContaining({
+          city: 'ស្រះចក',
+          stateProvince: 'Khan Chamkar Mon',
+          administrativeLocationPcode: 'KH12',
+        }),
+        { tx: true },
+      );
+    });
+
     it('stores a supplied optional field verbatim', async () => {
       addressCountByUserId.mockResolvedValue(1);
       addressCreate.mockResolvedValue(buildAddress());
@@ -440,6 +487,69 @@ describe('AddressesService', () => {
   });
 
   describe('update', () => {
+    it('keeps legacy Cambodia free-text location data on ordinary edits', async () => {
+      addressFindByIdAndUserId.mockResolvedValue(
+        buildAddress({
+          city: 'Old commune entry',
+          stateProvince: 'Old province entry',
+          countryCode: 'KH',
+        }),
+      );
+      addressUpdateByIdAndUserId.mockResolvedValue(
+        buildAddress({
+          label: 'Work',
+          city: 'Old commune entry',
+          stateProvince: 'Old province entry',
+          countryCode: 'KH',
+        }),
+      );
+
+      await service.update(
+        USER_ID,
+        ADDRESS_ID,
+        buildUpdateDto({ label: 'Work' }),
+      );
+
+      expect(addressUpdateByIdAndUserId.mock.calls[0][2]).toEqual({
+        label: 'Work',
+      });
+    });
+
+    it('updates province-only Cambodia location while preserving exact district and commune text', async () => {
+      addressFindByIdAndUserId.mockResolvedValue(
+        buildAddress({
+          city: 'ស្រះចក',
+          stateProvince: 'Khan Chamkar Mon',
+          countryCode: 'KH',
+          administrativeLocationPcode: 'KH12',
+        }),
+      );
+      addressUpdateByIdAndUserId.mockResolvedValue(
+        buildAddress({
+          city: ' ស្រះចក ',
+          stateProvince: ' Khan Chamkar Mon ',
+          countryCode: 'KH',
+          administrativeLocationPcode: 'KH12',
+        }),
+      );
+
+      await service.update(
+        USER_ID,
+        ADDRESS_ID,
+        buildUpdateDto({
+          administrativeLocationPcode: 'KH12',
+          district: ' Khan Chamkar Mon ',
+          commune: ' ស្រះចក ',
+        }),
+      );
+
+      expect(addressUpdateByIdAndUserId.mock.calls[0][2]).toMatchObject({
+        administrativeLocationPcode: 'KH12',
+        stateProvince: ' Khan Chamkar Mon ',
+        city: ' ស្រះចក ',
+      });
+    });
+
     it('writes only the fields the request supplied', async () => {
       addressFindByIdAndUserId.mockResolvedValue(buildAddress());
       addressUpdateByIdAndUserId.mockResolvedValue(

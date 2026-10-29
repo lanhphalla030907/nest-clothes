@@ -24,6 +24,8 @@ const buildOrder = (overrides: Record<string, unknown> = {}): OrderWithItems =>
     shippingAddressLine2: null,
     shippingCity: 'Bristol',
     shippingStateProvince: null,
+    shippingLocationPcode: null,
+    shippingLocationSnapshot: null,
     shippingPostalCode: 'BS1 4TR',
     shippingCountryCode: 'GB',
     createdAt: new Date('2026-01-04T11:30:00.000Z'),

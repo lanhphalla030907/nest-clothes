@@ -2,6 +2,10 @@ import { toMoneyString } from '../../common/utils/money.js';
 import type { OrderStatus } from '../constants/order-status.constants.js';
 import type { OrderWithItems } from '../repositories/order.repository.js';
 import { OrderItemResponseDto } from './order-item-response.dto.js';
+import {
+  toShippingLocationPath,
+  type ShippingLocationSnapshotEntry,
+} from './shipping-location-snapshot.dto.js';
 
 /**
  * Outbound representation of a single order, as returned by `GET /orders/:id`.
@@ -62,12 +66,20 @@ export class OrderResponseDto {
   discountAmount: string;
   totalAmount: string;
   currency: string;
+  paymentMethod: string | null;
+  shippingProviderId: string | null;
+  shippingProviderCode: string | null;
+  shippingProviderName: string | null;
+  codAreaId: string | null;
+  codAreaCode: string | null;
+  codAreaName: string | null;
   shippingRecipientName: string;
   shippingPhone: string;
   shippingAddressLine1: string;
   shippingAddressLine2: string | null;
-  shippingCity: string;
+  shippingCity: string | null;
   shippingStateProvince: string | null;
+  shippingLocationPath: ShippingLocationSnapshotEntry[] | null;
   shippingPostalCode: string | null;
   shippingCountryCode: string;
   items: OrderItemResponseDto[];
@@ -91,12 +103,22 @@ export class OrderResponseDto {
     dto.discountAmount = toMoneyString(order.discountAmount);
     dto.totalAmount = toMoneyString(order.totalAmount);
     dto.currency = order.currency;
+    dto.paymentMethod = order.paymentMethod;
+    dto.shippingProviderId = order.shippingProviderId;
+    dto.shippingProviderCode = order.shippingProviderCode;
+    dto.shippingProviderName = order.shippingProviderName;
+    dto.codAreaId = order.codAreaId;
+    dto.codAreaCode = order.codAreaCode;
+    dto.codAreaName = order.codAreaName;
     dto.shippingRecipientName = order.shippingRecipientName;
     dto.shippingPhone = order.shippingPhone;
     dto.shippingAddressLine1 = order.shippingAddressLine1;
     dto.shippingAddressLine2 = order.shippingAddressLine2;
     dto.shippingCity = order.shippingCity;
     dto.shippingStateProvince = order.shippingStateProvince;
+    dto.shippingLocationPath = toShippingLocationPath(
+      order.shippingLocationSnapshot,
+    );
     dto.shippingPostalCode = order.shippingPostalCode;
     dto.shippingCountryCode = order.shippingCountryCode;
     dto.items = items;

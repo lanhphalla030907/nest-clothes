@@ -29,8 +29,11 @@ export interface CreateAddressData {
   phone: string;
   addressLine1: string;
   addressLine2?: string | null;
-  city: string;
+  /** Stores free-text commune for KH addresses because no dedicated column exists. */
+  city: string | null;
+  /** Stores free-text district for KH addresses because no dedicated column exists. */
   stateProvince?: string | null;
+  administrativeLocationPcode?: string | null;
   postalCode?: string | null;
   countryCode: string;
   isDefault: boolean;

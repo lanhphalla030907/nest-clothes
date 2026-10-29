@@ -1,6 +1,7 @@
 import { Module } from '@nestjs/common';
 import { JwtAuthModule } from '../auth/jwt/jwt-auth.module.js';
 import { UsersModule } from '../users/users.module.js';
+import { LocationsModule } from '../locations/locations.module.js';
 import { AddressesController } from './addresses.controller.js';
 import { AddressesService } from './addresses.service.js';
 import { AddressRepository } from './repositories/address.repository.js';
@@ -38,7 +39,7 @@ import { AddressRepository } from './repositories/address.repository.js';
  * `@Global`.
  */
 @Module({
-  imports: [JwtAuthModule, UsersModule],
+  imports: [JwtAuthModule, UsersModule, LocationsModule],
   controllers: [AddressesController],
   providers: [AddressesService, AddressRepository],
   exports: [AddressesService],

@@ -4,6 +4,10 @@ import type { OrderStatus } from '../constants/order-status.constants.js';
 import { ORDER_STATUS } from '../constants/order-status.constants.js';
 import type { OrderWithItems } from '../repositories/order.repository.js';
 import { OrderItemResponseDto } from './order-item-response.dto.js';
+import {
+  toShippingLocationPath,
+  type ShippingLocationSnapshotEntry,
+} from './shipping-location-snapshot.dto.js';
 
 /**
  * The fields a client needs to render one row of "my orders", and nothing else.
@@ -51,7 +55,8 @@ export class OrderSummaryResponseDto {
   lineCount: number;
   /** From the snapshot, not from a live address row. */
   shippingRecipientName: string;
-  shippingCity: string;
+  shippingCity: string | null;
+  shippingLocationPath: ShippingLocationSnapshotEntry[] | null;
   shippingCountryCode: string;
   createdAt: Date;
   updatedAt: Date;
@@ -75,6 +80,9 @@ export class OrderSummaryResponseDto {
     dto.lineCount = items.length;
     dto.shippingRecipientName = order.shippingRecipientName;
     dto.shippingCity = order.shippingCity;
+    dto.shippingLocationPath = toShippingLocationPath(
+      order.shippingLocationSnapshot,
+    );
     dto.shippingCountryCode = order.shippingCountryCode;
     dto.createdAt = order.createdAt;
     dto.updatedAt = order.updatedAt;

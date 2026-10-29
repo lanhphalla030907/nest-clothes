@@ -1,18 +1,26 @@
 import { Module } from '@nestjs/common';
 import { JwtAuthModule } from '../auth/jwt/jwt-auth.module.js';
 import { CategoriesModule } from '../categories/categories.module.js';
+import { CodAreasModule } from '../cod-areas/cod-areas.module.js';
 import { InventoryModule } from '../inventory/inventory.module.js';
+import { OrderModule } from '../orders/order.module.js';
 import { ProductImagesModule } from '../product-images/product-images.module.js';
 import { ProductsModule } from '../products/products.module.js';
 import { ProductVariantsModule } from '../product-variants/product-variants.module.js';
+import { ShippingProvidersModule } from '../shipping-providers/shipping-providers.module.js';
 import { UsersModule } from '../users/users.module.js';
+import { LocationsModule } from '../locations/locations.module.js';
 import { VariantOptionsModule } from '../variant-options/variant-options.module.js';
 import { AdminController } from './admin.controller.js';
 import { AdminCategoriesController } from './controllers/admin-categories.controller.js';
+import { AdminCodAreasController } from './controllers/admin-cod-areas.controller.js';
+import { AdminCodEligibilityController } from './controllers/admin-cod-eligibility.controller.js';
 import { AdminInventoryController } from './controllers/admin-inventory.controller.js';
+import { AdminOrdersController } from './controllers/admin-orders.controller.js';
 import { AdminProductImagesController } from './controllers/admin-product-images.controller.js';
 import { AdminProductVariantsController } from './controllers/admin-product-variants.controller.js';
 import { AdminProductsController } from './controllers/admin-products.controller.js';
+import { AdminShippingProvidersController } from './controllers/admin-shipping-providers.controller.js';
 import { AdminVariantOptionsController } from './controllers/admin-variant-options.controller.js';
 
 /**
@@ -35,10 +43,18 @@ import { AdminVariantOptionsController } from './controllers/admin-variant-optio
  * Every controller here is a role-gated shell over the feature it administers. It holds
  * no business rules of its own — the category hierarchy, the catalogue slug and lifecycle
  * rules, the image primary invariant and Cloudinary compensation, the SKU uniqueness and
- * price rules, the option-name uniqueness, and the transactional stock invariants are all
- * reached by delegating to `CategoriesService`, `ProductsService`,
- * `ProductImagesService`, `ProductVariantsService`, `VariantOptionsService` and
- * `InventoryService`.
+ * price rules, the option-name uniqueness, the transactional stock invariants, and the
+ * global order listing's date/search/pagination semantics are all reached by delegating
+ * to `CategoriesService`, `ProductsService`, `ProductImagesService`,
+ * `ProductVariantsService`, `VariantOptionsService`, `InventoryService` and `OrderService`.
+ *
+ * The order routes delegate their listing and detail reads to `OrderService`, and
+ * delegate cancellation/shipment to the same service. That keeps the dashboard, the
+ * customer's own order reads and the two lifecycle actions on one repository
+ * projection and one set of rules, while the controller supplies the one thing an
+ * administrative route adds: `ADMIN` authority over data that is not scoped by owner.
+ * There is no arbitrary status assignment; the only mutations are the named cancel
+ * and ship actions, each with its own guards and inventory movement.
  *
  * That is the reason those modules now export their service as well as their repository.
  * Reusing one implementation is what makes it impossible for an administrative write to
@@ -63,20 +79,28 @@ import { AdminVariantOptionsController } from './controllers/admin-variant-optio
     JwtAuthModule,
     UsersModule,
     CategoriesModule,
+    CodAreasModule,
     ProductsModule,
     ProductImagesModule,
     ProductVariantsModule,
     VariantOptionsModule,
     InventoryModule,
+    OrderModule,
+    ShippingProvidersModule,
+    LocationsModule,
   ],
   controllers: [
     AdminController,
     AdminCategoriesController,
+    AdminCodAreasController,
+    AdminCodEligibilityController,
     AdminProductsController,
     AdminProductImagesController,
     AdminProductVariantsController,
     AdminVariantOptionsController,
     AdminInventoryController,
+    AdminOrdersController,
+    AdminShippingProvidersController,
   ],
 })
 export class AdminModule {}

@@ -1,4 +1,5 @@
 import {
+  BadRequestException,
   ConflictException,
   Injectable,
   NotFoundException,
@@ -8,8 +9,11 @@ import { UsersRepository } from '../users/repositories/users.repository.js';
 import { AddressResponseDto } from './dto/address-response.dto.js';
 import { CreateAddressDto } from './dto/create-address.dto.js';
 import { UpdateAddressDto } from './dto/update-address.dto.js';
+import { AdministrativeLocationsService } from '../locations/administrative-locations.service.js';
+import { AdministrativeLocationResponseDto } from '../locations/dto/administrative-location-response.dto.js';
 import {
   AddressRepository,
+  type Address,
   type AddressTransactionClient,
   type CreateAddressData,
   type UpdateAddressData,
@@ -112,6 +116,7 @@ export class AddressesService {
   constructor(
     private readonly addressRepository: AddressRepository,
     private readonly usersRepository: UsersRepository,
+    private readonly locationsService: AdministrativeLocationsService,
   ) {}
 
   /**
@@ -126,7 +131,9 @@ export class AddressesService {
 
     const addresses = await this.addressRepository.findAllByUserId(userId);
 
-    return addresses.map((address) => AddressResponseDto.fromEntity(address));
+    return Promise.all(
+      addresses.map((address) => this.toResponse(address)),
+    );
   }
 
   /**
@@ -152,7 +159,7 @@ export class AddressesService {
 
     const address = await this.requireOwnedAddress(addressId, userId, client);
 
-    return AddressResponseDto.fromEntity(address);
+    return this.toResponse(address, client);
   }
 
   /**
@@ -193,12 +200,12 @@ export class AddressesService {
       }
 
       return this.addressRepository.create(
-        this.buildCreateData(dto, userId, isDefault),
+        await this.buildCreateData(dto, userId, isDefault, tx),
         tx,
       );
     });
 
-    return AddressResponseDto.fromEntity(address);
+    return this.toResponse(address);
   }
 
   /**
@@ -231,7 +238,7 @@ export class AddressesService {
       throw new ConflictException(DEFAULT_CANNOT_BE_UNSET_MESSAGE);
     }
 
-    const data = buildUpdateData(dto);
+    const data = await this.buildUpdateData(existing, dto);
     const isPromotion = dto.isDefault === true && !existing.isDefault;
     const hasFieldChanges = Object.keys(data).length > 0;
 
@@ -243,7 +250,7 @@ export class AddressesService {
        * instead of failing on a write that would change nothing.
        */
       if (!hasFieldChanges) {
-        return AddressResponseDto.fromEntity(existing);
+        return this.toResponse(existing);
       }
 
       /**
@@ -253,7 +260,7 @@ export class AddressesService {
        * write, and `P2025` has to become the same 404 the read would have produced.
        */
       try {
-        return AddressResponseDto.fromEntity(
+        return this.toResponse(
           await this.addressRepository.updateByIdAndUserId(
             addressId,
             userId,
@@ -285,7 +292,7 @@ export class AddressesService {
       return this.addressRepository.promoteByIdAndUserId(addressId, userId, tx);
     });
 
-    return AddressResponseDto.fromEntity(updated);
+    return this.toResponse(updated);
   }
 
   /**
@@ -325,7 +332,7 @@ export class AddressesService {
       return this.addressRepository.promoteByIdAndUserId(addressId, userId, tx);
     });
 
-    return AddressResponseDto.fromEntity(updated);
+    return this.toResponse(updated);
   }
 
   /**
@@ -464,11 +471,40 @@ export class AddressesService {
   }
 
   /** Copies the validated request onto the columns a create is allowed to write. */
-  private buildCreateData(
+  private async buildCreateData(
     dto: CreateAddressDto,
     userId: string,
     isDefault: boolean,
-  ): CreateAddressData {
+    tx: AddressTransactionClient,
+  ): Promise<CreateAddressData> {
+    const isCambodia = dto.countryCode === 'KH';
+    if (
+      isCambodia &&
+      (dto.city !== undefined ||
+        dto.stateProvince !== undefined ||
+      !dto.district?.trim() ||
+      !dto.commune?.trim())
+    ) {
+      throw new BadRequestException(
+        'Select a province and provide both the district and commune for a Cambodia address',
+      );
+    }
+    if (
+      !isCambodia &&
+      (dto.administrativeLocationPcode !== undefined ||
+        dto.district !== undefined ||
+        dto.commune !== undefined)
+    ) {
+      throw new BadRequestException(
+        'Cambodia administrative locations can only be used for country KH',
+      );
+    }
+    if (isCambodia) {
+      await this.locationsService.requireProvince(
+        dto.administrativeLocationPcode,
+        tx,
+      );
+    }
     return {
       userId,
       label: dto.label,
@@ -476,12 +512,91 @@ export class AddressesService {
       phone: dto.phone,
       addressLine1: dto.addressLine1,
       addressLine2: dto.addressLine2 ?? null,
-      city: dto.city,
-      stateProvince: dto.stateProvince ?? null,
+      city: isCambodia ? dto.commune! : dto.city!,
+      stateProvince: isCambodia ? dto.district! : (dto.stateProvince ?? null),
+      administrativeLocationPcode: isCambodia
+        ? dto.administrativeLocationPcode!
+        : null,
       postalCode: dto.postalCode ?? null,
       countryCode: dto.countryCode,
       isDefault,
     };
+  }
+
+  private async buildUpdateData(
+    existing: Address,
+    dto: UpdateAddressDto,
+  ): Promise<UpdateAddressData> {
+    const data = buildUpdateData(dto);
+    const countryCode = dto.countryCode ?? existing.countryCode;
+
+    if (countryCode === 'KH') {
+      if (dto.city !== undefined || dto.stateProvince !== undefined) {
+        throw new BadRequestException(
+          'Use the district and commune fields for Cambodia addresses',
+        );
+      }
+      const locationChanged =
+        dto.administrativeLocationPcode !== undefined ||
+        dto.district !== undefined ||
+        dto.commune !== undefined ||
+        (dto.countryCode !== undefined && existing.countryCode !== 'KH');
+      if (!locationChanged) {
+        return data;
+      }
+      const pcode =
+        dto.administrativeLocationPcode === undefined
+          ? existing.administrativeLocationPcode
+          : dto.administrativeLocationPcode;
+      await this.locationsService.requireProvince(pcode ?? undefined);
+      const district = dto.district ?? existing.stateProvince;
+      const commune = dto.commune ?? existing.city;
+      if (!district?.trim() || !commune?.trim()) {
+        throw new BadRequestException(
+          'Provide both the district and commune for a Cambodia address',
+        );
+      }
+      data.city = commune;
+      data.stateProvince = district;
+      data.administrativeLocationPcode = pcode;
+    } else {
+      if (dto.district !== undefined || dto.commune !== undefined) {
+        throw new BadRequestException(
+          'District and commune fields are only available for country KH',
+        );
+      }
+      if (
+        dto.administrativeLocationPcode !== undefined &&
+        dto.administrativeLocationPcode !== null
+      ) {
+        throw new BadRequestException(
+          'Cambodia administrative locations can only be used for country KH',
+        );
+      }
+      const city = dto.city ?? (existing.countryCode === countryCode ? existing.city : null);
+      if (city === null || city.trim() === '') {
+        throw new BadRequestException('A city is required outside Cambodia');
+      }
+      if (dto.countryCode !== undefined || dto.administrativeLocationPcode !== undefined) {
+        data.administrativeLocationPcode = null;
+      }
+      if (dto.city !== undefined) data.city = dto.city;
+    }
+    return data;
+  }
+
+  private async toResponse(
+    address: Address,
+    client?: AddressTransactionClient,
+  ): Promise<AddressResponseDto> {
+    const path = await this.locationsService.getPath(
+      address.administrativeLocationPcode,
+      client,
+    );
+    return AddressResponseDto.fromEntity(
+      address,
+      path?.map(AdministrativeLocationResponseDto.fromEntity) ?? null,
+    );
   }
 
   /**
@@ -603,6 +718,10 @@ function buildUpdateData(dto: UpdateAddressDto): UpdateAddressData {
 
   if (dto.stateProvince !== undefined) {
     data.stateProvince = dto.stateProvince;
+  }
+
+  if (dto.administrativeLocationPcode !== undefined) {
+    data.administrativeLocationPcode = dto.administrativeLocationPcode;
   }
 
   if (dto.postalCode !== undefined) {

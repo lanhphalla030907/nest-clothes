@@ -7,6 +7,7 @@ import { AuthModule } from './auth/auth.module.js';
 import { CartModule } from './cart/cart.module.js';
 import { CheckoutModule } from './checkout/checkout.module.js';
 import { CategoriesModule } from './categories/categories.module.js';
+import { CodAreasModule } from './cod-areas/cod-areas.module.js';
 import { CloudinaryModule } from './cloudinary/cloudinary.module.js';
 import { InventoryModule } from './inventory/inventory.module.js';
 import { PrismaModule } from './prisma/prisma.module.js';
@@ -14,11 +15,13 @@ import { ProductAttributesModule } from './product-attributes/product-attributes
 import { ProductImagesModule } from './product-images/product-images.module.js';
 import { ProductsModule } from './products/products.module.js';
 import { ProductVariantsModule } from './product-variants/product-variants.module.js';
+import { ShippingProvidersModule } from './shipping-providers/shipping-providers.module.js';
 import { UsersModule } from './users/users.module.js';
 import { VariantOptionsModule } from './variant-options/variant-options.module.js';
 import { WishlistModule } from './wishlist/wishlist.module.js';
 import { OrderModule } from './orders/order.module.js';
 import { PaymentsModule } from './payments/payments.module.js';
+import { LocationsModule } from './locations/locations.module.js';
 
 @Module({
   imports: [
@@ -40,12 +43,15 @@ import { PaymentsModule } from './payments/payments.module.js';
      */
     AdminModule,
     CategoriesModule,
+    CodAreasModule,
+    LocationsModule,
     ProductsModule,
     ProductImagesModule,
     ProductVariantsModule,
     VariantOptionsModule,
     ProductAttributesModule,
     InventoryModule,
+    ShippingProvidersModule,
     /**
      * `CartModule` comes last because it depends on `UsersModule`,
      * `ProductVariantsModule` and `InventoryModule` for their repositories.

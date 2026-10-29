@@ -1,8 +1,13 @@
-import { BadRequestException, NotFoundException } from '@nestjs/common';
+import {
+  BadRequestException,
+  ConflictException,
+  NotFoundException,
+} from '@nestjs/common';
 import { Test, TestingModule } from '@nestjs/testing';
 import { Prisma } from '../generated/prisma/client.js';
 import { UsersRepository } from '../users/repositories/users.repository.js';
 import { DEFAULT_ORDER_CURRENCY } from './constants/order-status.constants.js';
+import { OrderInventoryService } from './order-inventory.service.js';
 import { OrderNumberGenerator } from './order-number.generator.js';
 import { OrderService, type PlaceOrderInput } from './order.service.js';
 import { OrderRepository } from './repositories/order.repository.js';
@@ -31,6 +36,8 @@ const buildOrder = (overrides: Record<string, unknown> = {}) => ({
   shippingAddressLine2: null,
   shippingCity: 'Bristol',
   shippingStateProvince: null,
+  shippingLocationPcode: null,
+  shippingLocationSnapshot: null,
   shippingPostalCode: 'BS1 4TR',
   shippingCountryCode: 'GB',
   createdAt: new Date('2026-01-04T11:30:00.000Z'),
@@ -67,7 +74,71 @@ const buildShipping = (overrides: Record<string, unknown> = {}) => ({
   ...overrides,
 });
 
-const buildInput = (overrides: Partial<PlaceOrderInput> = {}): PlaceOrderInput => ({
+const buildAdminOrderRow = (overrides: Record<string, unknown> = {}) => ({
+  id: ORDER_ID,
+  orderNumber: 'ORD-20260104-AAAAAA',
+  status: 'PENDING',
+  subtotal: new Prisma.Decimal('129.00'),
+  shippingFee: new Prisma.Decimal('7.50'),
+  discountAmount: new Prisma.Decimal('8.00'),
+  totalAmount: new Prisma.Decimal('128.50'),
+  currency: 'USD',
+  shippingRecipientName: 'Ada Lovelace',
+  shippingCity: 'Bristol',
+  shippingLocationSnapshot: null,
+  shippingCountryCode: 'GB',
+  createdAt: new Date('2026-01-04T11:30:00.000Z'),
+  updatedAt: new Date('2026-01-04T11:30:00.000Z'),
+  user: {
+    id: USER_ID,
+    firstName: 'Ada',
+    lastName: 'Lovelace',
+    email: 'ada@example.test',
+  },
+  items: [{ quantity: 1 }, { quantity: 2 }],
+  payments: [
+    {
+      id: 'a7b8c9d0-e1f2-4a3b-8c4d-5e6f7a8b9c0d',
+      status: 'PAID',
+      provider: 'ABA_PAYWAY',
+      amount: new Prisma.Decimal('128.50'),
+      currency: 'USD',
+      paidAt: new Date('2026-01-04T11:35:00.000Z'),
+      createdAt: new Date('2026-01-04T11:31:00.000Z'),
+    },
+  ],
+  _count: { payments: 1 },
+  ...overrides,
+});
+
+const buildAdminDetailRow = (overrides: Record<string, unknown> = {}) => ({
+  ...buildOrder(),
+  user: {
+    id: USER_ID,
+    firstName: 'Ada',
+    lastName: 'Lovelace',
+    email: 'ada@example.test',
+  },
+  payments: [
+    {
+      id: 'a7b8c9d0-e1f2-4a3b-8c4d-5e6f7a8b9c0d',
+      status: 'PAID',
+      provider: 'ABA_PAYWAY',
+      transactionId: 'PAY-20260104-AAAAAA',
+      amount: new Prisma.Decimal('128.50'),
+      currency: 'USD',
+      paymentMethod: 'ABA Pay',
+      providerReference: 'REF-1',
+      paidAt: new Date('2026-01-04T11:35:00.000Z'),
+      createdAt: new Date('2026-01-04T11:31:00.000Z'),
+    },
+  ],
+  ...overrides,
+});
+
+const buildInput = (
+  overrides: Partial<PlaceOrderInput> = {},
+): PlaceOrderInput => ({
   userId: USER_ID,
   lines: [{ variantId: VARIANT_ID, quantity: 1 }],
   shipping: buildShipping(),
@@ -100,10 +171,17 @@ describe('OrderService', () => {
   let orderCreateOrder: ReturnType<typeof vi.fn>;
   let orderFindById: ReturnType<typeof vi.fn>;
   let orderFindByUserId: ReturnType<typeof vi.fn>;
+  let orderFindAdminPage: ReturnType<typeof vi.fn>;
+  let orderFindAdminById: ReturnType<typeof vi.fn>;
+  let orderFindStatusById: ReturnType<typeof vi.fn>;
+  let orderTransitionStatus: ReturnType<typeof vi.fn>;
+  let orderHasPaidPayment: ReturnType<typeof vi.fn>;
   let orderExistsOrderNumber: ReturnType<typeof vi.fn>;
   let orderFindVariantForCheckout: ReturnType<typeof vi.fn>;
   let orderFindProductForCheckout: ReturnType<typeof vi.fn>;
   let orderFindVariantOptionsForSnapshot: ReturnType<typeof vi.fn>;
+  let inventoryReleaseReserved: ReturnType<typeof vi.fn>;
+  let inventoryCommitReserved: ReturnType<typeof vi.fn>;
   let userFindById: ReturnType<typeof vi.fn>;
   let generatorBuild: ReturnType<typeof vi.fn>;
 
@@ -112,10 +190,17 @@ describe('OrderService', () => {
     orderCreateOrder = vi.fn();
     orderFindById = vi.fn();
     orderFindByUserId = vi.fn();
+    orderFindAdminPage = vi.fn();
+    orderFindAdminById = vi.fn();
+    orderFindStatusById = vi.fn();
+    orderTransitionStatus = vi.fn();
+    orderHasPaidPayment = vi.fn();
     orderExistsOrderNumber = vi.fn();
     orderFindVariantForCheckout = vi.fn();
     orderFindProductForCheckout = vi.fn();
     orderFindVariantOptionsForSnapshot = vi.fn();
+    inventoryReleaseReserved = vi.fn();
+    inventoryCommitReserved = vi.fn();
     userFindById = vi.fn();
     generatorBuild = vi.fn();
 
@@ -129,6 +214,11 @@ describe('OrderService', () => {
             createOrder: orderCreateOrder,
             findById: orderFindById,
             findByUserId: orderFindByUserId,
+            findAdminPage: orderFindAdminPage,
+            findAdminById: orderFindAdminById,
+            findStatusById: orderFindStatusById,
+            transitionStatus: orderTransitionStatus,
+            hasPaidPayment: orderHasPaidPayment,
             findByOrderNumber: vi.fn(),
             existsOrderNumber: orderExistsOrderNumber,
             findVariantForCheckout: orderFindVariantForCheckout,
@@ -141,6 +231,13 @@ describe('OrderService', () => {
           provide: OrderNumberGenerator,
           useValue: { build: generatorBuild, buildMany: vi.fn() },
         },
+        {
+          provide: OrderInventoryService,
+          useValue: {
+            releaseReservedForOrder: inventoryReleaseReserved,
+            commitReservedForOrder: inventoryCommitReserved,
+          },
+        },
       ],
     }).compile();
 
@@ -148,7 +245,14 @@ describe('OrderService', () => {
 
     userFindById.mockResolvedValue({ id: USER_ID });
     orderFindByUserId.mockResolvedValue([]);
+    orderFindAdminPage.mockResolvedValue({ items: [], total: 0 });
+    orderFindAdminById.mockResolvedValue(null);
     orderFindById.mockResolvedValue(null);
+    orderFindStatusById.mockResolvedValue(null);
+    orderTransitionStatus.mockResolvedValue(true);
+    orderHasPaidPayment.mockResolvedValue(false);
+    inventoryReleaseReserved.mockResolvedValue(undefined);
+    inventoryCommitReserved.mockResolvedValue(undefined);
     orderExistsOrderNumber.mockResolvedValue(false);
     orderFindVariantForCheckout.mockResolvedValue({
       id: VARIANT_ID,
@@ -265,7 +369,9 @@ describe('OrderService', () => {
     it('gives an identical 404 whether the order is absent or not yours', async () => {
       // The same id in both cases, so the two responses are byte-identical: the
       // wording cannot distinguish "not yours" from "not there".
-      orderFindById.mockResolvedValueOnce(buildOrder({ userId: OTHER_USER_ID }));
+      orderFindById.mockResolvedValueOnce(
+        buildOrder({ userId: OTHER_USER_ID }),
+      );
       const notMine = await service
         .getOrder(USER_ID, ORDER_ID)
         .catch((error: NotFoundException) => error);
@@ -290,12 +396,373 @@ describe('OrderService', () => {
       expect(orderFindById).not.toHaveBeenCalled();
     });
 
-    it('reads the order by id only; the ownership check is the service\'s', async () => {
+    it("reads the order by id only; the ownership check is the service's", async () => {
       orderFindById.mockResolvedValue(buildOrder());
 
       await service.getOrder(USER_ID, ORDER_ID);
 
       expect(orderFindById).toHaveBeenCalledWith(ORDER_ID);
+    });
+
+    it('verifies pending payment when order is PENDING and returns CONFIRMED if promoted', async () => {
+      const mockPaymentsService = {
+        verifyOrderPayment: vi.fn().mockResolvedValue(true),
+      };
+      const serviceWithPayments = new OrderService(
+        { findById: orderFindById } as any,
+        { findById: userFindById } as any,
+        { build: vi.fn(), buildMany: vi.fn() } as any,
+        {} as any,
+        mockPaymentsService as any,
+      );
+
+      orderFindById
+        .mockResolvedValueOnce(buildOrder({ status: 'PENDING' }))
+        .mockResolvedValueOnce(buildOrder({ status: 'CONFIRMED' }));
+
+      const result = await serviceWithPayments.getOrder(USER_ID, ORDER_ID);
+
+      expect(mockPaymentsService.verifyOrderPayment).toHaveBeenCalledWith(ORDER_ID);
+      expect(result.status).toBe('CONFIRMED');
+    });
+
+    it('leaves order as PENDING when verifyOrderPayment returns false', async () => {
+      const mockPaymentsService = {
+        verifyOrderPayment: vi.fn().mockResolvedValue(false),
+      };
+      const serviceWithPayments = new OrderService(
+        { findById: orderFindById } as any,
+        { findById: userFindById } as any,
+        { build: vi.fn(), buildMany: vi.fn() } as any,
+        {} as any,
+        mockPaymentsService as any,
+      );
+
+      orderFindById.mockResolvedValue(buildOrder({ status: 'PENDING' }));
+
+      const result = await serviceWithPayments.getOrder(USER_ID, ORDER_ID);
+
+      expect(mockPaymentsService.verifyOrderPayment).toHaveBeenCalledWith(ORDER_ID);
+      expect(result.status).toBe('PENDING');
+    });
+  });
+
+  describe('listOrdersForAdmin', () => {
+    it('passes normalised filters to the repository and paginates the result', async () => {
+      orderFindAdminPage.mockResolvedValue({
+        items: [buildAdminOrderRow()],
+        total: 41,
+      });
+
+      const result = await service.listOrdersForAdmin({
+        page: 2,
+        limit: 20,
+        status: 'PENDING',
+        search: '  Ada  ',
+        createdFrom: '2026-01-01T00:00:00.000Z',
+        createdTo: '2026-01-31T23:59:59.000Z',
+      });
+
+      expect(orderFindAdminPage).toHaveBeenCalledWith({
+        page: 2,
+        limit: 20,
+        status: 'PENDING',
+        search: 'Ada',
+        createdFrom: new Date('2026-01-01T00:00:00.000Z'),
+        createdTo: new Date('2026-01-31T23:59:59.000Z'),
+      });
+      expect(result.pagination).toEqual({
+        page: 2,
+        limit: 20,
+        total: 41,
+        totalPages: 3,
+      });
+      expect(result.items[0]).toMatchObject({
+        id: ORDER_ID,
+        totalAmount: '128.50',
+        itemCount: 3,
+        lineCount: 2,
+        hasPaidPayment: true,
+      });
+      expect(result.items[0].customer).toEqual({
+        id: USER_ID,
+        firstName: 'Ada',
+        lastName: 'Lovelace',
+        email: 'ada@example.test',
+      });
+    });
+
+    it('treats a whitespace-only search as no search', async () => {
+      await service.listOrdersForAdmin({ page: 1, limit: 20, search: '   ' });
+
+      expect(orderFindAdminPage).toHaveBeenCalledWith(
+        expect.objectContaining({ search: undefined }),
+      );
+    });
+
+    it('rejects a reversed date range before querying', async () => {
+      await expect(
+        service.listOrdersForAdmin({
+          page: 1,
+          limit: 20,
+          createdFrom: '2026-02-01T00:00:00.000Z',
+          createdTo: '2026-01-01T00:00:00.000Z',
+        }),
+      ).rejects.toBeInstanceOf(BadRequestException);
+
+      expect(orderFindAdminPage).not.toHaveBeenCalled();
+    });
+
+    it('rejects an unparseable date even if HTTP validation was bypassed', async () => {
+      await expect(
+        service.listOrdersForAdmin({
+          page: 1,
+          limit: 20,
+          createdFrom: 'not-a-date',
+        }),
+      ).rejects.toBeInstanceOf(BadRequestException);
+
+      expect(orderFindAdminPage).not.toHaveBeenCalled();
+    });
+
+    it('does not need the caller to be a user row', async () => {
+      // The route's ADMIN role is the authority; there is no user id here to look up.
+      await service.listOrdersForAdmin({ page: 1, limit: 20 });
+
+      expect(userFindById).not.toHaveBeenCalled();
+    });
+  });
+
+  describe('getOrderForAdmin', () => {
+    it('returns snapshots, customer and safe payment attempts', async () => {
+      orderFindAdminById.mockResolvedValue(buildAdminDetailRow());
+
+      const result = await service.getOrderForAdmin(ORDER_ID);
+
+      expect(orderFindAdminById).toHaveBeenCalledWith(ORDER_ID);
+      expect(result.id).toBe(ORDER_ID);
+      expect(result.customer.email).toBe('ada@example.test');
+      expect(result.items[0].productName).toBe('Wool Peacoat');
+      expect(result.payments).toHaveLength(1);
+      expect(result.payments[0].transactionId).toBe('PAY-20260104-AAAAAA');
+      expect(JSON.stringify(result)).not.toContain('qrPayload');
+      expect(JSON.stringify(result)).not.toContain('passwordHash');
+    });
+
+    it('404s an unknown order', async () => {
+      orderFindAdminById.mockResolvedValue(null);
+
+      await expect(service.getOrderForAdmin(ORDER_ID)).rejects.toBeInstanceOf(
+        NotFoundException,
+      );
+    });
+
+    it('does not require an owning user, because the route is ADMIN-only', async () => {
+      orderFindAdminById.mockResolvedValue(
+        buildAdminDetailRow({ userId: OTHER_USER_ID }),
+      );
+
+      await expect(service.getOrderForAdmin(ORDER_ID)).resolves.toMatchObject({
+        id: ORDER_ID,
+      });
+      expect(userFindById).not.toHaveBeenCalled();
+    });
+  });
+
+  describe('cancelOrderForAdmin', () => {
+    beforeEach(() => {
+      orderFindStatusById.mockResolvedValue({
+        id: ORDER_ID,
+        status: 'PENDING',
+      });
+      orderFindAdminById.mockResolvedValue(
+        buildAdminDetailRow({ status: 'CANCELLED' }),
+      );
+    });
+
+    it('claims the PENDING transition, releases the reservation, then returns the updated order', async () => {
+      const result = await service.cancelOrderForAdmin(ORDER_ID);
+
+      expect(orderRunInTransaction).toHaveBeenCalledTimes(1);
+      expect(orderFindStatusById).toHaveBeenCalledWith(ORDER_ID, TRANSACTION);
+      expect(orderHasPaidPayment).toHaveBeenCalledWith(ORDER_ID, TRANSACTION);
+      expect(orderTransitionStatus).toHaveBeenCalledWith(
+        ORDER_ID,
+        'PENDING',
+        'CANCELLED',
+        TRANSACTION,
+      );
+      expect(inventoryReleaseReserved).toHaveBeenCalledWith(
+        ORDER_ID,
+        TRANSACTION,
+      );
+      expect(orderFindAdminById).toHaveBeenCalledWith(ORDER_ID, TRANSACTION);
+      expect(result.status).toBe('CANCELLED');
+    });
+
+    it('moves the status before touching inventory', async () => {
+      await service.cancelOrderForAdmin(ORDER_ID);
+
+      expect(orderTransitionStatus.mock.invocationCallOrder[0]).toBeLessThan(
+        inventoryReleaseReserved.mock.invocationCallOrder[0],
+      );
+    });
+
+    it('does not require an owning user, because the route is ADMIN-only', async () => {
+      await service.cancelOrderForAdmin(ORDER_ID);
+
+      expect(userFindById).not.toHaveBeenCalled();
+    });
+
+    it('404s an unknown order without moving anything', async () => {
+      orderFindStatusById.mockResolvedValue(null);
+
+      await expect(
+        service.cancelOrderForAdmin(ORDER_ID),
+      ).rejects.toBeInstanceOf(NotFoundException);
+      expect(orderTransitionStatus).not.toHaveBeenCalled();
+      expect(inventoryReleaseReserved).not.toHaveBeenCalled();
+    });
+
+    it.each(['CONFIRMED', 'PROCESSING', 'SHIPPED', 'DELIVERED', 'CANCELLED'])(
+      'refuses an order in %s without releasing inventory',
+      async (status) => {
+        orderFindStatusById.mockResolvedValue({ id: ORDER_ID, status });
+
+        await expect(
+          service.cancelOrderForAdmin(ORDER_ID),
+        ).rejects.toBeInstanceOf(ConflictException);
+        expect(orderTransitionStatus).not.toHaveBeenCalled();
+        expect(inventoryReleaseReserved).not.toHaveBeenCalled();
+      },
+    );
+
+    it('refuses a PENDING order that nevertheless has a verified payment', async () => {
+      orderHasPaidPayment.mockResolvedValue(true);
+
+      await expect(
+        service.cancelOrderForAdmin(ORDER_ID),
+      ).rejects.toBeInstanceOf(ConflictException);
+      expect(orderTransitionStatus).not.toHaveBeenCalled();
+      expect(inventoryReleaseReserved).not.toHaveBeenCalled();
+    });
+
+    it('refuses when a concurrent writer already claimed the transition', async () => {
+      orderTransitionStatus.mockResolvedValue(false);
+
+      await expect(
+        service.cancelOrderForAdmin(ORDER_ID),
+      ).rejects.toBeInstanceOf(ConflictException);
+      expect(inventoryReleaseReserved).not.toHaveBeenCalled();
+      expect(orderFindAdminById).not.toHaveBeenCalled();
+    });
+
+    it('propagates an inventory failure so the transaction rolls the status back', async () => {
+      inventoryReleaseReserved.mockRejectedValue(
+        new ConflictException('inconsistent inventory'),
+      );
+
+      await expect(
+        service.cancelOrderForAdmin(ORDER_ID),
+      ).rejects.toBeInstanceOf(ConflictException);
+      // The repository transaction owns the rollback; the service must not swallow
+      // the failure or return a half-cancelled order.
+      expect(orderFindAdminById).not.toHaveBeenCalled();
+    });
+  });
+
+  describe('shipOrderForAdmin', () => {
+    beforeEach(() => {
+      orderFindStatusById.mockResolvedValue({
+        id: ORDER_ID,
+        status: 'CONFIRMED',
+      });
+      orderHasPaidPayment.mockResolvedValue(true);
+      orderFindAdminById.mockResolvedValue(
+        buildAdminDetailRow({ status: 'SHIPPED' }),
+      );
+    });
+
+    it('claims the CONFIRMED transition, commits the stock, then returns the updated order', async () => {
+      const result = await service.shipOrderForAdmin(ORDER_ID);
+
+      expect(orderRunInTransaction).toHaveBeenCalledTimes(1);
+      expect(orderFindStatusById).toHaveBeenCalledWith(ORDER_ID, TRANSACTION);
+      expect(orderHasPaidPayment).toHaveBeenCalledWith(ORDER_ID, TRANSACTION);
+      expect(orderTransitionStatus).toHaveBeenCalledWith(
+        ORDER_ID,
+        'CONFIRMED',
+        'SHIPPED',
+        TRANSACTION,
+      );
+      expect(inventoryCommitReserved).toHaveBeenCalledWith(
+        ORDER_ID,
+        TRANSACTION,
+      );
+      expect(orderFindAdminById).toHaveBeenCalledWith(ORDER_ID, TRANSACTION);
+      expect(result.status).toBe('SHIPPED');
+    });
+
+    it('moves the status before committing inventory', async () => {
+      await service.shipOrderForAdmin(ORDER_ID);
+
+      expect(orderTransitionStatus.mock.invocationCallOrder[0]).toBeLessThan(
+        inventoryCommitReserved.mock.invocationCallOrder[0],
+      );
+    });
+
+    it('404s an unknown order without moving anything', async () => {
+      orderFindStatusById.mockResolvedValue(null);
+
+      await expect(service.shipOrderForAdmin(ORDER_ID)).rejects.toBeInstanceOf(
+        NotFoundException,
+      );
+      expect(orderTransitionStatus).not.toHaveBeenCalled();
+      expect(inventoryCommitReserved).not.toHaveBeenCalled();
+    });
+
+    it.each(['PENDING', 'PROCESSING', 'SHIPPED', 'DELIVERED', 'CANCELLED'])(
+      'refuses an order in %s without committing stock',
+      async (status) => {
+        orderFindStatusById.mockResolvedValue({ id: ORDER_ID, status });
+
+        await expect(
+          service.shipOrderForAdmin(ORDER_ID),
+        ).rejects.toBeInstanceOf(ConflictException);
+        expect(orderTransitionStatus).not.toHaveBeenCalled();
+        expect(inventoryCommitReserved).not.toHaveBeenCalled();
+      },
+    );
+
+    it('refuses a CONFIRMED order with no verified payment', async () => {
+      orderHasPaidPayment.mockResolvedValue(false);
+
+      await expect(service.shipOrderForAdmin(ORDER_ID)).rejects.toBeInstanceOf(
+        ConflictException,
+      );
+      expect(orderTransitionStatus).not.toHaveBeenCalled();
+      expect(inventoryCommitReserved).not.toHaveBeenCalled();
+    });
+
+    it('refuses when a concurrent writer already claimed the transition', async () => {
+      orderTransitionStatus.mockResolvedValue(false);
+
+      await expect(service.shipOrderForAdmin(ORDER_ID)).rejects.toBeInstanceOf(
+        ConflictException,
+      );
+      expect(inventoryCommitReserved).not.toHaveBeenCalled();
+      expect(orderFindAdminById).not.toHaveBeenCalled();
+    });
+
+    it('propagates an inventory failure so the transaction rolls the status back', async () => {
+      inventoryCommitReserved.mockRejectedValue(
+        new ConflictException('inconsistent inventory'),
+      );
+
+      await expect(service.shipOrderForAdmin(ORDER_ID)).rejects.toBeInstanceOf(
+        ConflictException,
+      );
+      expect(orderFindAdminById).not.toHaveBeenCalled();
     });
   });
 
@@ -393,7 +860,9 @@ describe('OrderService', () => {
         isActive: true,
       });
 
-      await service.placeOrder(buildInput({ lines: [{ variantId: VARIANT_ID, quantity: 3 }] }));
+      await service.placeOrder(
+        buildInput({ lines: [{ variantId: VARIANT_ID, quantity: 3 }] }),
+      );
 
       const data = orderCreateOrder.mock.calls[0][0];
       expect(data.items.create[0].lineTotal).toBe('59.97');
@@ -438,9 +907,9 @@ describe('OrderService', () => {
 
       expect(orderFindVariantForCheckout.mock.calls[0][1]).toBe(TRANSACTION);
       expect(orderFindProductForCheckout.mock.calls[0][1]).toBe(TRANSACTION);
-      expect(
-        orderFindVariantOptionsForSnapshot.mock.calls[0][1],
-      ).toBe(TRANSACTION);
+      expect(orderFindVariantOptionsForSnapshot.mock.calls[0][1]).toBe(
+        TRANSACTION,
+      );
     });
 
     it('rejects an empty basket', async () => {
@@ -573,7 +1042,9 @@ describe('OrderService', () => {
       await service.placeOrder(buildInput());
 
       // The pre-check runs outside the transaction that will insert the number.
-      expect(orderExistsOrderNumber).toHaveBeenCalledWith('ORD-20260104-AAAAAA');
+      expect(orderExistsOrderNumber).toHaveBeenCalledWith(
+        'ORD-20260104-AAAAAA',
+      );
       expect(generatorBuild).toHaveBeenCalledTimes(1);
     });
 

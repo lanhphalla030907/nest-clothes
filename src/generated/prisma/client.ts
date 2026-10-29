@@ -381,6 +381,26 @@ export type WishlistItem = Prisma.WishlistItemModel
  */
 export type Address = Prisma.AddressModel
 /**
+ * Model AdministrativeLocation
+ * Canonical Cambodia administrative locations sourced from the OCHA/HDX COD-AB
+ * KHM v01 dataset. P-codes are stable source identifiers; the nullable COD flag
+ * is an override, not part of the location's identity.
+ */
+export type AdministrativeLocation = Prisma.AdministrativeLocationModel
+/**
+ * Model ShippingProvider
+ * A configurable delivery provider. Providers are deactivated rather than deleted
+ * so future order snapshots can continue to refer to the provider that was chosen.
+ */
+export type ShippingProvider = Prisma.ShippingProviderModel
+/**
+ * Model CodArea
+ * An explicitly configured geographic area where cash on delivery is allowed.
+ * The code is a separate canonical identifier; it is not inferred from the
+ * free-form city or state/province values on saved addresses.
+ */
+export type CodArea = Prisma.CodAreaModel
+/**
  * Model Order
  * A confirmed purchase by one user.
  * 
@@ -411,14 +431,16 @@ export type Address = Prisma.AddressModel
  * non-negative. There is deliberately **no tax column yet**: adding one later is
  * additive, whereas a wrong tax figure baked into an immutable total would not
  * be.
- * ## 3. Everything it points at is copied, not referenced
+ * ## 3. Customer-visible details are copied, not read live
  * 
  * The shipping address is a **snapshot**, not a foreign key to {@link Address}.
  * Editing or deleting an address must not change where a past parcel went, so
  * the seven `shipping_*` columns duplicate the address fields on purpose. The
  * same reasoning drives {@link OrderItem}, which snapshots the product name,
  * SKU, options and price. This is the one place in the schema where
- * denormalising is the correct choice.
+ * denormalising is the correct choice. Provider and COD-area IDs are retained
+ * only as optional administrative references; the code and display-name snapshots
+ * remain the historical record if configuration changes.
  * 
  * ## Status is extensible, mutation is not
  * 
@@ -441,12 +463,17 @@ export type Address = Prisma.AddressModel
  * Deleting an order cascades to its items: a line is meaningless without the
  * order it belongs to, and the order is the only thing that makes it.
  * 
- * There is **no public route that mutates an order**. `GET /orders` and
- * `GET /orders/:id` are the entire HTTP surface of this feature. Prices,
- * totals, status and snapshots are written exactly once, by the checkout phase
- * that does not exist yet, and never by a client.
+ * Customer order reads are `GET /orders` and `GET /orders/:id`; creation is the
+ * authenticated checkout operation. Prices, totals, status and snapshots are
+ * written by server-side order services, never accepted from a client.
  */
 export type Order = Prisma.OrderModel
+/**
+ * Model CheckoutQuote
+ * A short-lived, server-calculated checkout offer. The immutable snapshots bind
+ * the accepted amount to the cart, address, provider, and delivery eligibility.
+ */
+export type CheckoutQuote = Prisma.CheckoutQuoteModel
 /**
  * Model OrderItem
  * One line of an order: a quantity of one variant, as it was sold.

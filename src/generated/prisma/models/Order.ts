@@ -43,14 +43,16 @@ import type * as Prisma from "../internal/prismaNamespace.js"
  * non-negative. There is deliberately **no tax column yet**: adding one later is
  * additive, whereas a wrong tax figure baked into an immutable total would not
  * be.
- * ## 3. Everything it points at is copied, not referenced
+ * ## 3. Customer-visible details are copied, not read live
  * 
  * The shipping address is a **snapshot**, not a foreign key to {@link Address}.
  * Editing or deleting an address must not change where a past parcel went, so
  * the seven `shipping_*` columns duplicate the address fields on purpose. The
  * same reasoning drives {@link OrderItem}, which snapshots the product name,
  * SKU, options and price. This is the one place in the schema where
- * denormalising is the correct choice.
+ * denormalising is the correct choice. Provider and COD-area IDs are retained
+ * only as optional administrative references; the code and display-name snapshots
+ * remain the historical record if configuration changes.
  * 
  * ## Status is extensible, mutation is not
  * 
@@ -73,10 +75,9 @@ import type * as Prisma from "../internal/prismaNamespace.js"
  * Deleting an order cascades to its items: a line is meaningless without the
  * order it belongs to, and the order is the only thing that makes it.
  * 
- * There is **no public route that mutates an order**. `GET /orders` and
- * `GET /orders/:id` are the entire HTTP surface of this feature. Prices,
- * totals, status and snapshots are written exactly once, by the checkout phase
- * that does not exist yet, and never by a client.
+ * Customer order reads are `GET /orders` and `GET /orders/:id`; creation is the
+ * authenticated checkout operation. Prices, totals, status and snapshots are
+ * written by server-side order services, never accepted from a client.
  */
 export type OrderModel = runtime.Types.Result.DefaultSelection<Prisma.$OrderPayload>
 
@@ -112,12 +113,20 @@ export type OrderMinAggregateOutputType = {
   discountAmount: runtime.Decimal | null
   totalAmount: runtime.Decimal | null
   currency: string | null
+  paymentMethod: string | null
+  shippingProviderId: string | null
+  shippingProviderCode: string | null
+  shippingProviderName: string | null
+  codAreaId: string | null
+  codAreaCode: string | null
+  codAreaName: string | null
   shippingRecipientName: string | null
   shippingPhone: string | null
   shippingAddressLine1: string | null
   shippingAddressLine2: string | null
   shippingCity: string | null
   shippingStateProvince: string | null
+  shippingLocationPcode: string | null
   shippingPostalCode: string | null
   shippingCountryCode: string | null
   createdAt: Date | null
@@ -134,12 +143,20 @@ export type OrderMaxAggregateOutputType = {
   discountAmount: runtime.Decimal | null
   totalAmount: runtime.Decimal | null
   currency: string | null
+  paymentMethod: string | null
+  shippingProviderId: string | null
+  shippingProviderCode: string | null
+  shippingProviderName: string | null
+  codAreaId: string | null
+  codAreaCode: string | null
+  codAreaName: string | null
   shippingRecipientName: string | null
   shippingPhone: string | null
   shippingAddressLine1: string | null
   shippingAddressLine2: string | null
   shippingCity: string | null
   shippingStateProvince: string | null
+  shippingLocationPcode: string | null
   shippingPostalCode: string | null
   shippingCountryCode: string | null
   createdAt: Date | null
@@ -156,12 +173,21 @@ export type OrderCountAggregateOutputType = {
   discountAmount: number
   totalAmount: number
   currency: number
+  paymentMethod: number
+  shippingProviderId: number
+  shippingProviderCode: number
+  shippingProviderName: number
+  codAreaId: number
+  codAreaCode: number
+  codAreaName: number
   shippingRecipientName: number
   shippingPhone: number
   shippingAddressLine1: number
   shippingAddressLine2: number
   shippingCity: number
   shippingStateProvince: number
+  shippingLocationPcode: number
+  shippingLocationSnapshot: number
   shippingPostalCode: number
   shippingCountryCode: number
   createdAt: number
@@ -194,12 +220,20 @@ export type OrderMinAggregateInputType = {
   discountAmount?: true
   totalAmount?: true
   currency?: true
+  paymentMethod?: true
+  shippingProviderId?: true
+  shippingProviderCode?: true
+  shippingProviderName?: true
+  codAreaId?: true
+  codAreaCode?: true
+  codAreaName?: true
   shippingRecipientName?: true
   shippingPhone?: true
   shippingAddressLine1?: true
   shippingAddressLine2?: true
   shippingCity?: true
   shippingStateProvince?: true
+  shippingLocationPcode?: true
   shippingPostalCode?: true
   shippingCountryCode?: true
   createdAt?: true
@@ -216,12 +250,20 @@ export type OrderMaxAggregateInputType = {
   discountAmount?: true
   totalAmount?: true
   currency?: true
+  paymentMethod?: true
+  shippingProviderId?: true
+  shippingProviderCode?: true
+  shippingProviderName?: true
+  codAreaId?: true
+  codAreaCode?: true
+  codAreaName?: true
   shippingRecipientName?: true
   shippingPhone?: true
   shippingAddressLine1?: true
   shippingAddressLine2?: true
   shippingCity?: true
   shippingStateProvince?: true
+  shippingLocationPcode?: true
   shippingPostalCode?: true
   shippingCountryCode?: true
   createdAt?: true
@@ -238,12 +280,21 @@ export type OrderCountAggregateInputType = {
   discountAmount?: true
   totalAmount?: true
   currency?: true
+  paymentMethod?: true
+  shippingProviderId?: true
+  shippingProviderCode?: true
+  shippingProviderName?: true
+  codAreaId?: true
+  codAreaCode?: true
+  codAreaName?: true
   shippingRecipientName?: true
   shippingPhone?: true
   shippingAddressLine1?: true
   shippingAddressLine2?: true
   shippingCity?: true
   shippingStateProvince?: true
+  shippingLocationPcode?: true
+  shippingLocationSnapshot?: true
   shippingPostalCode?: true
   shippingCountryCode?: true
   createdAt?: true
@@ -347,12 +398,21 @@ export type OrderGroupByOutputType = {
   discountAmount: runtime.Decimal
   totalAmount: runtime.Decimal
   currency: string
+  paymentMethod: string | null
+  shippingProviderId: string | null
+  shippingProviderCode: string | null
+  shippingProviderName: string | null
+  codAreaId: string | null
+  codAreaCode: string | null
+  codAreaName: string | null
   shippingRecipientName: string
   shippingPhone: string
   shippingAddressLine1: string
   shippingAddressLine2: string | null
-  shippingCity: string
+  shippingCity: string | null
   shippingStateProvince: string | null
+  shippingLocationPcode: string | null
+  shippingLocationSnapshot: runtime.JsonValue | null
   shippingPostalCode: string | null
   shippingCountryCode: string
   createdAt: Date
@@ -392,12 +452,21 @@ export type OrderWhereInput = {
   discountAmount?: Prisma.DecimalFilter<"Order"> | runtime.Decimal | runtime.DecimalJsLike | number | string
   totalAmount?: Prisma.DecimalFilter<"Order"> | runtime.Decimal | runtime.DecimalJsLike | number | string
   currency?: Prisma.StringFilter<"Order"> | string
+  paymentMethod?: Prisma.StringNullableFilter<"Order"> | string | null
+  shippingProviderId?: Prisma.UuidNullableFilter<"Order"> | string | null
+  shippingProviderCode?: Prisma.StringNullableFilter<"Order"> | string | null
+  shippingProviderName?: Prisma.StringNullableFilter<"Order"> | string | null
+  codAreaId?: Prisma.UuidNullableFilter<"Order"> | string | null
+  codAreaCode?: Prisma.StringNullableFilter<"Order"> | string | null
+  codAreaName?: Prisma.StringNullableFilter<"Order"> | string | null
   shippingRecipientName?: Prisma.StringFilter<"Order"> | string
   shippingPhone?: Prisma.StringFilter<"Order"> | string
   shippingAddressLine1?: Prisma.StringFilter<"Order"> | string
   shippingAddressLine2?: Prisma.StringNullableFilter<"Order"> | string | null
-  shippingCity?: Prisma.StringFilter<"Order"> | string
+  shippingCity?: Prisma.StringNullableFilter<"Order"> | string | null
   shippingStateProvince?: Prisma.StringNullableFilter<"Order"> | string | null
+  shippingLocationPcode?: Prisma.StringNullableFilter<"Order"> | string | null
+  shippingLocationSnapshot?: Prisma.JsonNullableFilter<"Order">
   shippingPostalCode?: Prisma.StringNullableFilter<"Order"> | string | null
   shippingCountryCode?: Prisma.StringFilter<"Order"> | string
   createdAt?: Prisma.DateTimeFilter<"Order"> | Date | string
@@ -405,6 +474,10 @@ export type OrderWhereInput = {
   user?: Prisma.XOR<Prisma.UserScalarRelationFilter, Prisma.UserWhereInput>
   items?: Prisma.OrderItemListRelationFilter
   payments?: Prisma.PaymentListRelationFilter
+  shippingProvider?: Prisma.XOR<Prisma.ShippingProviderNullableScalarRelationFilter, Prisma.ShippingProviderWhereInput> | null
+  codArea?: Prisma.XOR<Prisma.CodAreaNullableScalarRelationFilter, Prisma.CodAreaWhereInput> | null
+  shippingLocation?: Prisma.XOR<Prisma.AdministrativeLocationNullableScalarRelationFilter, Prisma.AdministrativeLocationWhereInput> | null
+  checkoutQuote?: Prisma.XOR<Prisma.CheckoutQuoteNullableScalarRelationFilter, Prisma.CheckoutQuoteWhereInput> | null
 }
 
 export type OrderOrderByWithRelationInput = {
@@ -417,12 +490,21 @@ export type OrderOrderByWithRelationInput = {
   discountAmount?: Prisma.SortOrder
   totalAmount?: Prisma.SortOrder
   currency?: Prisma.SortOrder
+  paymentMethod?: Prisma.SortOrderInput | Prisma.SortOrder
+  shippingProviderId?: Prisma.SortOrderInput | Prisma.SortOrder
+  shippingProviderCode?: Prisma.SortOrderInput | Prisma.SortOrder
+  shippingProviderName?: Prisma.SortOrderInput | Prisma.SortOrder
+  codAreaId?: Prisma.SortOrderInput | Prisma.SortOrder
+  codAreaCode?: Prisma.SortOrderInput | Prisma.SortOrder
+  codAreaName?: Prisma.SortOrderInput | Prisma.SortOrder
   shippingRecipientName?: Prisma.SortOrder
   shippingPhone?: Prisma.SortOrder
   shippingAddressLine1?: Prisma.SortOrder
   shippingAddressLine2?: Prisma.SortOrderInput | Prisma.SortOrder
-  shippingCity?: Prisma.SortOrder
+  shippingCity?: Prisma.SortOrderInput | Prisma.SortOrder
   shippingStateProvince?: Prisma.SortOrderInput | Prisma.SortOrder
+  shippingLocationPcode?: Prisma.SortOrderInput | Prisma.SortOrder
+  shippingLocationSnapshot?: Prisma.SortOrderInput | Prisma.SortOrder
   shippingPostalCode?: Prisma.SortOrderInput | Prisma.SortOrder
   shippingCountryCode?: Prisma.SortOrder
   createdAt?: Prisma.SortOrder
@@ -430,6 +512,10 @@ export type OrderOrderByWithRelationInput = {
   user?: Prisma.UserOrderByWithRelationInput
   items?: Prisma.OrderItemOrderByRelationAggregateInput
   payments?: Prisma.PaymentOrderByRelationAggregateInput
+  shippingProvider?: Prisma.ShippingProviderOrderByWithRelationInput
+  codArea?: Prisma.CodAreaOrderByWithRelationInput
+  shippingLocation?: Prisma.AdministrativeLocationOrderByWithRelationInput
+  checkoutQuote?: Prisma.CheckoutQuoteOrderByWithRelationInput
 }
 
 export type OrderWhereUniqueInput = Prisma.AtLeast<{
@@ -445,12 +531,21 @@ export type OrderWhereUniqueInput = Prisma.AtLeast<{
   discountAmount?: Prisma.DecimalFilter<"Order"> | runtime.Decimal | runtime.DecimalJsLike | number | string
   totalAmount?: Prisma.DecimalFilter<"Order"> | runtime.Decimal | runtime.DecimalJsLike | number | string
   currency?: Prisma.StringFilter<"Order"> | string
+  paymentMethod?: Prisma.StringNullableFilter<"Order"> | string | null
+  shippingProviderId?: Prisma.UuidNullableFilter<"Order"> | string | null
+  shippingProviderCode?: Prisma.StringNullableFilter<"Order"> | string | null
+  shippingProviderName?: Prisma.StringNullableFilter<"Order"> | string | null
+  codAreaId?: Prisma.UuidNullableFilter<"Order"> | string | null
+  codAreaCode?: Prisma.StringNullableFilter<"Order"> | string | null
+  codAreaName?: Prisma.StringNullableFilter<"Order"> | string | null
   shippingRecipientName?: Prisma.StringFilter<"Order"> | string
   shippingPhone?: Prisma.StringFilter<"Order"> | string
   shippingAddressLine1?: Prisma.StringFilter<"Order"> | string
   shippingAddressLine2?: Prisma.StringNullableFilter<"Order"> | string | null
-  shippingCity?: Prisma.StringFilter<"Order"> | string
+  shippingCity?: Prisma.StringNullableFilter<"Order"> | string | null
   shippingStateProvince?: Prisma.StringNullableFilter<"Order"> | string | null
+  shippingLocationPcode?: Prisma.StringNullableFilter<"Order"> | string | null
+  shippingLocationSnapshot?: Prisma.JsonNullableFilter<"Order">
   shippingPostalCode?: Prisma.StringNullableFilter<"Order"> | string | null
   shippingCountryCode?: Prisma.StringFilter<"Order"> | string
   createdAt?: Prisma.DateTimeFilter<"Order"> | Date | string
@@ -458,6 +553,10 @@ export type OrderWhereUniqueInput = Prisma.AtLeast<{
   user?: Prisma.XOR<Prisma.UserScalarRelationFilter, Prisma.UserWhereInput>
   items?: Prisma.OrderItemListRelationFilter
   payments?: Prisma.PaymentListRelationFilter
+  shippingProvider?: Prisma.XOR<Prisma.ShippingProviderNullableScalarRelationFilter, Prisma.ShippingProviderWhereInput> | null
+  codArea?: Prisma.XOR<Prisma.CodAreaNullableScalarRelationFilter, Prisma.CodAreaWhereInput> | null
+  shippingLocation?: Prisma.XOR<Prisma.AdministrativeLocationNullableScalarRelationFilter, Prisma.AdministrativeLocationWhereInput> | null
+  checkoutQuote?: Prisma.XOR<Prisma.CheckoutQuoteNullableScalarRelationFilter, Prisma.CheckoutQuoteWhereInput> | null
 }, "id" | "orderNumber">
 
 export type OrderOrderByWithAggregationInput = {
@@ -470,12 +569,21 @@ export type OrderOrderByWithAggregationInput = {
   discountAmount?: Prisma.SortOrder
   totalAmount?: Prisma.SortOrder
   currency?: Prisma.SortOrder
+  paymentMethod?: Prisma.SortOrderInput | Prisma.SortOrder
+  shippingProviderId?: Prisma.SortOrderInput | Prisma.SortOrder
+  shippingProviderCode?: Prisma.SortOrderInput | Prisma.SortOrder
+  shippingProviderName?: Prisma.SortOrderInput | Prisma.SortOrder
+  codAreaId?: Prisma.SortOrderInput | Prisma.SortOrder
+  codAreaCode?: Prisma.SortOrderInput | Prisma.SortOrder
+  codAreaName?: Prisma.SortOrderInput | Prisma.SortOrder
   shippingRecipientName?: Prisma.SortOrder
   shippingPhone?: Prisma.SortOrder
   shippingAddressLine1?: Prisma.SortOrder
   shippingAddressLine2?: Prisma.SortOrderInput | Prisma.SortOrder
-  shippingCity?: Prisma.SortOrder
+  shippingCity?: Prisma.SortOrderInput | Prisma.SortOrder
   shippingStateProvince?: Prisma.SortOrderInput | Prisma.SortOrder
+  shippingLocationPcode?: Prisma.SortOrderInput | Prisma.SortOrder
+  shippingLocationSnapshot?: Prisma.SortOrderInput | Prisma.SortOrder
   shippingPostalCode?: Prisma.SortOrderInput | Prisma.SortOrder
   shippingCountryCode?: Prisma.SortOrder
   createdAt?: Prisma.SortOrder
@@ -500,12 +608,21 @@ export type OrderScalarWhereWithAggregatesInput = {
   discountAmount?: Prisma.DecimalWithAggregatesFilter<"Order"> | runtime.Decimal | runtime.DecimalJsLike | number | string
   totalAmount?: Prisma.DecimalWithAggregatesFilter<"Order"> | runtime.Decimal | runtime.DecimalJsLike | number | string
   currency?: Prisma.StringWithAggregatesFilter<"Order"> | string
+  paymentMethod?: Prisma.StringNullableWithAggregatesFilter<"Order"> | string | null
+  shippingProviderId?: Prisma.UuidNullableWithAggregatesFilter<"Order"> | string | null
+  shippingProviderCode?: Prisma.StringNullableWithAggregatesFilter<"Order"> | string | null
+  shippingProviderName?: Prisma.StringNullableWithAggregatesFilter<"Order"> | string | null
+  codAreaId?: Prisma.UuidNullableWithAggregatesFilter<"Order"> | string | null
+  codAreaCode?: Prisma.StringNullableWithAggregatesFilter<"Order"> | string | null
+  codAreaName?: Prisma.StringNullableWithAggregatesFilter<"Order"> | string | null
   shippingRecipientName?: Prisma.StringWithAggregatesFilter<"Order"> | string
   shippingPhone?: Prisma.StringWithAggregatesFilter<"Order"> | string
   shippingAddressLine1?: Prisma.StringWithAggregatesFilter<"Order"> | string
   shippingAddressLine2?: Prisma.StringNullableWithAggregatesFilter<"Order"> | string | null
-  shippingCity?: Prisma.StringWithAggregatesFilter<"Order"> | string
+  shippingCity?: Prisma.StringNullableWithAggregatesFilter<"Order"> | string | null
   shippingStateProvince?: Prisma.StringNullableWithAggregatesFilter<"Order"> | string | null
+  shippingLocationPcode?: Prisma.StringNullableWithAggregatesFilter<"Order"> | string | null
+  shippingLocationSnapshot?: Prisma.JsonNullableWithAggregatesFilter<"Order">
   shippingPostalCode?: Prisma.StringNullableWithAggregatesFilter<"Order"> | string | null
   shippingCountryCode?: Prisma.StringWithAggregatesFilter<"Order"> | string
   createdAt?: Prisma.DateTimeWithAggregatesFilter<"Order"> | Date | string
@@ -521,12 +638,18 @@ export type OrderCreateInput = {
   discountAmount?: runtime.Decimal | runtime.DecimalJsLike | number | string
   totalAmount: runtime.Decimal | runtime.DecimalJsLike | number | string
   currency?: string
+  paymentMethod?: string | null
+  shippingProviderCode?: string | null
+  shippingProviderName?: string | null
+  codAreaCode?: string | null
+  codAreaName?: string | null
   shippingRecipientName: string
   shippingPhone: string
   shippingAddressLine1: string
   shippingAddressLine2?: string | null
-  shippingCity: string
+  shippingCity?: string | null
   shippingStateProvince?: string | null
+  shippingLocationSnapshot?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   shippingPostalCode?: string | null
   shippingCountryCode: string
   createdAt?: Date | string
@@ -534,6 +657,10 @@ export type OrderCreateInput = {
   user: Prisma.UserCreateNestedOneWithoutOrdersInput
   items?: Prisma.OrderItemCreateNestedManyWithoutOrderInput
   payments?: Prisma.PaymentCreateNestedManyWithoutOrderInput
+  shippingProvider?: Prisma.ShippingProviderCreateNestedOneWithoutOrdersInput
+  codArea?: Prisma.CodAreaCreateNestedOneWithoutOrdersInput
+  shippingLocation?: Prisma.AdministrativeLocationCreateNestedOneWithoutOrdersInput
+  checkoutQuote?: Prisma.CheckoutQuoteCreateNestedOneWithoutOrderInput
 }
 
 export type OrderUncheckedCreateInput = {
@@ -546,18 +673,28 @@ export type OrderUncheckedCreateInput = {
   discountAmount?: runtime.Decimal | runtime.DecimalJsLike | number | string
   totalAmount: runtime.Decimal | runtime.DecimalJsLike | number | string
   currency?: string
+  paymentMethod?: string | null
+  shippingProviderId?: string | null
+  shippingProviderCode?: string | null
+  shippingProviderName?: string | null
+  codAreaId?: string | null
+  codAreaCode?: string | null
+  codAreaName?: string | null
   shippingRecipientName: string
   shippingPhone: string
   shippingAddressLine1: string
   shippingAddressLine2?: string | null
-  shippingCity: string
+  shippingCity?: string | null
   shippingStateProvince?: string | null
+  shippingLocationPcode?: string | null
+  shippingLocationSnapshot?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   shippingPostalCode?: string | null
   shippingCountryCode: string
   createdAt?: Date | string
   updatedAt?: Date | string
   items?: Prisma.OrderItemUncheckedCreateNestedManyWithoutOrderInput
   payments?: Prisma.PaymentUncheckedCreateNestedManyWithoutOrderInput
+  checkoutQuote?: Prisma.CheckoutQuoteUncheckedCreateNestedOneWithoutOrderInput
 }
 
 export type OrderUpdateInput = {
@@ -569,12 +706,18 @@ export type OrderUpdateInput = {
   discountAmount?: Prisma.DecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string
   totalAmount?: Prisma.DecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string
   currency?: Prisma.StringFieldUpdateOperationsInput | string
+  paymentMethod?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  shippingProviderCode?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  shippingProviderName?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  codAreaCode?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  codAreaName?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   shippingRecipientName?: Prisma.StringFieldUpdateOperationsInput | string
   shippingPhone?: Prisma.StringFieldUpdateOperationsInput | string
   shippingAddressLine1?: Prisma.StringFieldUpdateOperationsInput | string
   shippingAddressLine2?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
-  shippingCity?: Prisma.StringFieldUpdateOperationsInput | string
+  shippingCity?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   shippingStateProvince?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  shippingLocationSnapshot?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   shippingPostalCode?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   shippingCountryCode?: Prisma.StringFieldUpdateOperationsInput | string
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
@@ -582,6 +725,10 @@ export type OrderUpdateInput = {
   user?: Prisma.UserUpdateOneRequiredWithoutOrdersNestedInput
   items?: Prisma.OrderItemUpdateManyWithoutOrderNestedInput
   payments?: Prisma.PaymentUpdateManyWithoutOrderNestedInput
+  shippingProvider?: Prisma.ShippingProviderUpdateOneWithoutOrdersNestedInput
+  codArea?: Prisma.CodAreaUpdateOneWithoutOrdersNestedInput
+  shippingLocation?: Prisma.AdministrativeLocationUpdateOneWithoutOrdersNestedInput
+  checkoutQuote?: Prisma.CheckoutQuoteUpdateOneWithoutOrderNestedInput
 }
 
 export type OrderUncheckedUpdateInput = {
@@ -594,18 +741,28 @@ export type OrderUncheckedUpdateInput = {
   discountAmount?: Prisma.DecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string
   totalAmount?: Prisma.DecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string
   currency?: Prisma.StringFieldUpdateOperationsInput | string
+  paymentMethod?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  shippingProviderId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  shippingProviderCode?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  shippingProviderName?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  codAreaId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  codAreaCode?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  codAreaName?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   shippingRecipientName?: Prisma.StringFieldUpdateOperationsInput | string
   shippingPhone?: Prisma.StringFieldUpdateOperationsInput | string
   shippingAddressLine1?: Prisma.StringFieldUpdateOperationsInput | string
   shippingAddressLine2?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
-  shippingCity?: Prisma.StringFieldUpdateOperationsInput | string
+  shippingCity?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   shippingStateProvince?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  shippingLocationPcode?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  shippingLocationSnapshot?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   shippingPostalCode?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   shippingCountryCode?: Prisma.StringFieldUpdateOperationsInput | string
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   items?: Prisma.OrderItemUncheckedUpdateManyWithoutOrderNestedInput
   payments?: Prisma.PaymentUncheckedUpdateManyWithoutOrderNestedInput
+  checkoutQuote?: Prisma.CheckoutQuoteUncheckedUpdateOneWithoutOrderNestedInput
 }
 
 export type OrderCreateManyInput = {
@@ -618,12 +775,21 @@ export type OrderCreateManyInput = {
   discountAmount?: runtime.Decimal | runtime.DecimalJsLike | number | string
   totalAmount: runtime.Decimal | runtime.DecimalJsLike | number | string
   currency?: string
+  paymentMethod?: string | null
+  shippingProviderId?: string | null
+  shippingProviderCode?: string | null
+  shippingProviderName?: string | null
+  codAreaId?: string | null
+  codAreaCode?: string | null
+  codAreaName?: string | null
   shippingRecipientName: string
   shippingPhone: string
   shippingAddressLine1: string
   shippingAddressLine2?: string | null
-  shippingCity: string
+  shippingCity?: string | null
   shippingStateProvince?: string | null
+  shippingLocationPcode?: string | null
+  shippingLocationSnapshot?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   shippingPostalCode?: string | null
   shippingCountryCode: string
   createdAt?: Date | string
@@ -639,12 +805,18 @@ export type OrderUpdateManyMutationInput = {
   discountAmount?: Prisma.DecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string
   totalAmount?: Prisma.DecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string
   currency?: Prisma.StringFieldUpdateOperationsInput | string
+  paymentMethod?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  shippingProviderCode?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  shippingProviderName?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  codAreaCode?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  codAreaName?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   shippingRecipientName?: Prisma.StringFieldUpdateOperationsInput | string
   shippingPhone?: Prisma.StringFieldUpdateOperationsInput | string
   shippingAddressLine1?: Prisma.StringFieldUpdateOperationsInput | string
   shippingAddressLine2?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
-  shippingCity?: Prisma.StringFieldUpdateOperationsInput | string
+  shippingCity?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   shippingStateProvince?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  shippingLocationSnapshot?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   shippingPostalCode?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   shippingCountryCode?: Prisma.StringFieldUpdateOperationsInput | string
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
@@ -661,12 +833,21 @@ export type OrderUncheckedUpdateManyInput = {
   discountAmount?: Prisma.DecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string
   totalAmount?: Prisma.DecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string
   currency?: Prisma.StringFieldUpdateOperationsInput | string
+  paymentMethod?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  shippingProviderId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  shippingProviderCode?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  shippingProviderName?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  codAreaId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  codAreaCode?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  codAreaName?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   shippingRecipientName?: Prisma.StringFieldUpdateOperationsInput | string
   shippingPhone?: Prisma.StringFieldUpdateOperationsInput | string
   shippingAddressLine1?: Prisma.StringFieldUpdateOperationsInput | string
   shippingAddressLine2?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
-  shippingCity?: Prisma.StringFieldUpdateOperationsInput | string
+  shippingCity?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   shippingStateProvince?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  shippingLocationPcode?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  shippingLocationSnapshot?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   shippingPostalCode?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   shippingCountryCode?: Prisma.StringFieldUpdateOperationsInput | string
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
@@ -693,12 +874,21 @@ export type OrderCountOrderByAggregateInput = {
   discountAmount?: Prisma.SortOrder
   totalAmount?: Prisma.SortOrder
   currency?: Prisma.SortOrder
+  paymentMethod?: Prisma.SortOrder
+  shippingProviderId?: Prisma.SortOrder
+  shippingProviderCode?: Prisma.SortOrder
+  shippingProviderName?: Prisma.SortOrder
+  codAreaId?: Prisma.SortOrder
+  codAreaCode?: Prisma.SortOrder
+  codAreaName?: Prisma.SortOrder
   shippingRecipientName?: Prisma.SortOrder
   shippingPhone?: Prisma.SortOrder
   shippingAddressLine1?: Prisma.SortOrder
   shippingAddressLine2?: Prisma.SortOrder
   shippingCity?: Prisma.SortOrder
   shippingStateProvince?: Prisma.SortOrder
+  shippingLocationPcode?: Prisma.SortOrder
+  shippingLocationSnapshot?: Prisma.SortOrder
   shippingPostalCode?: Prisma.SortOrder
   shippingCountryCode?: Prisma.SortOrder
   createdAt?: Prisma.SortOrder
@@ -722,12 +912,20 @@ export type OrderMaxOrderByAggregateInput = {
   discountAmount?: Prisma.SortOrder
   totalAmount?: Prisma.SortOrder
   currency?: Prisma.SortOrder
+  paymentMethod?: Prisma.SortOrder
+  shippingProviderId?: Prisma.SortOrder
+  shippingProviderCode?: Prisma.SortOrder
+  shippingProviderName?: Prisma.SortOrder
+  codAreaId?: Prisma.SortOrder
+  codAreaCode?: Prisma.SortOrder
+  codAreaName?: Prisma.SortOrder
   shippingRecipientName?: Prisma.SortOrder
   shippingPhone?: Prisma.SortOrder
   shippingAddressLine1?: Prisma.SortOrder
   shippingAddressLine2?: Prisma.SortOrder
   shippingCity?: Prisma.SortOrder
   shippingStateProvince?: Prisma.SortOrder
+  shippingLocationPcode?: Prisma.SortOrder
   shippingPostalCode?: Prisma.SortOrder
   shippingCountryCode?: Prisma.SortOrder
   createdAt?: Prisma.SortOrder
@@ -744,12 +942,20 @@ export type OrderMinOrderByAggregateInput = {
   discountAmount?: Prisma.SortOrder
   totalAmount?: Prisma.SortOrder
   currency?: Prisma.SortOrder
+  paymentMethod?: Prisma.SortOrder
+  shippingProviderId?: Prisma.SortOrder
+  shippingProviderCode?: Prisma.SortOrder
+  shippingProviderName?: Prisma.SortOrder
+  codAreaId?: Prisma.SortOrder
+  codAreaCode?: Prisma.SortOrder
+  codAreaName?: Prisma.SortOrder
   shippingRecipientName?: Prisma.SortOrder
   shippingPhone?: Prisma.SortOrder
   shippingAddressLine1?: Prisma.SortOrder
   shippingAddressLine2?: Prisma.SortOrder
   shippingCity?: Prisma.SortOrder
   shippingStateProvince?: Prisma.SortOrder
+  shippingLocationPcode?: Prisma.SortOrder
   shippingPostalCode?: Prisma.SortOrder
   shippingCountryCode?: Prisma.SortOrder
   createdAt?: Prisma.SortOrder
@@ -761,6 +967,11 @@ export type OrderSumOrderByAggregateInput = {
   shippingFee?: Prisma.SortOrder
   discountAmount?: Prisma.SortOrder
   totalAmount?: Prisma.SortOrder
+}
+
+export type OrderNullableScalarRelationFilter = {
+  is?: Prisma.OrderWhereInput | null
+  isNot?: Prisma.OrderWhereInput | null
 }
 
 export type OrderScalarRelationFilter = {
@@ -810,6 +1021,148 @@ export type OrderUncheckedUpdateManyWithoutUserNestedInput = {
   deleteMany?: Prisma.OrderScalarWhereInput | Prisma.OrderScalarWhereInput[]
 }
 
+export type OrderCreateNestedManyWithoutShippingLocationInput = {
+  create?: Prisma.XOR<Prisma.OrderCreateWithoutShippingLocationInput, Prisma.OrderUncheckedCreateWithoutShippingLocationInput> | Prisma.OrderCreateWithoutShippingLocationInput[] | Prisma.OrderUncheckedCreateWithoutShippingLocationInput[]
+  connectOrCreate?: Prisma.OrderCreateOrConnectWithoutShippingLocationInput | Prisma.OrderCreateOrConnectWithoutShippingLocationInput[]
+  createMany?: Prisma.OrderCreateManyShippingLocationInputEnvelope
+  connect?: Prisma.OrderWhereUniqueInput | Prisma.OrderWhereUniqueInput[]
+}
+
+export type OrderUncheckedCreateNestedManyWithoutShippingLocationInput = {
+  create?: Prisma.XOR<Prisma.OrderCreateWithoutShippingLocationInput, Prisma.OrderUncheckedCreateWithoutShippingLocationInput> | Prisma.OrderCreateWithoutShippingLocationInput[] | Prisma.OrderUncheckedCreateWithoutShippingLocationInput[]
+  connectOrCreate?: Prisma.OrderCreateOrConnectWithoutShippingLocationInput | Prisma.OrderCreateOrConnectWithoutShippingLocationInput[]
+  createMany?: Prisma.OrderCreateManyShippingLocationInputEnvelope
+  connect?: Prisma.OrderWhereUniqueInput | Prisma.OrderWhereUniqueInput[]
+}
+
+export type OrderUpdateManyWithoutShippingLocationNestedInput = {
+  create?: Prisma.XOR<Prisma.OrderCreateWithoutShippingLocationInput, Prisma.OrderUncheckedCreateWithoutShippingLocationInput> | Prisma.OrderCreateWithoutShippingLocationInput[] | Prisma.OrderUncheckedCreateWithoutShippingLocationInput[]
+  connectOrCreate?: Prisma.OrderCreateOrConnectWithoutShippingLocationInput | Prisma.OrderCreateOrConnectWithoutShippingLocationInput[]
+  upsert?: Prisma.OrderUpsertWithWhereUniqueWithoutShippingLocationInput | Prisma.OrderUpsertWithWhereUniqueWithoutShippingLocationInput[]
+  createMany?: Prisma.OrderCreateManyShippingLocationInputEnvelope
+  set?: Prisma.OrderWhereUniqueInput | Prisma.OrderWhereUniqueInput[]
+  disconnect?: Prisma.OrderWhereUniqueInput | Prisma.OrderWhereUniqueInput[]
+  delete?: Prisma.OrderWhereUniqueInput | Prisma.OrderWhereUniqueInput[]
+  connect?: Prisma.OrderWhereUniqueInput | Prisma.OrderWhereUniqueInput[]
+  update?: Prisma.OrderUpdateWithWhereUniqueWithoutShippingLocationInput | Prisma.OrderUpdateWithWhereUniqueWithoutShippingLocationInput[]
+  updateMany?: Prisma.OrderUpdateManyWithWhereWithoutShippingLocationInput | Prisma.OrderUpdateManyWithWhereWithoutShippingLocationInput[]
+  deleteMany?: Prisma.OrderScalarWhereInput | Prisma.OrderScalarWhereInput[]
+}
+
+export type OrderUncheckedUpdateManyWithoutShippingLocationNestedInput = {
+  create?: Prisma.XOR<Prisma.OrderCreateWithoutShippingLocationInput, Prisma.OrderUncheckedCreateWithoutShippingLocationInput> | Prisma.OrderCreateWithoutShippingLocationInput[] | Prisma.OrderUncheckedCreateWithoutShippingLocationInput[]
+  connectOrCreate?: Prisma.OrderCreateOrConnectWithoutShippingLocationInput | Prisma.OrderCreateOrConnectWithoutShippingLocationInput[]
+  upsert?: Prisma.OrderUpsertWithWhereUniqueWithoutShippingLocationInput | Prisma.OrderUpsertWithWhereUniqueWithoutShippingLocationInput[]
+  createMany?: Prisma.OrderCreateManyShippingLocationInputEnvelope
+  set?: Prisma.OrderWhereUniqueInput | Prisma.OrderWhereUniqueInput[]
+  disconnect?: Prisma.OrderWhereUniqueInput | Prisma.OrderWhereUniqueInput[]
+  delete?: Prisma.OrderWhereUniqueInput | Prisma.OrderWhereUniqueInput[]
+  connect?: Prisma.OrderWhereUniqueInput | Prisma.OrderWhereUniqueInput[]
+  update?: Prisma.OrderUpdateWithWhereUniqueWithoutShippingLocationInput | Prisma.OrderUpdateWithWhereUniqueWithoutShippingLocationInput[]
+  updateMany?: Prisma.OrderUpdateManyWithWhereWithoutShippingLocationInput | Prisma.OrderUpdateManyWithWhereWithoutShippingLocationInput[]
+  deleteMany?: Prisma.OrderScalarWhereInput | Prisma.OrderScalarWhereInput[]
+}
+
+export type OrderCreateNestedManyWithoutShippingProviderInput = {
+  create?: Prisma.XOR<Prisma.OrderCreateWithoutShippingProviderInput, Prisma.OrderUncheckedCreateWithoutShippingProviderInput> | Prisma.OrderCreateWithoutShippingProviderInput[] | Prisma.OrderUncheckedCreateWithoutShippingProviderInput[]
+  connectOrCreate?: Prisma.OrderCreateOrConnectWithoutShippingProviderInput | Prisma.OrderCreateOrConnectWithoutShippingProviderInput[]
+  createMany?: Prisma.OrderCreateManyShippingProviderInputEnvelope
+  connect?: Prisma.OrderWhereUniqueInput | Prisma.OrderWhereUniqueInput[]
+}
+
+export type OrderUncheckedCreateNestedManyWithoutShippingProviderInput = {
+  create?: Prisma.XOR<Prisma.OrderCreateWithoutShippingProviderInput, Prisma.OrderUncheckedCreateWithoutShippingProviderInput> | Prisma.OrderCreateWithoutShippingProviderInput[] | Prisma.OrderUncheckedCreateWithoutShippingProviderInput[]
+  connectOrCreate?: Prisma.OrderCreateOrConnectWithoutShippingProviderInput | Prisma.OrderCreateOrConnectWithoutShippingProviderInput[]
+  createMany?: Prisma.OrderCreateManyShippingProviderInputEnvelope
+  connect?: Prisma.OrderWhereUniqueInput | Prisma.OrderWhereUniqueInput[]
+}
+
+export type OrderUpdateManyWithoutShippingProviderNestedInput = {
+  create?: Prisma.XOR<Prisma.OrderCreateWithoutShippingProviderInput, Prisma.OrderUncheckedCreateWithoutShippingProviderInput> | Prisma.OrderCreateWithoutShippingProviderInput[] | Prisma.OrderUncheckedCreateWithoutShippingProviderInput[]
+  connectOrCreate?: Prisma.OrderCreateOrConnectWithoutShippingProviderInput | Prisma.OrderCreateOrConnectWithoutShippingProviderInput[]
+  upsert?: Prisma.OrderUpsertWithWhereUniqueWithoutShippingProviderInput | Prisma.OrderUpsertWithWhereUniqueWithoutShippingProviderInput[]
+  createMany?: Prisma.OrderCreateManyShippingProviderInputEnvelope
+  set?: Prisma.OrderWhereUniqueInput | Prisma.OrderWhereUniqueInput[]
+  disconnect?: Prisma.OrderWhereUniqueInput | Prisma.OrderWhereUniqueInput[]
+  delete?: Prisma.OrderWhereUniqueInput | Prisma.OrderWhereUniqueInput[]
+  connect?: Prisma.OrderWhereUniqueInput | Prisma.OrderWhereUniqueInput[]
+  update?: Prisma.OrderUpdateWithWhereUniqueWithoutShippingProviderInput | Prisma.OrderUpdateWithWhereUniqueWithoutShippingProviderInput[]
+  updateMany?: Prisma.OrderUpdateManyWithWhereWithoutShippingProviderInput | Prisma.OrderUpdateManyWithWhereWithoutShippingProviderInput[]
+  deleteMany?: Prisma.OrderScalarWhereInput | Prisma.OrderScalarWhereInput[]
+}
+
+export type OrderUncheckedUpdateManyWithoutShippingProviderNestedInput = {
+  create?: Prisma.XOR<Prisma.OrderCreateWithoutShippingProviderInput, Prisma.OrderUncheckedCreateWithoutShippingProviderInput> | Prisma.OrderCreateWithoutShippingProviderInput[] | Prisma.OrderUncheckedCreateWithoutShippingProviderInput[]
+  connectOrCreate?: Prisma.OrderCreateOrConnectWithoutShippingProviderInput | Prisma.OrderCreateOrConnectWithoutShippingProviderInput[]
+  upsert?: Prisma.OrderUpsertWithWhereUniqueWithoutShippingProviderInput | Prisma.OrderUpsertWithWhereUniqueWithoutShippingProviderInput[]
+  createMany?: Prisma.OrderCreateManyShippingProviderInputEnvelope
+  set?: Prisma.OrderWhereUniqueInput | Prisma.OrderWhereUniqueInput[]
+  disconnect?: Prisma.OrderWhereUniqueInput | Prisma.OrderWhereUniqueInput[]
+  delete?: Prisma.OrderWhereUniqueInput | Prisma.OrderWhereUniqueInput[]
+  connect?: Prisma.OrderWhereUniqueInput | Prisma.OrderWhereUniqueInput[]
+  update?: Prisma.OrderUpdateWithWhereUniqueWithoutShippingProviderInput | Prisma.OrderUpdateWithWhereUniqueWithoutShippingProviderInput[]
+  updateMany?: Prisma.OrderUpdateManyWithWhereWithoutShippingProviderInput | Prisma.OrderUpdateManyWithWhereWithoutShippingProviderInput[]
+  deleteMany?: Prisma.OrderScalarWhereInput | Prisma.OrderScalarWhereInput[]
+}
+
+export type OrderCreateNestedManyWithoutCodAreaInput = {
+  create?: Prisma.XOR<Prisma.OrderCreateWithoutCodAreaInput, Prisma.OrderUncheckedCreateWithoutCodAreaInput> | Prisma.OrderCreateWithoutCodAreaInput[] | Prisma.OrderUncheckedCreateWithoutCodAreaInput[]
+  connectOrCreate?: Prisma.OrderCreateOrConnectWithoutCodAreaInput | Prisma.OrderCreateOrConnectWithoutCodAreaInput[]
+  createMany?: Prisma.OrderCreateManyCodAreaInputEnvelope
+  connect?: Prisma.OrderWhereUniqueInput | Prisma.OrderWhereUniqueInput[]
+}
+
+export type OrderUncheckedCreateNestedManyWithoutCodAreaInput = {
+  create?: Prisma.XOR<Prisma.OrderCreateWithoutCodAreaInput, Prisma.OrderUncheckedCreateWithoutCodAreaInput> | Prisma.OrderCreateWithoutCodAreaInput[] | Prisma.OrderUncheckedCreateWithoutCodAreaInput[]
+  connectOrCreate?: Prisma.OrderCreateOrConnectWithoutCodAreaInput | Prisma.OrderCreateOrConnectWithoutCodAreaInput[]
+  createMany?: Prisma.OrderCreateManyCodAreaInputEnvelope
+  connect?: Prisma.OrderWhereUniqueInput | Prisma.OrderWhereUniqueInput[]
+}
+
+export type OrderUpdateManyWithoutCodAreaNestedInput = {
+  create?: Prisma.XOR<Prisma.OrderCreateWithoutCodAreaInput, Prisma.OrderUncheckedCreateWithoutCodAreaInput> | Prisma.OrderCreateWithoutCodAreaInput[] | Prisma.OrderUncheckedCreateWithoutCodAreaInput[]
+  connectOrCreate?: Prisma.OrderCreateOrConnectWithoutCodAreaInput | Prisma.OrderCreateOrConnectWithoutCodAreaInput[]
+  upsert?: Prisma.OrderUpsertWithWhereUniqueWithoutCodAreaInput | Prisma.OrderUpsertWithWhereUniqueWithoutCodAreaInput[]
+  createMany?: Prisma.OrderCreateManyCodAreaInputEnvelope
+  set?: Prisma.OrderWhereUniqueInput | Prisma.OrderWhereUniqueInput[]
+  disconnect?: Prisma.OrderWhereUniqueInput | Prisma.OrderWhereUniqueInput[]
+  delete?: Prisma.OrderWhereUniqueInput | Prisma.OrderWhereUniqueInput[]
+  connect?: Prisma.OrderWhereUniqueInput | Prisma.OrderWhereUniqueInput[]
+  update?: Prisma.OrderUpdateWithWhereUniqueWithoutCodAreaInput | Prisma.OrderUpdateWithWhereUniqueWithoutCodAreaInput[]
+  updateMany?: Prisma.OrderUpdateManyWithWhereWithoutCodAreaInput | Prisma.OrderUpdateManyWithWhereWithoutCodAreaInput[]
+  deleteMany?: Prisma.OrderScalarWhereInput | Prisma.OrderScalarWhereInput[]
+}
+
+export type OrderUncheckedUpdateManyWithoutCodAreaNestedInput = {
+  create?: Prisma.XOR<Prisma.OrderCreateWithoutCodAreaInput, Prisma.OrderUncheckedCreateWithoutCodAreaInput> | Prisma.OrderCreateWithoutCodAreaInput[] | Prisma.OrderUncheckedCreateWithoutCodAreaInput[]
+  connectOrCreate?: Prisma.OrderCreateOrConnectWithoutCodAreaInput | Prisma.OrderCreateOrConnectWithoutCodAreaInput[]
+  upsert?: Prisma.OrderUpsertWithWhereUniqueWithoutCodAreaInput | Prisma.OrderUpsertWithWhereUniqueWithoutCodAreaInput[]
+  createMany?: Prisma.OrderCreateManyCodAreaInputEnvelope
+  set?: Prisma.OrderWhereUniqueInput | Prisma.OrderWhereUniqueInput[]
+  disconnect?: Prisma.OrderWhereUniqueInput | Prisma.OrderWhereUniqueInput[]
+  delete?: Prisma.OrderWhereUniqueInput | Prisma.OrderWhereUniqueInput[]
+  connect?: Prisma.OrderWhereUniqueInput | Prisma.OrderWhereUniqueInput[]
+  update?: Prisma.OrderUpdateWithWhereUniqueWithoutCodAreaInput | Prisma.OrderUpdateWithWhereUniqueWithoutCodAreaInput[]
+  updateMany?: Prisma.OrderUpdateManyWithWhereWithoutCodAreaInput | Prisma.OrderUpdateManyWithWhereWithoutCodAreaInput[]
+  deleteMany?: Prisma.OrderScalarWhereInput | Prisma.OrderScalarWhereInput[]
+}
+
+export type OrderCreateNestedOneWithoutCheckoutQuoteInput = {
+  create?: Prisma.XOR<Prisma.OrderCreateWithoutCheckoutQuoteInput, Prisma.OrderUncheckedCreateWithoutCheckoutQuoteInput>
+  connectOrCreate?: Prisma.OrderCreateOrConnectWithoutCheckoutQuoteInput
+  connect?: Prisma.OrderWhereUniqueInput
+}
+
+export type OrderUpdateOneWithoutCheckoutQuoteNestedInput = {
+  create?: Prisma.XOR<Prisma.OrderCreateWithoutCheckoutQuoteInput, Prisma.OrderUncheckedCreateWithoutCheckoutQuoteInput>
+  connectOrCreate?: Prisma.OrderCreateOrConnectWithoutCheckoutQuoteInput
+  upsert?: Prisma.OrderUpsertWithoutCheckoutQuoteInput
+  disconnect?: Prisma.OrderWhereInput | boolean
+  delete?: Prisma.OrderWhereInput | boolean
+  connect?: Prisma.OrderWhereUniqueInput
+  update?: Prisma.XOR<Prisma.XOR<Prisma.OrderUpdateToOneWithWhereWithoutCheckoutQuoteInput, Prisma.OrderUpdateWithoutCheckoutQuoteInput>, Prisma.OrderUncheckedUpdateWithoutCheckoutQuoteInput>
+}
+
 export type OrderCreateNestedOneWithoutItemsInput = {
   create?: Prisma.XOR<Prisma.OrderCreateWithoutItemsInput, Prisma.OrderUncheckedCreateWithoutItemsInput>
   connectOrCreate?: Prisma.OrderCreateOrConnectWithoutItemsInput
@@ -847,18 +1200,28 @@ export type OrderCreateWithoutUserInput = {
   discountAmount?: runtime.Decimal | runtime.DecimalJsLike | number | string
   totalAmount: runtime.Decimal | runtime.DecimalJsLike | number | string
   currency?: string
+  paymentMethod?: string | null
+  shippingProviderCode?: string | null
+  shippingProviderName?: string | null
+  codAreaCode?: string | null
+  codAreaName?: string | null
   shippingRecipientName: string
   shippingPhone: string
   shippingAddressLine1: string
   shippingAddressLine2?: string | null
-  shippingCity: string
+  shippingCity?: string | null
   shippingStateProvince?: string | null
+  shippingLocationSnapshot?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   shippingPostalCode?: string | null
   shippingCountryCode: string
   createdAt?: Date | string
   updatedAt?: Date | string
   items?: Prisma.OrderItemCreateNestedManyWithoutOrderInput
   payments?: Prisma.PaymentCreateNestedManyWithoutOrderInput
+  shippingProvider?: Prisma.ShippingProviderCreateNestedOneWithoutOrdersInput
+  codArea?: Prisma.CodAreaCreateNestedOneWithoutOrdersInput
+  shippingLocation?: Prisma.AdministrativeLocationCreateNestedOneWithoutOrdersInput
+  checkoutQuote?: Prisma.CheckoutQuoteCreateNestedOneWithoutOrderInput
 }
 
 export type OrderUncheckedCreateWithoutUserInput = {
@@ -870,18 +1233,28 @@ export type OrderUncheckedCreateWithoutUserInput = {
   discountAmount?: runtime.Decimal | runtime.DecimalJsLike | number | string
   totalAmount: runtime.Decimal | runtime.DecimalJsLike | number | string
   currency?: string
+  paymentMethod?: string | null
+  shippingProviderId?: string | null
+  shippingProviderCode?: string | null
+  shippingProviderName?: string | null
+  codAreaId?: string | null
+  codAreaCode?: string | null
+  codAreaName?: string | null
   shippingRecipientName: string
   shippingPhone: string
   shippingAddressLine1: string
   shippingAddressLine2?: string | null
-  shippingCity: string
+  shippingCity?: string | null
   shippingStateProvince?: string | null
+  shippingLocationPcode?: string | null
+  shippingLocationSnapshot?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   shippingPostalCode?: string | null
   shippingCountryCode: string
   createdAt?: Date | string
   updatedAt?: Date | string
   items?: Prisma.OrderItemUncheckedCreateNestedManyWithoutOrderInput
   payments?: Prisma.PaymentUncheckedCreateNestedManyWithoutOrderInput
+  checkoutQuote?: Prisma.CheckoutQuoteUncheckedCreateNestedOneWithoutOrderInput
 }
 
 export type OrderCreateOrConnectWithoutUserInput = {
@@ -923,16 +1296,449 @@ export type OrderScalarWhereInput = {
   discountAmount?: Prisma.DecimalFilter<"Order"> | runtime.Decimal | runtime.DecimalJsLike | number | string
   totalAmount?: Prisma.DecimalFilter<"Order"> | runtime.Decimal | runtime.DecimalJsLike | number | string
   currency?: Prisma.StringFilter<"Order"> | string
+  paymentMethod?: Prisma.StringNullableFilter<"Order"> | string | null
+  shippingProviderId?: Prisma.UuidNullableFilter<"Order"> | string | null
+  shippingProviderCode?: Prisma.StringNullableFilter<"Order"> | string | null
+  shippingProviderName?: Prisma.StringNullableFilter<"Order"> | string | null
+  codAreaId?: Prisma.UuidNullableFilter<"Order"> | string | null
+  codAreaCode?: Prisma.StringNullableFilter<"Order"> | string | null
+  codAreaName?: Prisma.StringNullableFilter<"Order"> | string | null
   shippingRecipientName?: Prisma.StringFilter<"Order"> | string
   shippingPhone?: Prisma.StringFilter<"Order"> | string
   shippingAddressLine1?: Prisma.StringFilter<"Order"> | string
   shippingAddressLine2?: Prisma.StringNullableFilter<"Order"> | string | null
-  shippingCity?: Prisma.StringFilter<"Order"> | string
+  shippingCity?: Prisma.StringNullableFilter<"Order"> | string | null
   shippingStateProvince?: Prisma.StringNullableFilter<"Order"> | string | null
+  shippingLocationPcode?: Prisma.StringNullableFilter<"Order"> | string | null
+  shippingLocationSnapshot?: Prisma.JsonNullableFilter<"Order">
   shippingPostalCode?: Prisma.StringNullableFilter<"Order"> | string | null
   shippingCountryCode?: Prisma.StringFilter<"Order"> | string
   createdAt?: Prisma.DateTimeFilter<"Order"> | Date | string
   updatedAt?: Prisma.DateTimeFilter<"Order"> | Date | string
+}
+
+export type OrderCreateWithoutShippingLocationInput = {
+  id?: string
+  orderNumber: string
+  status: string
+  subtotal: runtime.Decimal | runtime.DecimalJsLike | number | string
+  shippingFee?: runtime.Decimal | runtime.DecimalJsLike | number | string
+  discountAmount?: runtime.Decimal | runtime.DecimalJsLike | number | string
+  totalAmount: runtime.Decimal | runtime.DecimalJsLike | number | string
+  currency?: string
+  paymentMethod?: string | null
+  shippingProviderCode?: string | null
+  shippingProviderName?: string | null
+  codAreaCode?: string | null
+  codAreaName?: string | null
+  shippingRecipientName: string
+  shippingPhone: string
+  shippingAddressLine1: string
+  shippingAddressLine2?: string | null
+  shippingCity?: string | null
+  shippingStateProvince?: string | null
+  shippingLocationSnapshot?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
+  shippingPostalCode?: string | null
+  shippingCountryCode: string
+  createdAt?: Date | string
+  updatedAt?: Date | string
+  user: Prisma.UserCreateNestedOneWithoutOrdersInput
+  items?: Prisma.OrderItemCreateNestedManyWithoutOrderInput
+  payments?: Prisma.PaymentCreateNestedManyWithoutOrderInput
+  shippingProvider?: Prisma.ShippingProviderCreateNestedOneWithoutOrdersInput
+  codArea?: Prisma.CodAreaCreateNestedOneWithoutOrdersInput
+  checkoutQuote?: Prisma.CheckoutQuoteCreateNestedOneWithoutOrderInput
+}
+
+export type OrderUncheckedCreateWithoutShippingLocationInput = {
+  id?: string
+  userId: string
+  orderNumber: string
+  status: string
+  subtotal: runtime.Decimal | runtime.DecimalJsLike | number | string
+  shippingFee?: runtime.Decimal | runtime.DecimalJsLike | number | string
+  discountAmount?: runtime.Decimal | runtime.DecimalJsLike | number | string
+  totalAmount: runtime.Decimal | runtime.DecimalJsLike | number | string
+  currency?: string
+  paymentMethod?: string | null
+  shippingProviderId?: string | null
+  shippingProviderCode?: string | null
+  shippingProviderName?: string | null
+  codAreaId?: string | null
+  codAreaCode?: string | null
+  codAreaName?: string | null
+  shippingRecipientName: string
+  shippingPhone: string
+  shippingAddressLine1: string
+  shippingAddressLine2?: string | null
+  shippingCity?: string | null
+  shippingStateProvince?: string | null
+  shippingLocationSnapshot?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
+  shippingPostalCode?: string | null
+  shippingCountryCode: string
+  createdAt?: Date | string
+  updatedAt?: Date | string
+  items?: Prisma.OrderItemUncheckedCreateNestedManyWithoutOrderInput
+  payments?: Prisma.PaymentUncheckedCreateNestedManyWithoutOrderInput
+  checkoutQuote?: Prisma.CheckoutQuoteUncheckedCreateNestedOneWithoutOrderInput
+}
+
+export type OrderCreateOrConnectWithoutShippingLocationInput = {
+  where: Prisma.OrderWhereUniqueInput
+  create: Prisma.XOR<Prisma.OrderCreateWithoutShippingLocationInput, Prisma.OrderUncheckedCreateWithoutShippingLocationInput>
+}
+
+export type OrderCreateManyShippingLocationInputEnvelope = {
+  data: Prisma.OrderCreateManyShippingLocationInput | Prisma.OrderCreateManyShippingLocationInput[]
+  skipDuplicates?: boolean
+}
+
+export type OrderUpsertWithWhereUniqueWithoutShippingLocationInput = {
+  where: Prisma.OrderWhereUniqueInput
+  update: Prisma.XOR<Prisma.OrderUpdateWithoutShippingLocationInput, Prisma.OrderUncheckedUpdateWithoutShippingLocationInput>
+  create: Prisma.XOR<Prisma.OrderCreateWithoutShippingLocationInput, Prisma.OrderUncheckedCreateWithoutShippingLocationInput>
+}
+
+export type OrderUpdateWithWhereUniqueWithoutShippingLocationInput = {
+  where: Prisma.OrderWhereUniqueInput
+  data: Prisma.XOR<Prisma.OrderUpdateWithoutShippingLocationInput, Prisma.OrderUncheckedUpdateWithoutShippingLocationInput>
+}
+
+export type OrderUpdateManyWithWhereWithoutShippingLocationInput = {
+  where: Prisma.OrderScalarWhereInput
+  data: Prisma.XOR<Prisma.OrderUpdateManyMutationInput, Prisma.OrderUncheckedUpdateManyWithoutShippingLocationInput>
+}
+
+export type OrderCreateWithoutShippingProviderInput = {
+  id?: string
+  orderNumber: string
+  status: string
+  subtotal: runtime.Decimal | runtime.DecimalJsLike | number | string
+  shippingFee?: runtime.Decimal | runtime.DecimalJsLike | number | string
+  discountAmount?: runtime.Decimal | runtime.DecimalJsLike | number | string
+  totalAmount: runtime.Decimal | runtime.DecimalJsLike | number | string
+  currency?: string
+  paymentMethod?: string | null
+  shippingProviderCode?: string | null
+  shippingProviderName?: string | null
+  codAreaCode?: string | null
+  codAreaName?: string | null
+  shippingRecipientName: string
+  shippingPhone: string
+  shippingAddressLine1: string
+  shippingAddressLine2?: string | null
+  shippingCity?: string | null
+  shippingStateProvince?: string | null
+  shippingLocationSnapshot?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
+  shippingPostalCode?: string | null
+  shippingCountryCode: string
+  createdAt?: Date | string
+  updatedAt?: Date | string
+  user: Prisma.UserCreateNestedOneWithoutOrdersInput
+  items?: Prisma.OrderItemCreateNestedManyWithoutOrderInput
+  payments?: Prisma.PaymentCreateNestedManyWithoutOrderInput
+  codArea?: Prisma.CodAreaCreateNestedOneWithoutOrdersInput
+  shippingLocation?: Prisma.AdministrativeLocationCreateNestedOneWithoutOrdersInput
+  checkoutQuote?: Prisma.CheckoutQuoteCreateNestedOneWithoutOrderInput
+}
+
+export type OrderUncheckedCreateWithoutShippingProviderInput = {
+  id?: string
+  userId: string
+  orderNumber: string
+  status: string
+  subtotal: runtime.Decimal | runtime.DecimalJsLike | number | string
+  shippingFee?: runtime.Decimal | runtime.DecimalJsLike | number | string
+  discountAmount?: runtime.Decimal | runtime.DecimalJsLike | number | string
+  totalAmount: runtime.Decimal | runtime.DecimalJsLike | number | string
+  currency?: string
+  paymentMethod?: string | null
+  shippingProviderCode?: string | null
+  shippingProviderName?: string | null
+  codAreaId?: string | null
+  codAreaCode?: string | null
+  codAreaName?: string | null
+  shippingRecipientName: string
+  shippingPhone: string
+  shippingAddressLine1: string
+  shippingAddressLine2?: string | null
+  shippingCity?: string | null
+  shippingStateProvince?: string | null
+  shippingLocationPcode?: string | null
+  shippingLocationSnapshot?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
+  shippingPostalCode?: string | null
+  shippingCountryCode: string
+  createdAt?: Date | string
+  updatedAt?: Date | string
+  items?: Prisma.OrderItemUncheckedCreateNestedManyWithoutOrderInput
+  payments?: Prisma.PaymentUncheckedCreateNestedManyWithoutOrderInput
+  checkoutQuote?: Prisma.CheckoutQuoteUncheckedCreateNestedOneWithoutOrderInput
+}
+
+export type OrderCreateOrConnectWithoutShippingProviderInput = {
+  where: Prisma.OrderWhereUniqueInput
+  create: Prisma.XOR<Prisma.OrderCreateWithoutShippingProviderInput, Prisma.OrderUncheckedCreateWithoutShippingProviderInput>
+}
+
+export type OrderCreateManyShippingProviderInputEnvelope = {
+  data: Prisma.OrderCreateManyShippingProviderInput | Prisma.OrderCreateManyShippingProviderInput[]
+  skipDuplicates?: boolean
+}
+
+export type OrderUpsertWithWhereUniqueWithoutShippingProviderInput = {
+  where: Prisma.OrderWhereUniqueInput
+  update: Prisma.XOR<Prisma.OrderUpdateWithoutShippingProviderInput, Prisma.OrderUncheckedUpdateWithoutShippingProviderInput>
+  create: Prisma.XOR<Prisma.OrderCreateWithoutShippingProviderInput, Prisma.OrderUncheckedCreateWithoutShippingProviderInput>
+}
+
+export type OrderUpdateWithWhereUniqueWithoutShippingProviderInput = {
+  where: Prisma.OrderWhereUniqueInput
+  data: Prisma.XOR<Prisma.OrderUpdateWithoutShippingProviderInput, Prisma.OrderUncheckedUpdateWithoutShippingProviderInput>
+}
+
+export type OrderUpdateManyWithWhereWithoutShippingProviderInput = {
+  where: Prisma.OrderScalarWhereInput
+  data: Prisma.XOR<Prisma.OrderUpdateManyMutationInput, Prisma.OrderUncheckedUpdateManyWithoutShippingProviderInput>
+}
+
+export type OrderCreateWithoutCodAreaInput = {
+  id?: string
+  orderNumber: string
+  status: string
+  subtotal: runtime.Decimal | runtime.DecimalJsLike | number | string
+  shippingFee?: runtime.Decimal | runtime.DecimalJsLike | number | string
+  discountAmount?: runtime.Decimal | runtime.DecimalJsLike | number | string
+  totalAmount: runtime.Decimal | runtime.DecimalJsLike | number | string
+  currency?: string
+  paymentMethod?: string | null
+  shippingProviderCode?: string | null
+  shippingProviderName?: string | null
+  codAreaCode?: string | null
+  codAreaName?: string | null
+  shippingRecipientName: string
+  shippingPhone: string
+  shippingAddressLine1: string
+  shippingAddressLine2?: string | null
+  shippingCity?: string | null
+  shippingStateProvince?: string | null
+  shippingLocationSnapshot?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
+  shippingPostalCode?: string | null
+  shippingCountryCode: string
+  createdAt?: Date | string
+  updatedAt?: Date | string
+  user: Prisma.UserCreateNestedOneWithoutOrdersInput
+  items?: Prisma.OrderItemCreateNestedManyWithoutOrderInput
+  payments?: Prisma.PaymentCreateNestedManyWithoutOrderInput
+  shippingProvider?: Prisma.ShippingProviderCreateNestedOneWithoutOrdersInput
+  shippingLocation?: Prisma.AdministrativeLocationCreateNestedOneWithoutOrdersInput
+  checkoutQuote?: Prisma.CheckoutQuoteCreateNestedOneWithoutOrderInput
+}
+
+export type OrderUncheckedCreateWithoutCodAreaInput = {
+  id?: string
+  userId: string
+  orderNumber: string
+  status: string
+  subtotal: runtime.Decimal | runtime.DecimalJsLike | number | string
+  shippingFee?: runtime.Decimal | runtime.DecimalJsLike | number | string
+  discountAmount?: runtime.Decimal | runtime.DecimalJsLike | number | string
+  totalAmount: runtime.Decimal | runtime.DecimalJsLike | number | string
+  currency?: string
+  paymentMethod?: string | null
+  shippingProviderId?: string | null
+  shippingProviderCode?: string | null
+  shippingProviderName?: string | null
+  codAreaCode?: string | null
+  codAreaName?: string | null
+  shippingRecipientName: string
+  shippingPhone: string
+  shippingAddressLine1: string
+  shippingAddressLine2?: string | null
+  shippingCity?: string | null
+  shippingStateProvince?: string | null
+  shippingLocationPcode?: string | null
+  shippingLocationSnapshot?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
+  shippingPostalCode?: string | null
+  shippingCountryCode: string
+  createdAt?: Date | string
+  updatedAt?: Date | string
+  items?: Prisma.OrderItemUncheckedCreateNestedManyWithoutOrderInput
+  payments?: Prisma.PaymentUncheckedCreateNestedManyWithoutOrderInput
+  checkoutQuote?: Prisma.CheckoutQuoteUncheckedCreateNestedOneWithoutOrderInput
+}
+
+export type OrderCreateOrConnectWithoutCodAreaInput = {
+  where: Prisma.OrderWhereUniqueInput
+  create: Prisma.XOR<Prisma.OrderCreateWithoutCodAreaInput, Prisma.OrderUncheckedCreateWithoutCodAreaInput>
+}
+
+export type OrderCreateManyCodAreaInputEnvelope = {
+  data: Prisma.OrderCreateManyCodAreaInput | Prisma.OrderCreateManyCodAreaInput[]
+  skipDuplicates?: boolean
+}
+
+export type OrderUpsertWithWhereUniqueWithoutCodAreaInput = {
+  where: Prisma.OrderWhereUniqueInput
+  update: Prisma.XOR<Prisma.OrderUpdateWithoutCodAreaInput, Prisma.OrderUncheckedUpdateWithoutCodAreaInput>
+  create: Prisma.XOR<Prisma.OrderCreateWithoutCodAreaInput, Prisma.OrderUncheckedCreateWithoutCodAreaInput>
+}
+
+export type OrderUpdateWithWhereUniqueWithoutCodAreaInput = {
+  where: Prisma.OrderWhereUniqueInput
+  data: Prisma.XOR<Prisma.OrderUpdateWithoutCodAreaInput, Prisma.OrderUncheckedUpdateWithoutCodAreaInput>
+}
+
+export type OrderUpdateManyWithWhereWithoutCodAreaInput = {
+  where: Prisma.OrderScalarWhereInput
+  data: Prisma.XOR<Prisma.OrderUpdateManyMutationInput, Prisma.OrderUncheckedUpdateManyWithoutCodAreaInput>
+}
+
+export type OrderCreateWithoutCheckoutQuoteInput = {
+  id?: string
+  orderNumber: string
+  status: string
+  subtotal: runtime.Decimal | runtime.DecimalJsLike | number | string
+  shippingFee?: runtime.Decimal | runtime.DecimalJsLike | number | string
+  discountAmount?: runtime.Decimal | runtime.DecimalJsLike | number | string
+  totalAmount: runtime.Decimal | runtime.DecimalJsLike | number | string
+  currency?: string
+  paymentMethod?: string | null
+  shippingProviderCode?: string | null
+  shippingProviderName?: string | null
+  codAreaCode?: string | null
+  codAreaName?: string | null
+  shippingRecipientName: string
+  shippingPhone: string
+  shippingAddressLine1: string
+  shippingAddressLine2?: string | null
+  shippingCity?: string | null
+  shippingStateProvince?: string | null
+  shippingLocationSnapshot?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
+  shippingPostalCode?: string | null
+  shippingCountryCode: string
+  createdAt?: Date | string
+  updatedAt?: Date | string
+  user: Prisma.UserCreateNestedOneWithoutOrdersInput
+  items?: Prisma.OrderItemCreateNestedManyWithoutOrderInput
+  payments?: Prisma.PaymentCreateNestedManyWithoutOrderInput
+  shippingProvider?: Prisma.ShippingProviderCreateNestedOneWithoutOrdersInput
+  codArea?: Prisma.CodAreaCreateNestedOneWithoutOrdersInput
+  shippingLocation?: Prisma.AdministrativeLocationCreateNestedOneWithoutOrdersInput
+}
+
+export type OrderUncheckedCreateWithoutCheckoutQuoteInput = {
+  id?: string
+  userId: string
+  orderNumber: string
+  status: string
+  subtotal: runtime.Decimal | runtime.DecimalJsLike | number | string
+  shippingFee?: runtime.Decimal | runtime.DecimalJsLike | number | string
+  discountAmount?: runtime.Decimal | runtime.DecimalJsLike | number | string
+  totalAmount: runtime.Decimal | runtime.DecimalJsLike | number | string
+  currency?: string
+  paymentMethod?: string | null
+  shippingProviderId?: string | null
+  shippingProviderCode?: string | null
+  shippingProviderName?: string | null
+  codAreaId?: string | null
+  codAreaCode?: string | null
+  codAreaName?: string | null
+  shippingRecipientName: string
+  shippingPhone: string
+  shippingAddressLine1: string
+  shippingAddressLine2?: string | null
+  shippingCity?: string | null
+  shippingStateProvince?: string | null
+  shippingLocationPcode?: string | null
+  shippingLocationSnapshot?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
+  shippingPostalCode?: string | null
+  shippingCountryCode: string
+  createdAt?: Date | string
+  updatedAt?: Date | string
+  items?: Prisma.OrderItemUncheckedCreateNestedManyWithoutOrderInput
+  payments?: Prisma.PaymentUncheckedCreateNestedManyWithoutOrderInput
+}
+
+export type OrderCreateOrConnectWithoutCheckoutQuoteInput = {
+  where: Prisma.OrderWhereUniqueInput
+  create: Prisma.XOR<Prisma.OrderCreateWithoutCheckoutQuoteInput, Prisma.OrderUncheckedCreateWithoutCheckoutQuoteInput>
+}
+
+export type OrderUpsertWithoutCheckoutQuoteInput = {
+  update: Prisma.XOR<Prisma.OrderUpdateWithoutCheckoutQuoteInput, Prisma.OrderUncheckedUpdateWithoutCheckoutQuoteInput>
+  create: Prisma.XOR<Prisma.OrderCreateWithoutCheckoutQuoteInput, Prisma.OrderUncheckedCreateWithoutCheckoutQuoteInput>
+  where?: Prisma.OrderWhereInput
+}
+
+export type OrderUpdateToOneWithWhereWithoutCheckoutQuoteInput = {
+  where?: Prisma.OrderWhereInput
+  data: Prisma.XOR<Prisma.OrderUpdateWithoutCheckoutQuoteInput, Prisma.OrderUncheckedUpdateWithoutCheckoutQuoteInput>
+}
+
+export type OrderUpdateWithoutCheckoutQuoteInput = {
+  id?: Prisma.StringFieldUpdateOperationsInput | string
+  orderNumber?: Prisma.StringFieldUpdateOperationsInput | string
+  status?: Prisma.StringFieldUpdateOperationsInput | string
+  subtotal?: Prisma.DecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string
+  shippingFee?: Prisma.DecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string
+  discountAmount?: Prisma.DecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string
+  totalAmount?: Prisma.DecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string
+  currency?: Prisma.StringFieldUpdateOperationsInput | string
+  paymentMethod?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  shippingProviderCode?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  shippingProviderName?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  codAreaCode?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  codAreaName?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  shippingRecipientName?: Prisma.StringFieldUpdateOperationsInput | string
+  shippingPhone?: Prisma.StringFieldUpdateOperationsInput | string
+  shippingAddressLine1?: Prisma.StringFieldUpdateOperationsInput | string
+  shippingAddressLine2?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  shippingCity?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  shippingStateProvince?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  shippingLocationSnapshot?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
+  shippingPostalCode?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  shippingCountryCode?: Prisma.StringFieldUpdateOperationsInput | string
+  createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  user?: Prisma.UserUpdateOneRequiredWithoutOrdersNestedInput
+  items?: Prisma.OrderItemUpdateManyWithoutOrderNestedInput
+  payments?: Prisma.PaymentUpdateManyWithoutOrderNestedInput
+  shippingProvider?: Prisma.ShippingProviderUpdateOneWithoutOrdersNestedInput
+  codArea?: Prisma.CodAreaUpdateOneWithoutOrdersNestedInput
+  shippingLocation?: Prisma.AdministrativeLocationUpdateOneWithoutOrdersNestedInput
+}
+
+export type OrderUncheckedUpdateWithoutCheckoutQuoteInput = {
+  id?: Prisma.StringFieldUpdateOperationsInput | string
+  userId?: Prisma.StringFieldUpdateOperationsInput | string
+  orderNumber?: Prisma.StringFieldUpdateOperationsInput | string
+  status?: Prisma.StringFieldUpdateOperationsInput | string
+  subtotal?: Prisma.DecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string
+  shippingFee?: Prisma.DecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string
+  discountAmount?: Prisma.DecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string
+  totalAmount?: Prisma.DecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string
+  currency?: Prisma.StringFieldUpdateOperationsInput | string
+  paymentMethod?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  shippingProviderId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  shippingProviderCode?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  shippingProviderName?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  codAreaId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  codAreaCode?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  codAreaName?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  shippingRecipientName?: Prisma.StringFieldUpdateOperationsInput | string
+  shippingPhone?: Prisma.StringFieldUpdateOperationsInput | string
+  shippingAddressLine1?: Prisma.StringFieldUpdateOperationsInput | string
+  shippingAddressLine2?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  shippingCity?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  shippingStateProvince?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  shippingLocationPcode?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  shippingLocationSnapshot?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
+  shippingPostalCode?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  shippingCountryCode?: Prisma.StringFieldUpdateOperationsInput | string
+  createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  items?: Prisma.OrderItemUncheckedUpdateManyWithoutOrderNestedInput
+  payments?: Prisma.PaymentUncheckedUpdateManyWithoutOrderNestedInput
 }
 
 export type OrderCreateWithoutItemsInput = {
@@ -944,18 +1750,28 @@ export type OrderCreateWithoutItemsInput = {
   discountAmount?: runtime.Decimal | runtime.DecimalJsLike | number | string
   totalAmount: runtime.Decimal | runtime.DecimalJsLike | number | string
   currency?: string
+  paymentMethod?: string | null
+  shippingProviderCode?: string | null
+  shippingProviderName?: string | null
+  codAreaCode?: string | null
+  codAreaName?: string | null
   shippingRecipientName: string
   shippingPhone: string
   shippingAddressLine1: string
   shippingAddressLine2?: string | null
-  shippingCity: string
+  shippingCity?: string | null
   shippingStateProvince?: string | null
+  shippingLocationSnapshot?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   shippingPostalCode?: string | null
   shippingCountryCode: string
   createdAt?: Date | string
   updatedAt?: Date | string
   user: Prisma.UserCreateNestedOneWithoutOrdersInput
   payments?: Prisma.PaymentCreateNestedManyWithoutOrderInput
+  shippingProvider?: Prisma.ShippingProviderCreateNestedOneWithoutOrdersInput
+  codArea?: Prisma.CodAreaCreateNestedOneWithoutOrdersInput
+  shippingLocation?: Prisma.AdministrativeLocationCreateNestedOneWithoutOrdersInput
+  checkoutQuote?: Prisma.CheckoutQuoteCreateNestedOneWithoutOrderInput
 }
 
 export type OrderUncheckedCreateWithoutItemsInput = {
@@ -968,17 +1784,27 @@ export type OrderUncheckedCreateWithoutItemsInput = {
   discountAmount?: runtime.Decimal | runtime.DecimalJsLike | number | string
   totalAmount: runtime.Decimal | runtime.DecimalJsLike | number | string
   currency?: string
+  paymentMethod?: string | null
+  shippingProviderId?: string | null
+  shippingProviderCode?: string | null
+  shippingProviderName?: string | null
+  codAreaId?: string | null
+  codAreaCode?: string | null
+  codAreaName?: string | null
   shippingRecipientName: string
   shippingPhone: string
   shippingAddressLine1: string
   shippingAddressLine2?: string | null
-  shippingCity: string
+  shippingCity?: string | null
   shippingStateProvince?: string | null
+  shippingLocationPcode?: string | null
+  shippingLocationSnapshot?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   shippingPostalCode?: string | null
   shippingCountryCode: string
   createdAt?: Date | string
   updatedAt?: Date | string
   payments?: Prisma.PaymentUncheckedCreateNestedManyWithoutOrderInput
+  checkoutQuote?: Prisma.CheckoutQuoteUncheckedCreateNestedOneWithoutOrderInput
 }
 
 export type OrderCreateOrConnectWithoutItemsInput = {
@@ -1006,18 +1832,28 @@ export type OrderUpdateWithoutItemsInput = {
   discountAmount?: Prisma.DecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string
   totalAmount?: Prisma.DecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string
   currency?: Prisma.StringFieldUpdateOperationsInput | string
+  paymentMethod?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  shippingProviderCode?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  shippingProviderName?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  codAreaCode?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  codAreaName?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   shippingRecipientName?: Prisma.StringFieldUpdateOperationsInput | string
   shippingPhone?: Prisma.StringFieldUpdateOperationsInput | string
   shippingAddressLine1?: Prisma.StringFieldUpdateOperationsInput | string
   shippingAddressLine2?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
-  shippingCity?: Prisma.StringFieldUpdateOperationsInput | string
+  shippingCity?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   shippingStateProvince?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  shippingLocationSnapshot?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   shippingPostalCode?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   shippingCountryCode?: Prisma.StringFieldUpdateOperationsInput | string
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   user?: Prisma.UserUpdateOneRequiredWithoutOrdersNestedInput
   payments?: Prisma.PaymentUpdateManyWithoutOrderNestedInput
+  shippingProvider?: Prisma.ShippingProviderUpdateOneWithoutOrdersNestedInput
+  codArea?: Prisma.CodAreaUpdateOneWithoutOrdersNestedInput
+  shippingLocation?: Prisma.AdministrativeLocationUpdateOneWithoutOrdersNestedInput
+  checkoutQuote?: Prisma.CheckoutQuoteUpdateOneWithoutOrderNestedInput
 }
 
 export type OrderUncheckedUpdateWithoutItemsInput = {
@@ -1030,17 +1866,27 @@ export type OrderUncheckedUpdateWithoutItemsInput = {
   discountAmount?: Prisma.DecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string
   totalAmount?: Prisma.DecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string
   currency?: Prisma.StringFieldUpdateOperationsInput | string
+  paymentMethod?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  shippingProviderId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  shippingProviderCode?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  shippingProviderName?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  codAreaId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  codAreaCode?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  codAreaName?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   shippingRecipientName?: Prisma.StringFieldUpdateOperationsInput | string
   shippingPhone?: Prisma.StringFieldUpdateOperationsInput | string
   shippingAddressLine1?: Prisma.StringFieldUpdateOperationsInput | string
   shippingAddressLine2?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
-  shippingCity?: Prisma.StringFieldUpdateOperationsInput | string
+  shippingCity?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   shippingStateProvince?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  shippingLocationPcode?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  shippingLocationSnapshot?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   shippingPostalCode?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   shippingCountryCode?: Prisma.StringFieldUpdateOperationsInput | string
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   payments?: Prisma.PaymentUncheckedUpdateManyWithoutOrderNestedInput
+  checkoutQuote?: Prisma.CheckoutQuoteUncheckedUpdateOneWithoutOrderNestedInput
 }
 
 export type OrderCreateWithoutPaymentsInput = {
@@ -1052,18 +1898,28 @@ export type OrderCreateWithoutPaymentsInput = {
   discountAmount?: runtime.Decimal | runtime.DecimalJsLike | number | string
   totalAmount: runtime.Decimal | runtime.DecimalJsLike | number | string
   currency?: string
+  paymentMethod?: string | null
+  shippingProviderCode?: string | null
+  shippingProviderName?: string | null
+  codAreaCode?: string | null
+  codAreaName?: string | null
   shippingRecipientName: string
   shippingPhone: string
   shippingAddressLine1: string
   shippingAddressLine2?: string | null
-  shippingCity: string
+  shippingCity?: string | null
   shippingStateProvince?: string | null
+  shippingLocationSnapshot?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   shippingPostalCode?: string | null
   shippingCountryCode: string
   createdAt?: Date | string
   updatedAt?: Date | string
   user: Prisma.UserCreateNestedOneWithoutOrdersInput
   items?: Prisma.OrderItemCreateNestedManyWithoutOrderInput
+  shippingProvider?: Prisma.ShippingProviderCreateNestedOneWithoutOrdersInput
+  codArea?: Prisma.CodAreaCreateNestedOneWithoutOrdersInput
+  shippingLocation?: Prisma.AdministrativeLocationCreateNestedOneWithoutOrdersInput
+  checkoutQuote?: Prisma.CheckoutQuoteCreateNestedOneWithoutOrderInput
 }
 
 export type OrderUncheckedCreateWithoutPaymentsInput = {
@@ -1076,17 +1932,27 @@ export type OrderUncheckedCreateWithoutPaymentsInput = {
   discountAmount?: runtime.Decimal | runtime.DecimalJsLike | number | string
   totalAmount: runtime.Decimal | runtime.DecimalJsLike | number | string
   currency?: string
+  paymentMethod?: string | null
+  shippingProviderId?: string | null
+  shippingProviderCode?: string | null
+  shippingProviderName?: string | null
+  codAreaId?: string | null
+  codAreaCode?: string | null
+  codAreaName?: string | null
   shippingRecipientName: string
   shippingPhone: string
   shippingAddressLine1: string
   shippingAddressLine2?: string | null
-  shippingCity: string
+  shippingCity?: string | null
   shippingStateProvince?: string | null
+  shippingLocationPcode?: string | null
+  shippingLocationSnapshot?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   shippingPostalCode?: string | null
   shippingCountryCode: string
   createdAt?: Date | string
   updatedAt?: Date | string
   items?: Prisma.OrderItemUncheckedCreateNestedManyWithoutOrderInput
+  checkoutQuote?: Prisma.CheckoutQuoteUncheckedCreateNestedOneWithoutOrderInput
 }
 
 export type OrderCreateOrConnectWithoutPaymentsInput = {
@@ -1114,18 +1980,28 @@ export type OrderUpdateWithoutPaymentsInput = {
   discountAmount?: Prisma.DecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string
   totalAmount?: Prisma.DecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string
   currency?: Prisma.StringFieldUpdateOperationsInput | string
+  paymentMethod?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  shippingProviderCode?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  shippingProviderName?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  codAreaCode?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  codAreaName?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   shippingRecipientName?: Prisma.StringFieldUpdateOperationsInput | string
   shippingPhone?: Prisma.StringFieldUpdateOperationsInput | string
   shippingAddressLine1?: Prisma.StringFieldUpdateOperationsInput | string
   shippingAddressLine2?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
-  shippingCity?: Prisma.StringFieldUpdateOperationsInput | string
+  shippingCity?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   shippingStateProvince?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  shippingLocationSnapshot?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   shippingPostalCode?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   shippingCountryCode?: Prisma.StringFieldUpdateOperationsInput | string
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   user?: Prisma.UserUpdateOneRequiredWithoutOrdersNestedInput
   items?: Prisma.OrderItemUpdateManyWithoutOrderNestedInput
+  shippingProvider?: Prisma.ShippingProviderUpdateOneWithoutOrdersNestedInput
+  codArea?: Prisma.CodAreaUpdateOneWithoutOrdersNestedInput
+  shippingLocation?: Prisma.AdministrativeLocationUpdateOneWithoutOrdersNestedInput
+  checkoutQuote?: Prisma.CheckoutQuoteUpdateOneWithoutOrderNestedInput
 }
 
 export type OrderUncheckedUpdateWithoutPaymentsInput = {
@@ -1138,17 +2014,27 @@ export type OrderUncheckedUpdateWithoutPaymentsInput = {
   discountAmount?: Prisma.DecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string
   totalAmount?: Prisma.DecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string
   currency?: Prisma.StringFieldUpdateOperationsInput | string
+  paymentMethod?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  shippingProviderId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  shippingProviderCode?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  shippingProviderName?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  codAreaId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  codAreaCode?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  codAreaName?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   shippingRecipientName?: Prisma.StringFieldUpdateOperationsInput | string
   shippingPhone?: Prisma.StringFieldUpdateOperationsInput | string
   shippingAddressLine1?: Prisma.StringFieldUpdateOperationsInput | string
   shippingAddressLine2?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
-  shippingCity?: Prisma.StringFieldUpdateOperationsInput | string
+  shippingCity?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   shippingStateProvince?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  shippingLocationPcode?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  shippingLocationSnapshot?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   shippingPostalCode?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   shippingCountryCode?: Prisma.StringFieldUpdateOperationsInput | string
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   items?: Prisma.OrderItemUncheckedUpdateManyWithoutOrderNestedInput
+  checkoutQuote?: Prisma.CheckoutQuoteUncheckedUpdateOneWithoutOrderNestedInput
 }
 
 export type OrderCreateManyUserInput = {
@@ -1160,12 +2046,21 @@ export type OrderCreateManyUserInput = {
   discountAmount?: runtime.Decimal | runtime.DecimalJsLike | number | string
   totalAmount: runtime.Decimal | runtime.DecimalJsLike | number | string
   currency?: string
+  paymentMethod?: string | null
+  shippingProviderId?: string | null
+  shippingProviderCode?: string | null
+  shippingProviderName?: string | null
+  codAreaId?: string | null
+  codAreaCode?: string | null
+  codAreaName?: string | null
   shippingRecipientName: string
   shippingPhone: string
   shippingAddressLine1: string
   shippingAddressLine2?: string | null
-  shippingCity: string
+  shippingCity?: string | null
   shippingStateProvince?: string | null
+  shippingLocationPcode?: string | null
+  shippingLocationSnapshot?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   shippingPostalCode?: string | null
   shippingCountryCode: string
   createdAt?: Date | string
@@ -1181,18 +2076,28 @@ export type OrderUpdateWithoutUserInput = {
   discountAmount?: Prisma.DecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string
   totalAmount?: Prisma.DecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string
   currency?: Prisma.StringFieldUpdateOperationsInput | string
+  paymentMethod?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  shippingProviderCode?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  shippingProviderName?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  codAreaCode?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  codAreaName?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   shippingRecipientName?: Prisma.StringFieldUpdateOperationsInput | string
   shippingPhone?: Prisma.StringFieldUpdateOperationsInput | string
   shippingAddressLine1?: Prisma.StringFieldUpdateOperationsInput | string
   shippingAddressLine2?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
-  shippingCity?: Prisma.StringFieldUpdateOperationsInput | string
+  shippingCity?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   shippingStateProvince?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  shippingLocationSnapshot?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   shippingPostalCode?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   shippingCountryCode?: Prisma.StringFieldUpdateOperationsInput | string
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   items?: Prisma.OrderItemUpdateManyWithoutOrderNestedInput
   payments?: Prisma.PaymentUpdateManyWithoutOrderNestedInput
+  shippingProvider?: Prisma.ShippingProviderUpdateOneWithoutOrdersNestedInput
+  codArea?: Prisma.CodAreaUpdateOneWithoutOrdersNestedInput
+  shippingLocation?: Prisma.AdministrativeLocationUpdateOneWithoutOrdersNestedInput
+  checkoutQuote?: Prisma.CheckoutQuoteUpdateOneWithoutOrderNestedInput
 }
 
 export type OrderUncheckedUpdateWithoutUserInput = {
@@ -1204,18 +2109,28 @@ export type OrderUncheckedUpdateWithoutUserInput = {
   discountAmount?: Prisma.DecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string
   totalAmount?: Prisma.DecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string
   currency?: Prisma.StringFieldUpdateOperationsInput | string
+  paymentMethod?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  shippingProviderId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  shippingProviderCode?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  shippingProviderName?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  codAreaId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  codAreaCode?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  codAreaName?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   shippingRecipientName?: Prisma.StringFieldUpdateOperationsInput | string
   shippingPhone?: Prisma.StringFieldUpdateOperationsInput | string
   shippingAddressLine1?: Prisma.StringFieldUpdateOperationsInput | string
   shippingAddressLine2?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
-  shippingCity?: Prisma.StringFieldUpdateOperationsInput | string
+  shippingCity?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   shippingStateProvince?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  shippingLocationPcode?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  shippingLocationSnapshot?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   shippingPostalCode?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   shippingCountryCode?: Prisma.StringFieldUpdateOperationsInput | string
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   items?: Prisma.OrderItemUncheckedUpdateManyWithoutOrderNestedInput
   payments?: Prisma.PaymentUncheckedUpdateManyWithoutOrderNestedInput
+  checkoutQuote?: Prisma.CheckoutQuoteUncheckedUpdateOneWithoutOrderNestedInput
 }
 
 export type OrderUncheckedUpdateManyWithoutUserInput = {
@@ -1227,12 +2142,399 @@ export type OrderUncheckedUpdateManyWithoutUserInput = {
   discountAmount?: Prisma.DecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string
   totalAmount?: Prisma.DecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string
   currency?: Prisma.StringFieldUpdateOperationsInput | string
+  paymentMethod?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  shippingProviderId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  shippingProviderCode?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  shippingProviderName?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  codAreaId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  codAreaCode?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  codAreaName?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   shippingRecipientName?: Prisma.StringFieldUpdateOperationsInput | string
   shippingPhone?: Prisma.StringFieldUpdateOperationsInput | string
   shippingAddressLine1?: Prisma.StringFieldUpdateOperationsInput | string
   shippingAddressLine2?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
-  shippingCity?: Prisma.StringFieldUpdateOperationsInput | string
+  shippingCity?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   shippingStateProvince?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  shippingLocationPcode?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  shippingLocationSnapshot?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
+  shippingPostalCode?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  shippingCountryCode?: Prisma.StringFieldUpdateOperationsInput | string
+  createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+}
+
+export type OrderCreateManyShippingLocationInput = {
+  id?: string
+  userId: string
+  orderNumber: string
+  status: string
+  subtotal: runtime.Decimal | runtime.DecimalJsLike | number | string
+  shippingFee?: runtime.Decimal | runtime.DecimalJsLike | number | string
+  discountAmount?: runtime.Decimal | runtime.DecimalJsLike | number | string
+  totalAmount: runtime.Decimal | runtime.DecimalJsLike | number | string
+  currency?: string
+  paymentMethod?: string | null
+  shippingProviderId?: string | null
+  shippingProviderCode?: string | null
+  shippingProviderName?: string | null
+  codAreaId?: string | null
+  codAreaCode?: string | null
+  codAreaName?: string | null
+  shippingRecipientName: string
+  shippingPhone: string
+  shippingAddressLine1: string
+  shippingAddressLine2?: string | null
+  shippingCity?: string | null
+  shippingStateProvince?: string | null
+  shippingLocationSnapshot?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
+  shippingPostalCode?: string | null
+  shippingCountryCode: string
+  createdAt?: Date | string
+  updatedAt?: Date | string
+}
+
+export type OrderUpdateWithoutShippingLocationInput = {
+  id?: Prisma.StringFieldUpdateOperationsInput | string
+  orderNumber?: Prisma.StringFieldUpdateOperationsInput | string
+  status?: Prisma.StringFieldUpdateOperationsInput | string
+  subtotal?: Prisma.DecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string
+  shippingFee?: Prisma.DecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string
+  discountAmount?: Prisma.DecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string
+  totalAmount?: Prisma.DecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string
+  currency?: Prisma.StringFieldUpdateOperationsInput | string
+  paymentMethod?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  shippingProviderCode?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  shippingProviderName?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  codAreaCode?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  codAreaName?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  shippingRecipientName?: Prisma.StringFieldUpdateOperationsInput | string
+  shippingPhone?: Prisma.StringFieldUpdateOperationsInput | string
+  shippingAddressLine1?: Prisma.StringFieldUpdateOperationsInput | string
+  shippingAddressLine2?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  shippingCity?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  shippingStateProvince?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  shippingLocationSnapshot?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
+  shippingPostalCode?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  shippingCountryCode?: Prisma.StringFieldUpdateOperationsInput | string
+  createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  user?: Prisma.UserUpdateOneRequiredWithoutOrdersNestedInput
+  items?: Prisma.OrderItemUpdateManyWithoutOrderNestedInput
+  payments?: Prisma.PaymentUpdateManyWithoutOrderNestedInput
+  shippingProvider?: Prisma.ShippingProviderUpdateOneWithoutOrdersNestedInput
+  codArea?: Prisma.CodAreaUpdateOneWithoutOrdersNestedInput
+  checkoutQuote?: Prisma.CheckoutQuoteUpdateOneWithoutOrderNestedInput
+}
+
+export type OrderUncheckedUpdateWithoutShippingLocationInput = {
+  id?: Prisma.StringFieldUpdateOperationsInput | string
+  userId?: Prisma.StringFieldUpdateOperationsInput | string
+  orderNumber?: Prisma.StringFieldUpdateOperationsInput | string
+  status?: Prisma.StringFieldUpdateOperationsInput | string
+  subtotal?: Prisma.DecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string
+  shippingFee?: Prisma.DecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string
+  discountAmount?: Prisma.DecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string
+  totalAmount?: Prisma.DecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string
+  currency?: Prisma.StringFieldUpdateOperationsInput | string
+  paymentMethod?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  shippingProviderId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  shippingProviderCode?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  shippingProviderName?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  codAreaId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  codAreaCode?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  codAreaName?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  shippingRecipientName?: Prisma.StringFieldUpdateOperationsInput | string
+  shippingPhone?: Prisma.StringFieldUpdateOperationsInput | string
+  shippingAddressLine1?: Prisma.StringFieldUpdateOperationsInput | string
+  shippingAddressLine2?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  shippingCity?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  shippingStateProvince?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  shippingLocationSnapshot?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
+  shippingPostalCode?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  shippingCountryCode?: Prisma.StringFieldUpdateOperationsInput | string
+  createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  items?: Prisma.OrderItemUncheckedUpdateManyWithoutOrderNestedInput
+  payments?: Prisma.PaymentUncheckedUpdateManyWithoutOrderNestedInput
+  checkoutQuote?: Prisma.CheckoutQuoteUncheckedUpdateOneWithoutOrderNestedInput
+}
+
+export type OrderUncheckedUpdateManyWithoutShippingLocationInput = {
+  id?: Prisma.StringFieldUpdateOperationsInput | string
+  userId?: Prisma.StringFieldUpdateOperationsInput | string
+  orderNumber?: Prisma.StringFieldUpdateOperationsInput | string
+  status?: Prisma.StringFieldUpdateOperationsInput | string
+  subtotal?: Prisma.DecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string
+  shippingFee?: Prisma.DecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string
+  discountAmount?: Prisma.DecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string
+  totalAmount?: Prisma.DecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string
+  currency?: Prisma.StringFieldUpdateOperationsInput | string
+  paymentMethod?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  shippingProviderId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  shippingProviderCode?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  shippingProviderName?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  codAreaId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  codAreaCode?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  codAreaName?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  shippingRecipientName?: Prisma.StringFieldUpdateOperationsInput | string
+  shippingPhone?: Prisma.StringFieldUpdateOperationsInput | string
+  shippingAddressLine1?: Prisma.StringFieldUpdateOperationsInput | string
+  shippingAddressLine2?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  shippingCity?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  shippingStateProvince?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  shippingLocationSnapshot?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
+  shippingPostalCode?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  shippingCountryCode?: Prisma.StringFieldUpdateOperationsInput | string
+  createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+}
+
+export type OrderCreateManyShippingProviderInput = {
+  id?: string
+  userId: string
+  orderNumber: string
+  status: string
+  subtotal: runtime.Decimal | runtime.DecimalJsLike | number | string
+  shippingFee?: runtime.Decimal | runtime.DecimalJsLike | number | string
+  discountAmount?: runtime.Decimal | runtime.DecimalJsLike | number | string
+  totalAmount: runtime.Decimal | runtime.DecimalJsLike | number | string
+  currency?: string
+  paymentMethod?: string | null
+  shippingProviderCode?: string | null
+  shippingProviderName?: string | null
+  codAreaId?: string | null
+  codAreaCode?: string | null
+  codAreaName?: string | null
+  shippingRecipientName: string
+  shippingPhone: string
+  shippingAddressLine1: string
+  shippingAddressLine2?: string | null
+  shippingCity?: string | null
+  shippingStateProvince?: string | null
+  shippingLocationPcode?: string | null
+  shippingLocationSnapshot?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
+  shippingPostalCode?: string | null
+  shippingCountryCode: string
+  createdAt?: Date | string
+  updatedAt?: Date | string
+}
+
+export type OrderUpdateWithoutShippingProviderInput = {
+  id?: Prisma.StringFieldUpdateOperationsInput | string
+  orderNumber?: Prisma.StringFieldUpdateOperationsInput | string
+  status?: Prisma.StringFieldUpdateOperationsInput | string
+  subtotal?: Prisma.DecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string
+  shippingFee?: Prisma.DecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string
+  discountAmount?: Prisma.DecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string
+  totalAmount?: Prisma.DecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string
+  currency?: Prisma.StringFieldUpdateOperationsInput | string
+  paymentMethod?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  shippingProviderCode?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  shippingProviderName?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  codAreaCode?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  codAreaName?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  shippingRecipientName?: Prisma.StringFieldUpdateOperationsInput | string
+  shippingPhone?: Prisma.StringFieldUpdateOperationsInput | string
+  shippingAddressLine1?: Prisma.StringFieldUpdateOperationsInput | string
+  shippingAddressLine2?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  shippingCity?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  shippingStateProvince?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  shippingLocationSnapshot?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
+  shippingPostalCode?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  shippingCountryCode?: Prisma.StringFieldUpdateOperationsInput | string
+  createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  user?: Prisma.UserUpdateOneRequiredWithoutOrdersNestedInput
+  items?: Prisma.OrderItemUpdateManyWithoutOrderNestedInput
+  payments?: Prisma.PaymentUpdateManyWithoutOrderNestedInput
+  codArea?: Prisma.CodAreaUpdateOneWithoutOrdersNestedInput
+  shippingLocation?: Prisma.AdministrativeLocationUpdateOneWithoutOrdersNestedInput
+  checkoutQuote?: Prisma.CheckoutQuoteUpdateOneWithoutOrderNestedInput
+}
+
+export type OrderUncheckedUpdateWithoutShippingProviderInput = {
+  id?: Prisma.StringFieldUpdateOperationsInput | string
+  userId?: Prisma.StringFieldUpdateOperationsInput | string
+  orderNumber?: Prisma.StringFieldUpdateOperationsInput | string
+  status?: Prisma.StringFieldUpdateOperationsInput | string
+  subtotal?: Prisma.DecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string
+  shippingFee?: Prisma.DecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string
+  discountAmount?: Prisma.DecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string
+  totalAmount?: Prisma.DecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string
+  currency?: Prisma.StringFieldUpdateOperationsInput | string
+  paymentMethod?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  shippingProviderCode?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  shippingProviderName?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  codAreaId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  codAreaCode?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  codAreaName?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  shippingRecipientName?: Prisma.StringFieldUpdateOperationsInput | string
+  shippingPhone?: Prisma.StringFieldUpdateOperationsInput | string
+  shippingAddressLine1?: Prisma.StringFieldUpdateOperationsInput | string
+  shippingAddressLine2?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  shippingCity?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  shippingStateProvince?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  shippingLocationPcode?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  shippingLocationSnapshot?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
+  shippingPostalCode?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  shippingCountryCode?: Prisma.StringFieldUpdateOperationsInput | string
+  createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  items?: Prisma.OrderItemUncheckedUpdateManyWithoutOrderNestedInput
+  payments?: Prisma.PaymentUncheckedUpdateManyWithoutOrderNestedInput
+  checkoutQuote?: Prisma.CheckoutQuoteUncheckedUpdateOneWithoutOrderNestedInput
+}
+
+export type OrderUncheckedUpdateManyWithoutShippingProviderInput = {
+  id?: Prisma.StringFieldUpdateOperationsInput | string
+  userId?: Prisma.StringFieldUpdateOperationsInput | string
+  orderNumber?: Prisma.StringFieldUpdateOperationsInput | string
+  status?: Prisma.StringFieldUpdateOperationsInput | string
+  subtotal?: Prisma.DecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string
+  shippingFee?: Prisma.DecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string
+  discountAmount?: Prisma.DecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string
+  totalAmount?: Prisma.DecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string
+  currency?: Prisma.StringFieldUpdateOperationsInput | string
+  paymentMethod?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  shippingProviderCode?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  shippingProviderName?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  codAreaId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  codAreaCode?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  codAreaName?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  shippingRecipientName?: Prisma.StringFieldUpdateOperationsInput | string
+  shippingPhone?: Prisma.StringFieldUpdateOperationsInput | string
+  shippingAddressLine1?: Prisma.StringFieldUpdateOperationsInput | string
+  shippingAddressLine2?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  shippingCity?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  shippingStateProvince?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  shippingLocationPcode?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  shippingLocationSnapshot?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
+  shippingPostalCode?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  shippingCountryCode?: Prisma.StringFieldUpdateOperationsInput | string
+  createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+}
+
+export type OrderCreateManyCodAreaInput = {
+  id?: string
+  userId: string
+  orderNumber: string
+  status: string
+  subtotal: runtime.Decimal | runtime.DecimalJsLike | number | string
+  shippingFee?: runtime.Decimal | runtime.DecimalJsLike | number | string
+  discountAmount?: runtime.Decimal | runtime.DecimalJsLike | number | string
+  totalAmount: runtime.Decimal | runtime.DecimalJsLike | number | string
+  currency?: string
+  paymentMethod?: string | null
+  shippingProviderId?: string | null
+  shippingProviderCode?: string | null
+  shippingProviderName?: string | null
+  codAreaCode?: string | null
+  codAreaName?: string | null
+  shippingRecipientName: string
+  shippingPhone: string
+  shippingAddressLine1: string
+  shippingAddressLine2?: string | null
+  shippingCity?: string | null
+  shippingStateProvince?: string | null
+  shippingLocationPcode?: string | null
+  shippingLocationSnapshot?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
+  shippingPostalCode?: string | null
+  shippingCountryCode: string
+  createdAt?: Date | string
+  updatedAt?: Date | string
+}
+
+export type OrderUpdateWithoutCodAreaInput = {
+  id?: Prisma.StringFieldUpdateOperationsInput | string
+  orderNumber?: Prisma.StringFieldUpdateOperationsInput | string
+  status?: Prisma.StringFieldUpdateOperationsInput | string
+  subtotal?: Prisma.DecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string
+  shippingFee?: Prisma.DecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string
+  discountAmount?: Prisma.DecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string
+  totalAmount?: Prisma.DecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string
+  currency?: Prisma.StringFieldUpdateOperationsInput | string
+  paymentMethod?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  shippingProviderCode?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  shippingProviderName?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  codAreaCode?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  codAreaName?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  shippingRecipientName?: Prisma.StringFieldUpdateOperationsInput | string
+  shippingPhone?: Prisma.StringFieldUpdateOperationsInput | string
+  shippingAddressLine1?: Prisma.StringFieldUpdateOperationsInput | string
+  shippingAddressLine2?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  shippingCity?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  shippingStateProvince?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  shippingLocationSnapshot?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
+  shippingPostalCode?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  shippingCountryCode?: Prisma.StringFieldUpdateOperationsInput | string
+  createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  user?: Prisma.UserUpdateOneRequiredWithoutOrdersNestedInput
+  items?: Prisma.OrderItemUpdateManyWithoutOrderNestedInput
+  payments?: Prisma.PaymentUpdateManyWithoutOrderNestedInput
+  shippingProvider?: Prisma.ShippingProviderUpdateOneWithoutOrdersNestedInput
+  shippingLocation?: Prisma.AdministrativeLocationUpdateOneWithoutOrdersNestedInput
+  checkoutQuote?: Prisma.CheckoutQuoteUpdateOneWithoutOrderNestedInput
+}
+
+export type OrderUncheckedUpdateWithoutCodAreaInput = {
+  id?: Prisma.StringFieldUpdateOperationsInput | string
+  userId?: Prisma.StringFieldUpdateOperationsInput | string
+  orderNumber?: Prisma.StringFieldUpdateOperationsInput | string
+  status?: Prisma.StringFieldUpdateOperationsInput | string
+  subtotal?: Prisma.DecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string
+  shippingFee?: Prisma.DecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string
+  discountAmount?: Prisma.DecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string
+  totalAmount?: Prisma.DecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string
+  currency?: Prisma.StringFieldUpdateOperationsInput | string
+  paymentMethod?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  shippingProviderId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  shippingProviderCode?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  shippingProviderName?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  codAreaCode?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  codAreaName?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  shippingRecipientName?: Prisma.StringFieldUpdateOperationsInput | string
+  shippingPhone?: Prisma.StringFieldUpdateOperationsInput | string
+  shippingAddressLine1?: Prisma.StringFieldUpdateOperationsInput | string
+  shippingAddressLine2?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  shippingCity?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  shippingStateProvince?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  shippingLocationPcode?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  shippingLocationSnapshot?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
+  shippingPostalCode?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  shippingCountryCode?: Prisma.StringFieldUpdateOperationsInput | string
+  createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  items?: Prisma.OrderItemUncheckedUpdateManyWithoutOrderNestedInput
+  payments?: Prisma.PaymentUncheckedUpdateManyWithoutOrderNestedInput
+  checkoutQuote?: Prisma.CheckoutQuoteUncheckedUpdateOneWithoutOrderNestedInput
+}
+
+export type OrderUncheckedUpdateManyWithoutCodAreaInput = {
+  id?: Prisma.StringFieldUpdateOperationsInput | string
+  userId?: Prisma.StringFieldUpdateOperationsInput | string
+  orderNumber?: Prisma.StringFieldUpdateOperationsInput | string
+  status?: Prisma.StringFieldUpdateOperationsInput | string
+  subtotal?: Prisma.DecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string
+  shippingFee?: Prisma.DecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string
+  discountAmount?: Prisma.DecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string
+  totalAmount?: Prisma.DecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string
+  currency?: Prisma.StringFieldUpdateOperationsInput | string
+  paymentMethod?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  shippingProviderId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  shippingProviderCode?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  shippingProviderName?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  codAreaCode?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  codAreaName?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  shippingRecipientName?: Prisma.StringFieldUpdateOperationsInput | string
+  shippingPhone?: Prisma.StringFieldUpdateOperationsInput | string
+  shippingAddressLine1?: Prisma.StringFieldUpdateOperationsInput | string
+  shippingAddressLine2?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  shippingCity?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  shippingStateProvince?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  shippingLocationPcode?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  shippingLocationSnapshot?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   shippingPostalCode?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   shippingCountryCode?: Prisma.StringFieldUpdateOperationsInput | string
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
@@ -1289,12 +2591,21 @@ export type OrderSelect<ExtArgs extends runtime.Types.Extensions.InternalArgs = 
   discountAmount?: boolean
   totalAmount?: boolean
   currency?: boolean
+  paymentMethod?: boolean
+  shippingProviderId?: boolean
+  shippingProviderCode?: boolean
+  shippingProviderName?: boolean
+  codAreaId?: boolean
+  codAreaCode?: boolean
+  codAreaName?: boolean
   shippingRecipientName?: boolean
   shippingPhone?: boolean
   shippingAddressLine1?: boolean
   shippingAddressLine2?: boolean
   shippingCity?: boolean
   shippingStateProvince?: boolean
+  shippingLocationPcode?: boolean
+  shippingLocationSnapshot?: boolean
   shippingPostalCode?: boolean
   shippingCountryCode?: boolean
   createdAt?: boolean
@@ -1302,6 +2613,10 @@ export type OrderSelect<ExtArgs extends runtime.Types.Extensions.InternalArgs = 
   user?: boolean | Prisma.UserDefaultArgs<ExtArgs>
   items?: boolean | Prisma.Order$itemsArgs<ExtArgs>
   payments?: boolean | Prisma.Order$paymentsArgs<ExtArgs>
+  shippingProvider?: boolean | Prisma.Order$shippingProviderArgs<ExtArgs>
+  codArea?: boolean | Prisma.Order$codAreaArgs<ExtArgs>
+  shippingLocation?: boolean | Prisma.Order$shippingLocationArgs<ExtArgs>
+  checkoutQuote?: boolean | Prisma.Order$checkoutQuoteArgs<ExtArgs>
   _count?: boolean | Prisma.OrderCountOutputTypeDefaultArgs<ExtArgs>
 }, ExtArgs["result"]["order"]>
 
@@ -1315,17 +2630,29 @@ export type OrderSelectCreateManyAndReturn<ExtArgs extends runtime.Types.Extensi
   discountAmount?: boolean
   totalAmount?: boolean
   currency?: boolean
+  paymentMethod?: boolean
+  shippingProviderId?: boolean
+  shippingProviderCode?: boolean
+  shippingProviderName?: boolean
+  codAreaId?: boolean
+  codAreaCode?: boolean
+  codAreaName?: boolean
   shippingRecipientName?: boolean
   shippingPhone?: boolean
   shippingAddressLine1?: boolean
   shippingAddressLine2?: boolean
   shippingCity?: boolean
   shippingStateProvince?: boolean
+  shippingLocationPcode?: boolean
+  shippingLocationSnapshot?: boolean
   shippingPostalCode?: boolean
   shippingCountryCode?: boolean
   createdAt?: boolean
   updatedAt?: boolean
   user?: boolean | Prisma.UserDefaultArgs<ExtArgs>
+  shippingProvider?: boolean | Prisma.Order$shippingProviderArgs<ExtArgs>
+  codArea?: boolean | Prisma.Order$codAreaArgs<ExtArgs>
+  shippingLocation?: boolean | Prisma.Order$shippingLocationArgs<ExtArgs>
 }, ExtArgs["result"]["order"]>
 
 export type OrderSelectUpdateManyAndReturn<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetSelect<{
@@ -1338,17 +2665,29 @@ export type OrderSelectUpdateManyAndReturn<ExtArgs extends runtime.Types.Extensi
   discountAmount?: boolean
   totalAmount?: boolean
   currency?: boolean
+  paymentMethod?: boolean
+  shippingProviderId?: boolean
+  shippingProviderCode?: boolean
+  shippingProviderName?: boolean
+  codAreaId?: boolean
+  codAreaCode?: boolean
+  codAreaName?: boolean
   shippingRecipientName?: boolean
   shippingPhone?: boolean
   shippingAddressLine1?: boolean
   shippingAddressLine2?: boolean
   shippingCity?: boolean
   shippingStateProvince?: boolean
+  shippingLocationPcode?: boolean
+  shippingLocationSnapshot?: boolean
   shippingPostalCode?: boolean
   shippingCountryCode?: boolean
   createdAt?: boolean
   updatedAt?: boolean
   user?: boolean | Prisma.UserDefaultArgs<ExtArgs>
+  shippingProvider?: boolean | Prisma.Order$shippingProviderArgs<ExtArgs>
+  codArea?: boolean | Prisma.Order$codAreaArgs<ExtArgs>
+  shippingLocation?: boolean | Prisma.Order$shippingLocationArgs<ExtArgs>
 }, ExtArgs["result"]["order"]>
 
 export type OrderSelectScalar = {
@@ -1361,30 +2700,49 @@ export type OrderSelectScalar = {
   discountAmount?: boolean
   totalAmount?: boolean
   currency?: boolean
+  paymentMethod?: boolean
+  shippingProviderId?: boolean
+  shippingProviderCode?: boolean
+  shippingProviderName?: boolean
+  codAreaId?: boolean
+  codAreaCode?: boolean
+  codAreaName?: boolean
   shippingRecipientName?: boolean
   shippingPhone?: boolean
   shippingAddressLine1?: boolean
   shippingAddressLine2?: boolean
   shippingCity?: boolean
   shippingStateProvince?: boolean
+  shippingLocationPcode?: boolean
+  shippingLocationSnapshot?: boolean
   shippingPostalCode?: boolean
   shippingCountryCode?: boolean
   createdAt?: boolean
   updatedAt?: boolean
 }
 
-export type OrderOmit<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetOmit<"id" | "userId" | "orderNumber" | "status" | "subtotal" | "shippingFee" | "discountAmount" | "totalAmount" | "currency" | "shippingRecipientName" | "shippingPhone" | "shippingAddressLine1" | "shippingAddressLine2" | "shippingCity" | "shippingStateProvince" | "shippingPostalCode" | "shippingCountryCode" | "createdAt" | "updatedAt", ExtArgs["result"]["order"]>
+export type OrderOmit<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetOmit<"id" | "userId" | "orderNumber" | "status" | "subtotal" | "shippingFee" | "discountAmount" | "totalAmount" | "currency" | "paymentMethod" | "shippingProviderId" | "shippingProviderCode" | "shippingProviderName" | "codAreaId" | "codAreaCode" | "codAreaName" | "shippingRecipientName" | "shippingPhone" | "shippingAddressLine1" | "shippingAddressLine2" | "shippingCity" | "shippingStateProvince" | "shippingLocationPcode" | "shippingLocationSnapshot" | "shippingPostalCode" | "shippingCountryCode" | "createdAt" | "updatedAt", ExtArgs["result"]["order"]>
 export type OrderInclude<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
   user?: boolean | Prisma.UserDefaultArgs<ExtArgs>
   items?: boolean | Prisma.Order$itemsArgs<ExtArgs>
   payments?: boolean | Prisma.Order$paymentsArgs<ExtArgs>
+  shippingProvider?: boolean | Prisma.Order$shippingProviderArgs<ExtArgs>
+  codArea?: boolean | Prisma.Order$codAreaArgs<ExtArgs>
+  shippingLocation?: boolean | Prisma.Order$shippingLocationArgs<ExtArgs>
+  checkoutQuote?: boolean | Prisma.Order$checkoutQuoteArgs<ExtArgs>
   _count?: boolean | Prisma.OrderCountOutputTypeDefaultArgs<ExtArgs>
 }
 export type OrderIncludeCreateManyAndReturn<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
   user?: boolean | Prisma.UserDefaultArgs<ExtArgs>
+  shippingProvider?: boolean | Prisma.Order$shippingProviderArgs<ExtArgs>
+  codArea?: boolean | Prisma.Order$codAreaArgs<ExtArgs>
+  shippingLocation?: boolean | Prisma.Order$shippingLocationArgs<ExtArgs>
 }
 export type OrderIncludeUpdateManyAndReturn<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
   user?: boolean | Prisma.UserDefaultArgs<ExtArgs>
+  shippingProvider?: boolean | Prisma.Order$shippingProviderArgs<ExtArgs>
+  codArea?: boolean | Prisma.Order$codAreaArgs<ExtArgs>
+  shippingLocation?: boolean | Prisma.Order$shippingLocationArgs<ExtArgs>
 }
 
 export type $OrderPayload<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
@@ -1393,6 +2751,10 @@ export type $OrderPayload<ExtArgs extends runtime.Types.Extensions.InternalArgs 
     user: Prisma.$UserPayload<ExtArgs>
     items: Prisma.$OrderItemPayload<ExtArgs>[]
     payments: Prisma.$PaymentPayload<ExtArgs>[]
+    shippingProvider: Prisma.$ShippingProviderPayload<ExtArgs> | null
+    codArea: Prisma.$CodAreaPayload<ExtArgs> | null
+    shippingLocation: Prisma.$AdministrativeLocationPayload<ExtArgs> | null
+    checkoutQuote: Prisma.$CheckoutQuotePayload<ExtArgs> | null
   }
   scalars: runtime.Types.Extensions.GetPayloadResult<{
     id: string
@@ -1404,12 +2766,21 @@ export type $OrderPayload<ExtArgs extends runtime.Types.Extensions.InternalArgs 
     discountAmount: runtime.Decimal
     totalAmount: runtime.Decimal
     currency: string
+    paymentMethod: string | null
+    shippingProviderId: string | null
+    shippingProviderCode: string | null
+    shippingProviderName: string | null
+    codAreaId: string | null
+    codAreaCode: string | null
+    codAreaName: string | null
     shippingRecipientName: string
     shippingPhone: string
     shippingAddressLine1: string
     shippingAddressLine2: string | null
-    shippingCity: string
+    shippingCity: string | null
     shippingStateProvince: string | null
+    shippingLocationPcode: string | null
+    shippingLocationSnapshot: runtime.JsonValue | null
     shippingPostalCode: string | null
     shippingCountryCode: string
     createdAt: Date
@@ -1811,6 +3182,10 @@ export interface Prisma__OrderClient<T, Null = never, ExtArgs extends runtime.Ty
   user<T extends Prisma.UserDefaultArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.UserDefaultArgs<ExtArgs>>): Prisma.Prisma__UserClient<runtime.Types.Result.GetResult<Prisma.$UserPayload<ExtArgs>, T, "findUniqueOrThrow", GlobalOmitOptions> | Null, Null, ExtArgs, GlobalOmitOptions>
   items<T extends Prisma.Order$itemsArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.Order$itemsArgs<ExtArgs>>): Prisma.PrismaPromise<runtime.Types.Result.GetResult<Prisma.$OrderItemPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
   payments<T extends Prisma.Order$paymentsArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.Order$paymentsArgs<ExtArgs>>): Prisma.PrismaPromise<runtime.Types.Result.GetResult<Prisma.$PaymentPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
+  shippingProvider<T extends Prisma.Order$shippingProviderArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.Order$shippingProviderArgs<ExtArgs>>): Prisma.Prisma__ShippingProviderClient<runtime.Types.Result.GetResult<Prisma.$ShippingProviderPayload<ExtArgs>, T, "findUniqueOrThrow", GlobalOmitOptions> | null, null, ExtArgs, GlobalOmitOptions>
+  codArea<T extends Prisma.Order$codAreaArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.Order$codAreaArgs<ExtArgs>>): Prisma.Prisma__CodAreaClient<runtime.Types.Result.GetResult<Prisma.$CodAreaPayload<ExtArgs>, T, "findUniqueOrThrow", GlobalOmitOptions> | null, null, ExtArgs, GlobalOmitOptions>
+  shippingLocation<T extends Prisma.Order$shippingLocationArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.Order$shippingLocationArgs<ExtArgs>>): Prisma.Prisma__AdministrativeLocationClient<runtime.Types.Result.GetResult<Prisma.$AdministrativeLocationPayload<ExtArgs>, T, "findUniqueOrThrow", GlobalOmitOptions> | null, null, ExtArgs, GlobalOmitOptions>
+  checkoutQuote<T extends Prisma.Order$checkoutQuoteArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.Order$checkoutQuoteArgs<ExtArgs>>): Prisma.Prisma__CheckoutQuoteClient<runtime.Types.Result.GetResult<Prisma.$CheckoutQuotePayload<ExtArgs>, T, "findUniqueOrThrow", GlobalOmitOptions> | null, null, ExtArgs, GlobalOmitOptions>
   /**
    * Attaches callbacks for the resolution and/or rejection of the Promise.
    * @param onfulfilled The callback to execute when the Promise is resolved.
@@ -1849,12 +3224,21 @@ export interface OrderFieldRefs {
   readonly discountAmount: Prisma.FieldRef<"Order", 'Decimal'>
   readonly totalAmount: Prisma.FieldRef<"Order", 'Decimal'>
   readonly currency: Prisma.FieldRef<"Order", 'String'>
+  readonly paymentMethod: Prisma.FieldRef<"Order", 'String'>
+  readonly shippingProviderId: Prisma.FieldRef<"Order", 'String'>
+  readonly shippingProviderCode: Prisma.FieldRef<"Order", 'String'>
+  readonly shippingProviderName: Prisma.FieldRef<"Order", 'String'>
+  readonly codAreaId: Prisma.FieldRef<"Order", 'String'>
+  readonly codAreaCode: Prisma.FieldRef<"Order", 'String'>
+  readonly codAreaName: Prisma.FieldRef<"Order", 'String'>
   readonly shippingRecipientName: Prisma.FieldRef<"Order", 'String'>
   readonly shippingPhone: Prisma.FieldRef<"Order", 'String'>
   readonly shippingAddressLine1: Prisma.FieldRef<"Order", 'String'>
   readonly shippingAddressLine2: Prisma.FieldRef<"Order", 'String'>
   readonly shippingCity: Prisma.FieldRef<"Order", 'String'>
   readonly shippingStateProvince: Prisma.FieldRef<"Order", 'String'>
+  readonly shippingLocationPcode: Prisma.FieldRef<"Order", 'String'>
+  readonly shippingLocationSnapshot: Prisma.FieldRef<"Order", 'Json'>
   readonly shippingPostalCode: Prisma.FieldRef<"Order", 'String'>
   readonly shippingCountryCode: Prisma.FieldRef<"Order", 'String'>
   readonly createdAt: Prisma.FieldRef<"Order", 'DateTime'>
@@ -2305,6 +3689,82 @@ export type Order$paymentsArgs<ExtArgs extends runtime.Types.Extensions.Internal
   take?: number
   skip?: number
   distinct?: Prisma.PaymentScalarFieldEnum | Prisma.PaymentScalarFieldEnum[]
+}
+
+/**
+ * Order.shippingProvider
+ */
+export type Order$shippingProviderArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
+  /**
+   * Select specific fields to fetch from the ShippingProvider
+   */
+  select?: Prisma.ShippingProviderSelect<ExtArgs> | null
+  /**
+   * Omit specific fields from the ShippingProvider
+   */
+  omit?: Prisma.ShippingProviderOmit<ExtArgs> | null
+  /**
+   * Choose, which related nodes to fetch as well
+   */
+  include?: Prisma.ShippingProviderInclude<ExtArgs> | null
+  where?: Prisma.ShippingProviderWhereInput
+}
+
+/**
+ * Order.codArea
+ */
+export type Order$codAreaArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
+  /**
+   * Select specific fields to fetch from the CodArea
+   */
+  select?: Prisma.CodAreaSelect<ExtArgs> | null
+  /**
+   * Omit specific fields from the CodArea
+   */
+  omit?: Prisma.CodAreaOmit<ExtArgs> | null
+  /**
+   * Choose, which related nodes to fetch as well
+   */
+  include?: Prisma.CodAreaInclude<ExtArgs> | null
+  where?: Prisma.CodAreaWhereInput
+}
+
+/**
+ * Order.shippingLocation
+ */
+export type Order$shippingLocationArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
+  /**
+   * Select specific fields to fetch from the AdministrativeLocation
+   */
+  select?: Prisma.AdministrativeLocationSelect<ExtArgs> | null
+  /**
+   * Omit specific fields from the AdministrativeLocation
+   */
+  omit?: Prisma.AdministrativeLocationOmit<ExtArgs> | null
+  /**
+   * Choose, which related nodes to fetch as well
+   */
+  include?: Prisma.AdministrativeLocationInclude<ExtArgs> | null
+  where?: Prisma.AdministrativeLocationWhereInput
+}
+
+/**
+ * Order.checkoutQuote
+ */
+export type Order$checkoutQuoteArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
+  /**
+   * Select specific fields to fetch from the CheckoutQuote
+   */
+  select?: Prisma.CheckoutQuoteSelect<ExtArgs> | null
+  /**
+   * Omit specific fields from the CheckoutQuote
+   */
+  omit?: Prisma.CheckoutQuoteOmit<ExtArgs> | null
+  /**
+   * Choose, which related nodes to fetch as well
+   */
+  include?: Prisma.CheckoutQuoteInclude<ExtArgs> | null
+  where?: Prisma.CheckoutQuoteWhereInput
 }
 
 /**

@@ -1,8 +1,11 @@
-import { Module } from '@nestjs/common';
+import { forwardRef, Module } from '@nestjs/common';
+import { PaymentsModule } from '../payments/payments.module.js';
 import { JwtAuthModule } from '../auth/jwt/jwt-auth.module.js';
+import { InventoryModule } from '../inventory/inventory.module.js';
 import { UsersModule } from '../users/users.module.js';
 import { OrderNumberGenerator } from './order-number.generator.js';
 import { OrderController } from './order.controller.js';
+import { OrderInventoryService } from './order-inventory.service.js';
 import { OrderService } from './order.service.js';
 import { OrderRepository } from './repositories/order.repository.js';
 
@@ -39,11 +42,30 @@ import { OrderRepository } from './repositories/order.repository.js';
  *
  * Both take the caller's transaction client, which is what lets checkout run
  * resolve → reserve → write → clear the cart as one transaction.
+ *
+ * `InventoryModule` is imported for `InventoryRepository`. `OrderInventoryService`
+ * is the order-level coordination of the two inventory primitives — release a
+ * reservation on cancellation, commit reserved stock on shipment — and it lives here
+ * because the order is what knows which lines were sold. It reads those lines from
+ * {@link OrderRepository} and moves counters through `InventoryRepository`'s guarded
+ * siblings of `reserve`, so neither the quantities nor the SQL are re-implemented.
+ * The edge runs one way — Orders -> Inventory — and nothing in inventory imports
+ * orders.
  */
 @Module({
-  imports: [JwtAuthModule, UsersModule],
+  imports: [
+    JwtAuthModule,
+    UsersModule,
+    InventoryModule,
+    forwardRef(() => PaymentsModule),
+  ],
   controllers: [OrderController],
-  providers: [OrderRepository, OrderNumberGenerator, OrderService],
-  exports: [OrderRepository, OrderService],
+  providers: [
+    OrderRepository,
+    OrderNumberGenerator,
+    OrderService,
+    OrderInventoryService,
+  ],
+  exports: [OrderRepository, OrderService, OrderInventoryService],
 })
 export class OrderModule {}

@@ -180,6 +180,17 @@ describe('PaymentsService', () => {
   });
 
   describe('createPayment', () => {
+    it('never creates a PayWay QR for a COD order', async () => {
+      orders.findById.mockResolvedValue(orderRow({ paymentMethod: 'COD' }));
+
+      await expect(
+        service.createPayment(USER_ID, ORDER_ID),
+      ).rejects.toBeInstanceOf(ConflictException);
+
+      expect(payments.createPending).not.toHaveBeenCalled();
+      expect(payway.generateQr).not.toHaveBeenCalled();
+    });
+
     it('creates a PENDING attempt from the order, then attaches the QR', async () => {
       const response = await service.createPayment(USER_ID, ORDER_ID);
 
@@ -481,6 +492,18 @@ describe('PaymentsService', () => {
       expect(orders.confirmPaid).toHaveBeenCalledWith(ORDER_ID, {});
     });
 
+    it('does not verify or confirm a payment attached to a COD order', async () => {
+      orders.findById.mockResolvedValue(orderRow({ paymentMethod: 'COD' }));
+
+      await expect(
+        service.handlePaywayCallback(callback()),
+      ).rejects.toBeInstanceOf(ConflictException);
+
+      expect(payway.checkTransaction).not.toHaveBeenCalled();
+      expect(payments.markPaid).not.toHaveBeenCalled();
+      expect(orders.confirmPaid).not.toHaveBeenCalled();
+    });
+
     it('runs the payment write and the order promotion in one transaction', async () => {
       // Two commits could leave an order CONFIRMED with no recorded payment, or money
       // collected against an order still PENDING.
@@ -668,6 +691,69 @@ describe('PaymentsService', () => {
         service.handlePaywayCallback(callback()),
       ).rejects.toBeInstanceOf(ConflictException);
       expect(payway.checkTransaction).not.toHaveBeenCalled();
+    });
+  });
+
+  describe('verifyOrderPayment', () => {
+    it('does not verify PayWay attempts for COD orders', async () => {
+      orders.findById.mockResolvedValue(orderRow({ paymentMethod: 'COD' }));
+
+      await expect(service.verifyOrderPayment(ORDER_ID)).resolves.toBe(false);
+
+      expect(payments.findPendingByOrderId).not.toHaveBeenCalled();
+      expect(payway.checkTransaction).not.toHaveBeenCalled();
+    });
+
+    it('returns false when no pending payment exists for the order', async () => {
+      payments.findPendingByOrderId.mockResolvedValue(null);
+
+      const result = await service.verifyOrderPayment(ORDER_ID);
+
+      expect(result).toBe(false);
+      expect(payway.checkTransaction).not.toHaveBeenCalled();
+    });
+
+    it('returns false when PayWay reports transaction as not collected', async () => {
+      payments.findPendingByOrderId.mockResolvedValue(storedPaymentRow());
+      payway.isCollected.mockReturnValue(false);
+
+      const result = await service.verifyOrderPayment(ORDER_ID);
+
+      expect(result).toBe(false);
+      expect(payway.checkTransaction).toHaveBeenCalledWith({
+        transactionId: TRANSACTION_ID,
+      });
+      expect(payments.markPaid).not.toHaveBeenCalled();
+      expect(orders.confirmPaid).not.toHaveBeenCalled();
+    });
+
+    it('verifies with PayWay and marks payment PAID and order CONFIRMED', async () => {
+      payments.findPendingByOrderId.mockResolvedValue(storedPaymentRow());
+      payway.isCollected.mockReturnValue(true);
+      orders.findById.mockResolvedValue(orderRow({ status: 'PENDING' }));
+      payments.markPaid.mockResolvedValue(true);
+      orders.confirmPaid.mockResolvedValue(true);
+
+      const result = await service.verifyOrderPayment(ORDER_ID);
+
+      expect(result).toBe(true);
+      expect(payments.markPaid).toHaveBeenCalled();
+      expect(orders.confirmPaid).toHaveBeenCalledWith(ORDER_ID, expect.anything());
+    });
+
+    it('returns false and leaves order PENDING when amounts do not match', async () => {
+      payments.findPendingByOrderId.mockResolvedValue(storedPaymentRow());
+      payway.isCollected.mockReturnValue(true);
+      payway.checkTransaction.mockResolvedValue(
+        collected({ totalAmount: new Prisma.Decimal('1.00') }),
+      );
+      orders.findById.mockResolvedValue(orderRow({ status: 'PENDING' }));
+
+      const result = await service.verifyOrderPayment(ORDER_ID);
+
+      expect(result).toBe(false);
+      expect(payments.markPaid).not.toHaveBeenCalled();
+      expect(orders.confirmPaid).not.toHaveBeenCalled();
     });
   });
 });

@@ -1,18 +1,29 @@
 import {
   BadRequestException,
+  ConflictException,
+  forwardRef,
+  Inject,
   Injectable,
   Logger,
   NotFoundException,
+  Optional,
 } from '@nestjs/common';
+import { PaymentsService } from '../payments/payments.service.js';
 import { Prisma } from '../generated/prisma/client.js';
 import { UsersRepository } from '../users/repositories/users.repository.js';
 import {
+  CANCELLABLE_ORDER_STATUSES,
   DEFAULT_ORDER_CURRENCY,
   DEFAULT_ORDER_STATUS,
   ORDER_STATUS,
+  SHIPPABLE_ORDER_STATUS,
 } from './constants/order-status.constants.js';
+import { AdminOrderDetailResponseDto } from './dto/admin-order-detail-response.dto.js';
+import { AdminOrderListQueryDto } from './dto/admin-order-list-query.dto.js';
+import { AdminOrderListResponseDto } from './dto/admin-order-list-response.dto.js';
 import { OrderResponseDto } from './dto/order-response.dto.js';
 import { OrderSummaryResponseDto } from './dto/order-summary-response.dto.js';
+import { OrderInventoryService } from './order-inventory.service.js';
 import {
   MAX_CANDIDATE_ATTEMPTS,
   OrderNumberGenerator,
@@ -69,8 +80,10 @@ export interface PlaceOrderShipping {
   phone: string;
   addressLine1: string;
   addressLine2?: string | null;
-  city: string;
+  city: string | null;
   stateProvince?: string | null;
+  administrativeLocationPcode?: string | null;
+  administrativeLocationSnapshot?: Prisma.InputJsonArray;
   postalCode?: string | null;
   countryCode: string;
 }
@@ -78,10 +91,9 @@ export interface PlaceOrderShipping {
 /**
  * Everything needed to write one order.
  *
- * Declared in this phase but reachable from nothing: no controller accepts it and
- * no route creates an order. It exists so the money rules have a real input type to
- * be written and tested against, rather than being deferred to a phase that has to
- * invent it from scratch.
+ * Server-owned values used when writing an order. HTTP DTOs never expose monetary
+ * amounts or snapshots directly; quote-backed checkout supplies them only after
+ * validating the persisted quote in its transaction.
  */
 export interface PlaceOrderInput {
   userId: string;
@@ -90,6 +102,13 @@ export interface PlaceOrderInput {
   shippingFee?: unknown;
   discountAmount?: unknown;
   currency?: string;
+  paymentMethod?: string | null;
+  shippingProviderId?: string | null;
+  shippingProviderCode?: string | null;
+  shippingProviderName?: string | null;
+  codAreaId?: string | null;
+  codAreaCode?: string | null;
+  codAreaName?: string | null;
 }
 
 /**
@@ -181,6 +200,10 @@ export class OrderService {
     private readonly orderRepository: OrderRepository,
     private readonly usersRepository: UsersRepository,
     private readonly orderNumberGenerator: OrderNumberGenerator,
+    private readonly orderInventory: OrderInventoryService,
+    @Inject(forwardRef(() => PaymentsService))
+    @Optional()
+    private readonly paymentsService?: PaymentsService,
   ) {}
 
   /**
@@ -199,6 +222,20 @@ export class OrderService {
 
     const orders = await this.orderRepository.findByUserId(userId);
 
+    if (this.paymentsService && orders.some((o) => o.status === ORDER_STATUS.PENDING)) {
+      let anyPromoted = false;
+      for (const order of orders) {
+        if (order.status === ORDER_STATUS.PENDING) {
+          const promoted = await this.paymentsService.verifyOrderPayment(order.id);
+          if (promoted) anyPromoted = true;
+        }
+      }
+      if (anyPromoted) {
+        const refreshed = await this.orderRepository.findByUserId(userId);
+        return refreshed.map((order) => OrderSummaryResponseDto.fromEntity(order));
+      }
+    }
+
     return orders.map((order) => OrderSummaryResponseDto.fromEntity(order));
   }
 
@@ -212,9 +249,224 @@ export class OrderService {
   async getOrder(userId: string, orderId: string): Promise<OrderResponseDto> {
     await this.requireUser(userId);
 
-    const order = await this.requireOwnOrder(userId, orderId);
+    let order = await this.requireOwnOrder(userId, orderId);
+
+    if (order.status === ORDER_STATUS.PENDING && this.paymentsService) {
+      const promoted = await this.paymentsService.verifyOrderPayment(order.id);
+      if (promoted) {
+        order = await this.requireOwnOrder(userId, orderId);
+      }
+    }
 
     return OrderResponseDto.fromEntity(order);
+  }
+
+  /**
+   * Returns one page of every customer's orders, for an administrator.
+   *
+   * **Reached only from `GET /admin/orders`**, whose controller carries
+   * `@Roles(Role.ADMIN)`. It is intentionally not scoped to a user: an operator
+   * needs to see the whole shop, and the authorisation boundary is the route
+   * rather than a filter.
+   *
+   * The date range is validated as two independently well-formed timestamps by
+   * the DTO; their relative order is checked here because it is a cross-field
+   * rule. `createdFrom` and `createdTo` are inclusive, which is what an operator
+   * expects when they type a day boundary.
+   */
+  async listOrdersForAdmin(
+    query: AdminOrderListQueryDto,
+  ): Promise<AdminOrderListResponseDto> {
+    const createdFrom = this.parseAdminDate(query.createdFrom, 'createdFrom');
+    const createdTo = this.parseAdminDate(query.createdTo, 'createdTo');
+
+    if (
+      createdFrom !== undefined &&
+      createdTo !== undefined &&
+      createdFrom.getTime() > createdTo.getTime()
+    ) {
+      throw new BadRequestException(
+        'createdFrom must not be later than createdTo',
+      );
+    }
+
+    const search = query.search?.trim();
+
+    const result = await this.orderRepository.findAdminPage({
+      page: query.page,
+      limit: query.limit,
+      status: query.status,
+      search: search === undefined || search.length === 0 ? undefined : search,
+      createdFrom,
+      createdTo,
+    });
+
+    return AdminOrderListResponseDto.fromResult(
+      result,
+      query.page,
+      query.limit,
+    );
+  }
+
+  /**
+   * Returns any customer's order with its snapshots and payment attempts.
+   *
+   * A missing order is a 404. Unlike the customer route, there is no ownership
+   * check: the caller's `ADMIN` role is what makes crossing that boundary legal,
+   * and it is enforced by `RolesGuard` before this method is called.
+   */
+  async getOrderForAdmin(
+    orderId: string,
+  ): Promise<AdminOrderDetailResponseDto> {
+    const order = await this.orderRepository.findAdminById(orderId);
+
+    if (order === null) {
+      throw this.orderNotFound(orderId);
+    }
+
+    return AdminOrderDetailResponseDto.fromEntity(order);
+  }
+
+  /**
+   * Cancels an unpaid order and releases its inventory reservation exactly once.
+   *
+   * ## The rules
+   *
+   * The only cancellable state is `PENDING`, the state checkout writes before any
+   * money is collected. A `CONFIRMED` order has a verified `PAID` payment and this
+   * application has no refund workflow, so it is refused: cancelling it would keep
+   * the customer's money while describing the order as abandoned. `PROCESSING`
+   * and later states are refused for the same reason, and because they are not
+   * reachable through any route in this application.
+   *
+   * A `PENDING` order that nevertheless has a `PAID` payment — a late callback
+   * racing a cancellation — is also refused. The payment flow's own guard remains
+   * unchanged; see the late-callback note in `OrderInventoryService` and the final
+   * caveat below.
+   *
+   * ## Atomicity and concurrency
+   *
+   * Everything runs in the caller-owned transaction:
+   *
+   * 1. a read distinguishes an unknown order (404) from an unsupported state (409);
+   * 2. the payment policy is checked;
+   * 3. a **guarded** `PENDING -> CANCELLED` update claims the transition;
+   * 4. only the winner releases the reservation.
+   *
+   * Two concurrent cancellations both read `PENDING`, but the second `UPDATE`
+   * affects zero rows after the first commits, so it never reaches inventory. If
+   * releasing either fails — missing stock, an incoherent row, insufficient
+   * reservation — the exception propagates and the status update rolls back with it.
+   *
+   * ## Known limitation: a live QR and a late callback
+   *
+   * Cancelling a `PENDING` order does not expire an outstanding QR, because payment
+   * expiry is not implemented in this application. PayWay may still collect that
+   * payment after the cancellation. The existing callback handler will record the
+   * payment as `PAID` but cannot confirm an order that is no longer `PENDING`; it
+   * logs the mismatch. Stock is not moved a second time, but the collected money
+   * needs manual reconciliation/refund. Fixing that requires a refund workflow and
+   * is deliberately outside this phase.
+   */
+  cancelOrderForAdmin(orderId: string): Promise<AdminOrderDetailResponseDto> {
+    return this.orderRepository.runInTransaction(async (tx) => {
+      const order = await this.orderRepository.findStatusById(orderId, tx);
+
+      if (order === null) {
+        throw this.orderNotFound(orderId);
+      }
+
+      if (
+        !CANCELLABLE_ORDER_STATUSES.some(
+          (cancellable) => cancellable === order.status,
+        )
+      ) {
+        throw new ConflictException(
+          `Order ${orderId} is ${order.status} and cannot be cancelled`,
+        );
+      }
+
+      if (await this.orderRepository.hasPaidPayment(orderId, tx)) {
+        throw new ConflictException(
+          `Order ${orderId} has a verified payment and cannot be cancelled without a refund`,
+        );
+      }
+
+      const transitioned = await this.orderRepository.transitionStatus(
+        orderId,
+        order.status,
+        ORDER_STATUS.CANCELLED,
+        tx,
+      );
+
+      if (!transitioned) {
+        throw this.transitionConflict(orderId);
+      }
+
+      // The reservation is derived from the persisted order lines inside
+      // `OrderInventoryService`; the request body never supplies a quantity.
+      await this.orderInventory.releaseReservedForOrder(orderId, tx);
+
+      return this.readAdminOrder(orderId, tx);
+    });
+  }
+
+  /**
+   * Ships a paid, confirmed order and commits its reserved stock exactly once.
+   *
+   * ## The rules
+   *
+   * The only shippable state is `CONFIRMED`, written exclusively by the verified
+   * PayWay callback after it has checked the transaction against the order's amount
+   * and currency. Shipment additionally requires at least one `PAID` payment, so a
+   * malformed or manually altered `CONFIRMED` order cannot ship without evidence
+   * that money was collected. No refund, payment mutation or status assignment is
+   * exposed here.
+   *
+   * ## Atomicity and concurrency
+   *
+   * The same pattern as cancellation: read for 404/409, check the payment policy,
+   * claim `CONFIRMED -> SHIPPED` with a guarded update, then call
+   * `commitReservedForOrder` on the same transaction. The guarded update is the
+   * concurrency control; the preceding read is only there to give a precise error.
+   * A repeated or losing request affects zero rows and is rejected before inventory
+   * moves. An inventory failure rolls the status change back.
+   */
+  shipOrderForAdmin(orderId: string): Promise<AdminOrderDetailResponseDto> {
+    return this.orderRepository.runInTransaction(async (tx) => {
+      const order = await this.orderRepository.findStatusById(orderId, tx);
+
+      if (order === null) {
+        throw this.orderNotFound(orderId);
+      }
+
+      if (order.status !== SHIPPABLE_ORDER_STATUS) {
+        throw new ConflictException(
+          `Order ${orderId} is ${order.status} and cannot be shipped`,
+        );
+      }
+
+      if (!(await this.orderRepository.hasPaidPayment(orderId, tx))) {
+        throw new ConflictException(
+          `Order ${orderId} has no verified payment and cannot be shipped`,
+        );
+      }
+
+      const transitioned = await this.orderRepository.transitionStatus(
+        orderId,
+        order.status,
+        ORDER_STATUS.SHIPPED,
+        tx,
+      );
+
+      if (!transitioned) {
+        throw this.transitionConflict(orderId);
+      }
+
+      await this.orderInventory.commitReservedForOrder(orderId, tx);
+
+      return this.readAdminOrder(orderId, tx);
+    });
   }
 
   /**
@@ -314,9 +566,8 @@ export class OrderService {
    * commits or all rolls back as one unit.
    *
    * `shippingFee` and `discountAmount` default to zero and `currency` to the order
-   * default, which is what checkout supplies this phase: there is no shipping rate,
-   * coupon or tax yet, and defaulting here rather than in the caller means a future
-   * phase can pass real figures without changing this method's shape.
+   * default for the legacy checkout path. Quote-backed checkout provides the
+   * server-stored shipping fee and currency explicitly.
    *
    * The order and its lines are written by a single nested `create`, so an order is
    * never observable without its contents.
@@ -352,12 +603,27 @@ export class OrderService {
         discountAmount: discountAmount.toFixed(2),
         totalAmount: totalAmount.toFixed(2),
         currency: input.currency ?? DEFAULT_ORDER_CURRENCY,
+        paymentMethod: input.paymentMethod ?? null,
+        shippingProviderId: input.shippingProviderId ?? null,
+        shippingProviderCode: input.shippingProviderCode ?? null,
+        shippingProviderName: input.shippingProviderName ?? null,
+        codAreaId: input.codAreaId ?? null,
+        codAreaCode: input.codAreaCode ?? null,
+        codAreaName: input.codAreaName ?? null,
         shippingRecipientName: input.shipping.recipientName,
         shippingPhone: input.shipping.phone,
         shippingAddressLine1: input.shipping.addressLine1,
         shippingAddressLine2: input.shipping.addressLine2 ?? null,
         shippingCity: input.shipping.city,
         shippingStateProvince: input.shipping.stateProvince ?? null,
+        shippingLocationPcode:
+          input.shipping.administrativeLocationPcode ?? null,
+        ...(input.shipping.administrativeLocationSnapshot === undefined
+          ? {}
+          : {
+              shippingLocationSnapshot:
+                input.shipping.administrativeLocationSnapshot,
+            }),
         shippingPostalCode: input.shipping.postalCode ?? null,
         shippingCountryCode: input.shipping.countryCode,
         items: { create: lines.map(toOrderItemCreateInput) },
@@ -475,6 +741,33 @@ export class OrderService {
   }
 
   /**
+   * Turns one validated ISO-8601 query value into a `Date`.
+   *
+   * The DTO has already refused a malformed timestamp, so the `Number.isNaN`
+   * branch only protects an internal caller that bypasses HTTP validation. It is
+   * still a 400 rather than a 500: the value is caller-shaped input even when it
+   * arrives through the service.
+   */
+  private parseAdminDate(
+    value: string | undefined,
+    field: string,
+  ): Date | undefined {
+    if (value === undefined) {
+      return undefined;
+    }
+
+    const date = new Date(value);
+
+    if (Number.isNaN(date.getTime())) {
+      throw new BadRequestException(
+        `${field} must be a valid ISO-8601 timestamp`,
+      );
+    }
+
+    return date;
+  }
+
+  /**
    * Returns the order only when the caller owns it, else 404.
    *
    * One message for "no such order" and "not your order", so neither is probeable.
@@ -586,7 +879,8 @@ export class OrderService {
 
     if (Array.isArray(target)) {
       return (
-        target.includes(ORDER_NUMBER_FIELD) || target.includes(ORDER_NUMBER_COLUMN)
+        target.includes(ORDER_NUMBER_FIELD) ||
+        target.includes(ORDER_NUMBER_COLUMN)
       );
     }
 
@@ -604,6 +898,27 @@ export class OrderService {
   /** One message for "no such order" and "not your order". */
   private orderNotFound(orderId: string): NotFoundException {
     return new NotFoundException(`Order ${orderId} does not exist`);
+  }
+
+  /** A concurrent writer won between the read and the guarded status update. */
+  private transitionConflict(orderId: string): ConflictException {
+    return new ConflictException(
+      `Order ${orderId} changed state before the transition could be applied`,
+    );
+  }
+
+  /** Reads the updated order through the administrative safe projection. */
+  private async readAdminOrder(
+    orderId: string,
+    tx: OrderTransactionClient,
+  ): Promise<AdminOrderDetailResponseDto> {
+    const updated = await this.orderRepository.findAdminById(orderId, tx);
+
+    if (updated === null) {
+      throw this.orderNotFound(orderId);
+    }
+
+    return AdminOrderDetailResponseDto.fromEntity(updated);
   }
 }
 

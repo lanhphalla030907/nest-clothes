@@ -160,7 +160,10 @@ export class PaymentsService {
 
     const qrPayload = await this.requestQr(payment.payment, amount, currency);
 
-    const stored = await this.payments.attachQrPayload(payment.payment.id, qrPayload);
+    const stored = await this.payments.attachQrPayload(
+      payment.payment.id,
+      qrPayload,
+    );
 
     // A `false` here means the row stopped being `PENDING` between the insert and now
     // — the only writer that could do it is the callback handler, which would mean the
@@ -233,6 +236,12 @@ export class PaymentsService {
 
       throw new ConflictException('The payment could not be verified');
     }
+    if (order.paymentMethod === 'COD') {
+      this.logger.error(
+        `PayWay callback matched a payment for COD order ${order.id}; refusing confirmation`,
+      );
+      throw new ConflictException('The payment could not be verified');
+    }
 
     const check = await this.payway.checkTransaction({ transactionId });
 
@@ -252,7 +261,7 @@ export class PaymentsService {
     // one closes a way for money to be attributed to the wrong order.
     this.assertMatchesOrder(payment.transactionId, order, check);
 
-    const wasRecorded = await this.payments.runInTransaction(async (tx) => {
+    const outcome = await this.payments.runInTransaction(async (tx) => {
       const marked = await this.payments.markPaid(
         payment.id,
         {
@@ -267,32 +276,104 @@ export class PaymentsService {
       if (!marked) {
         // A concurrent delivery got there first. It also promoted the order, inside its
         // own transaction, so there is nothing left to do.
-        return false;
+        return { recorded: false, promoted: false } as const;
       }
 
       const promoted = await this.orders.confirmPaid(order.id, tx);
 
       if (!promoted) {
         // Money is collected but the order is not `PENDING` — it was cancelled, or
-        // something else advanced it, between the read above and this write. Unreachable
-        // while cancellation does not exist, and deliberately loud rather than silent
-        // if that ever changes: a collected payment with no confirmed order needs a
-        // human, and pretending otherwise is how a shop loses track of its own money.
+        // something else advanced it, between the read above and this write. This
+        // is reachable: an administrator can cancel a PENDING order while its QR
+        // is still live, and a late callback then collects the money. Recording
+        // `PAID` is still the truth, but the order stays cancelled and the money
+        // needs a human; there is no refund workflow. Stock is not moved here, so
+        // the cancelled order's reservation cannot be committed a second time.
         this.logger.error(
           `Payment ${payment.id} was collected but order ${order.id} was ${order.status}, not ${ORDER_STATUS.PENDING}`,
         );
       }
 
-      return true;
+      return { recorded: true, promoted } as const;
     });
 
     this.logger.log(
-      wasRecorded
-        ? `Payment ${payment.id} verified as collected; order ${order.id} confirmed`
-        : `Payment ${payment.id} was already recorded by a concurrent callback`,
+      !outcome.recorded
+        ? `Payment ${payment.id} was already recorded by a concurrent callback`
+        : outcome.promoted
+          ? `Payment ${payment.id} verified as collected; order ${order.id} confirmed`
+          : `Payment ${payment.id} verified as collected but order ${order.id} was not confirmed because it is no longer PENDING`,
     );
 
     return PaywayCallbackAckDto.recorded();
+  }
+
+  /**
+   * Verifies with PayWay whether an order's live pending payment was collected,
+   * and if so, records it as PAID and promotes the order to CONFIRMED.
+   *
+   * Called during order status queries (e.g. GET /orders/:id) so that payment
+   * confirmation succeeds even when webhook callbacks are blocked, delayed, or
+   * unreachable (such as in local development or under network partitions).
+   */
+  async verifyOrderPayment(orderId: string): Promise<boolean> {
+    const order = await this.orders.findById(orderId);
+    if (order === null || order.paymentMethod === 'COD') {
+      return false;
+    }
+
+    const payment = await this.payments.findPendingByOrderId(orderId);
+    if (payment === null) {
+      return false;
+    }
+
+    if (payment.status === 'PAID') {
+      return false;
+    }
+
+    try {
+      const check = await this.payway.checkTransaction({
+        transactionId: payment.transactionId,
+      });
+
+      if (!this.payway.isCollected(check)) {
+        return false;
+      }
+
+      this.assertMatchesOrder(payment.transactionId, order, check);
+
+      const outcome = await this.payments.runInTransaction(async (tx) => {
+        const marked = await this.payments.markPaid(
+          payment.id,
+          {
+            providerReference: check.apv,
+            paidAt: check.transactionDate
+              ? new Date(check.transactionDate)
+              : new Date(),
+          },
+          tx,
+        );
+
+        if (!marked) {
+          return false;
+        }
+
+        return this.orders.confirmPaid(order.id, tx);
+      });
+
+      if (outcome) {
+        this.logger.log(
+          `Payment ${payment.id} verified as collected via checkTransaction; order ${orderId} confirmed`,
+        );
+      }
+
+      return outcome;
+    } catch (error) {
+      this.logger.warn(
+        `Failed to verify PayWay transaction ${payment.transactionId} for order ${orderId}: ${error instanceof Error ? error.message : String(error)}`,
+      );
+      return false;
+    }
   }
 
   /**
@@ -328,7 +409,9 @@ export class PaymentsService {
     }
 
     if (!check.paymentAmount.equals(expectedAmount)) {
-      problems.push(`payment_amount ${check.paymentAmount} != ${expectedAmount}`);
+      problems.push(
+        `payment_amount ${check.paymentAmount} != ${expectedAmount}`,
+      );
     }
 
     if (settledCurrency !== expectedCurrency) {
@@ -360,6 +443,12 @@ export class PaymentsService {
 
     if (order === null || order.userId !== userId) {
       throw new NotFoundException('Order not found');
+    }
+
+    if (order.paymentMethod === 'COD') {
+      throw new ConflictException(
+        `COD order ${order.orderNumber} cannot create a PayWay payment`,
+      );
     }
 
     if (order.status !== PAYABLE_ORDER_STATUS) {
@@ -424,7 +513,11 @@ export class PaymentsService {
     amount: string,
     currency: string,
   ): Promise<{ payment: Payment; isOwner: boolean }> {
-    for (let attempt = 1; attempt <= MAX_TRANSACTION_ID_ATTEMPTS; attempt += 1) {
+    for (
+      let attempt = 1;
+      attempt <= MAX_TRANSACTION_ID_ATTEMPTS;
+      attempt += 1
+    ) {
       const transactionId = this.transactionIds.build();
 
       try {

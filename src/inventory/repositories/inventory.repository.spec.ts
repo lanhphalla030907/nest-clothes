@@ -28,6 +28,7 @@ describe('InventoryRepository', () => {
   let repository: InventoryRepository;
   let create: ReturnType<typeof vi.fn>;
   let findUnique: ReturnType<typeof vi.fn>;
+  let findMany: ReturnType<typeof vi.fn>;
   let update: ReturnType<typeof vi.fn>;
   let transaction: ReturnType<typeof vi.fn>;
   let executeRaw: ReturnType<typeof vi.fn>;
@@ -35,6 +36,7 @@ describe('InventoryRepository', () => {
   beforeEach(async () => {
     create = vi.fn();
     findUnique = vi.fn();
+    findMany = vi.fn().mockResolvedValue([]);
     update = vi.fn();
     transaction = vi.fn();
     executeRaw = vi.fn().mockResolvedValue(1);
@@ -45,7 +47,7 @@ describe('InventoryRepository', () => {
         {
           provide: PrismaService,
           useValue: {
-            inventory: { create, findUnique, update },
+            inventory: { create, findUnique, findMany, update },
             $transaction: transaction,
             $executeRaw: executeRaw,
           },
@@ -105,6 +107,38 @@ describe('InventoryRepository', () => {
     findUnique.mockResolvedValue(null);
 
     await expect(repository.findByVariantId('v-1')).resolves.toBeNull();
+  });
+
+  describe('findByVariantIds', () => {
+    it('fetches every requested row in one IN query', async () => {
+      const rows = [buildInventory(), buildInventory({ variantId: 'v-2' })];
+      findMany.mockResolvedValue(rows);
+
+      await expect(
+        repository.findByVariantIds(['v-1', 'v-2']),
+      ).resolves.toBe(rows);
+      expect(findMany).toHaveBeenCalledWith({
+        where: { variantId: { in: ['v-1', 'v-2'] } },
+      });
+    });
+
+    it('returns an empty result without querying for an empty id list', async () => {
+      await expect(repository.findByVariantIds([])).resolves.toEqual([]);
+      expect(findMany).not.toHaveBeenCalled();
+    });
+
+    it('uses the transaction client when one is supplied', async () => {
+      const txFindMany = vi.fn().mockResolvedValue([]);
+
+      await repository.findByVariantIds(['v-1'], {
+        inventory: { findMany: txFindMany },
+      } as never);
+
+      expect(txFindMany).toHaveBeenCalledWith({
+        where: { variantId: { in: ['v-1'] } },
+      });
+      expect(findMany).not.toHaveBeenCalled();
+    });
   });
 
   it('update writes only the supplied counters against the unique owner', async () => {
@@ -222,6 +256,168 @@ describe('InventoryRepository', () => {
 
       await expect(
         repository.reserve('v-1', 3, { $executeRaw: txExecuteRaw } as never),
+      ).resolves.toBe(1);
+      expect(txExecuteRaw).toHaveBeenCalledTimes(1);
+      expect(executeRaw).not.toHaveBeenCalled();
+    });
+  });
+
+  /** Reads the single SQL string and bound values the tagged template produced. */
+  const executedStatement = () => {
+    const [strings, ...values] = executeRaw.mock.calls[0] as [
+      TemplateStringsArray,
+      ...unknown[],
+    ];
+
+    return { sql: strings.join('?'), values };
+  };
+
+  describe('releaseReserved', () => {
+    it('subtracts from reserved_quantity in the SET clause', async () => {
+      await repository.releaseReserved('v-1', 3);
+
+      const { sql } = executedStatement();
+
+      expect(sql).toContain(
+        '"reserved_quantity" = "reserved_quantity" - ?',
+      );
+      expect(sql).not.toMatch(/SET\s+"reserved_quantity"\s*=\s*\?/);
+    });
+
+    it('guards the release against the row own reserved quantity', async () => {
+      await repository.releaseReserved('v-1', 3);
+
+      const { sql, values } = executedStatement();
+
+      expect(sql).toContain('"reserved_quantity" >= ?');
+      expect(values).toEqual([3, 'v-1', 3]);
+    });
+
+    it('never writes quantity: releasing a hold is not a stock movement', async () => {
+      await repository.releaseReserved('v-1', 3);
+
+      const { sql } = executedStatement();
+      const setClause = sql.slice(sql.indexOf('SET'), sql.indexOf('WHERE'));
+
+      expect(setClause).not.toContain('"quantity"');
+    });
+
+    it('updates updated_at explicitly', async () => {
+      await repository.releaseReserved('v-1', 3);
+
+      expect(executedStatement().sql).toContain('"updated_at" = now()');
+    });
+
+    it('addresses the row by its unique variant id', async () => {
+      await repository.releaseReserved('v-1', 3);
+
+      expect(executedStatement().sql).toContain('WHERE "variant_id" = ?::uuid');
+    });
+
+    it('reports 1 when the reservation was released', async () => {
+      executeRaw.mockResolvedValue(1);
+
+      await expect(repository.releaseReserved('v-1', 3)).resolves.toBe(1);
+    });
+
+    it('reports 0 when the guard refused it', async () => {
+      executeRaw.mockResolvedValue(0);
+
+      await expect(repository.releaseReserved('v-1', 3)).resolves.toBe(0);
+    });
+
+    it('rejects zero, negative and fractional quantities before any SQL', async () => {
+      await expect(repository.releaseReserved('v-1', 0)).rejects.toBeInstanceOf(
+        RangeError,
+      );
+      await expect(
+        repository.releaseReserved('v-1', -1),
+      ).rejects.toBeInstanceOf(RangeError);
+      await expect(
+        repository.releaseReserved('v-1', 1.5),
+      ).rejects.toBeInstanceOf(RangeError);
+      expect(executeRaw).not.toHaveBeenCalled();
+    });
+
+    it('uses the transaction client when one is supplied', async () => {
+      const txExecuteRaw = vi.fn().mockResolvedValue(1);
+
+      await expect(
+        repository.releaseReserved('v-1', 3, {
+          $executeRaw: txExecuteRaw,
+        } as never),
+      ).resolves.toBe(1);
+      expect(txExecuteRaw).toHaveBeenCalledTimes(1);
+      expect(executeRaw).not.toHaveBeenCalled();
+    });
+  });
+
+  describe('commitReserved', () => {
+    it('subtracts from both counters in the SET clause', async () => {
+      await repository.commitReserved('v-1', 3);
+
+      const { sql } = executedStatement();
+
+      expect(sql).toContain('"quantity" = "quantity" - ?');
+      expect(sql).toContain(
+        '"reserved_quantity" = "reserved_quantity" - ?',
+      );
+    });
+
+    it('requires both physical stock and reserved stock to cover the movement', async () => {
+      await repository.commitReserved('v-1', 3);
+
+      const { sql, values } = executedStatement();
+
+      expect(sql).toContain('"quantity" >= ?');
+      expect(sql).toContain('"reserved_quantity" >= ?');
+      expect(values).toEqual([3, 3, 'v-1', 3, 3]);
+    });
+
+    it('updates updated_at explicitly', async () => {
+      await repository.commitReserved('v-1', 3);
+
+      expect(executedStatement().sql).toContain('"updated_at" = now()');
+    });
+
+    it('addresses the row by its unique variant id', async () => {
+      await repository.commitReserved('v-1', 3);
+
+      expect(executedStatement().sql).toContain('WHERE "variant_id" = ?::uuid');
+    });
+
+    it('reports 1 when the commitment was applied', async () => {
+      executeRaw.mockResolvedValue(1);
+
+      await expect(repository.commitReserved('v-1', 3)).resolves.toBe(1);
+    });
+
+    it('reports 0 when the guard refused it', async () => {
+      executeRaw.mockResolvedValue(0);
+
+      await expect(repository.commitReserved('v-1', 3)).resolves.toBe(0);
+    });
+
+    it('rejects zero, negative and fractional quantities before any SQL', async () => {
+      await expect(repository.commitReserved('v-1', 0)).rejects.toBeInstanceOf(
+        RangeError,
+      );
+      await expect(
+        repository.commitReserved('v-1', -1),
+      ).rejects.toBeInstanceOf(RangeError);
+      await expect(
+        repository.commitReserved('v-1', 1.5),
+      ).rejects.toBeInstanceOf(RangeError);
+      expect(executeRaw).not.toHaveBeenCalled();
+    });
+
+    it('uses the transaction client when one is supplied', async () => {
+      const txExecuteRaw = vi.fn().mockResolvedValue(1);
+
+      await expect(
+        repository.commitReserved('v-1', 3, {
+          $executeRaw: txExecuteRaw,
+        } as never),
       ).resolves.toBe(1);
       expect(txExecuteRaw).toHaveBeenCalledTimes(1);
       expect(executeRaw).not.toHaveBeenCalled();

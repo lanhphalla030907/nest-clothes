@@ -115,8 +115,11 @@ export class CartRepository {
    */
   runInTransaction<T>(
     work: (tx: CartTransactionClient) => Promise<T>,
+    options?: { isolationLevel?: Prisma.TransactionIsolationLevel },
   ): Promise<T> {
-    return this.prisma.$transaction(work);
+    return options === undefined
+      ? this.prisma.$transaction(work)
+      : this.prisma.$transaction(work, options);
   }
 
   /**
@@ -134,6 +137,26 @@ export class CartRepository {
       where: { userId },
       include: CART_WITH_ITEMS_INCLUDE,
     });
+  }
+
+  async findForCheckout(
+    userId: string,
+    client: CartTransactionClient,
+  ): Promise<CartWithItems | null> {
+    const carts = await client.$queryRaw<{ id: string }[]>`
+      SELECT "id" FROM "carts"
+      WHERE "user_id" = ${userId}::uuid
+      FOR UPDATE
+    `;
+    if (carts.length === 0) return null;
+
+    await client.$queryRaw`
+      SELECT "id" FROM "cart_items"
+      WHERE "cart_id" = ${carts[0].id}::uuid
+      ORDER BY "variant_id"
+      FOR UPDATE
+    `;
+    return this.findByUserId(userId, client);
   }
 
   /** Persists an empty cart for `userId` and returns it, hydrated. */

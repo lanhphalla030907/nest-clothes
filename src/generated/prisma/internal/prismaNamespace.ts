@@ -410,7 +410,11 @@ export const ModelName = {
   Wishlist: 'Wishlist',
   WishlistItem: 'WishlistItem',
   Address: 'Address',
+  AdministrativeLocation: 'AdministrativeLocation',
+  ShippingProvider: 'ShippingProvider',
+  CodArea: 'CodArea',
   Order: 'Order',
+  CheckoutQuote: 'CheckoutQuote',
   OrderItem: 'OrderItem',
   Payment: 'Payment'
 } as const
@@ -428,7 +432,7 @@ export type TypeMap<ExtArgs extends runtime.Types.Extensions.InternalArgs = runt
     omit: GlobalOmitOptions
   }
   meta: {
-    modelProps: "user" | "category" | "product" | "productImage" | "productVariant" | "variantOption" | "productAttribute" | "inventory" | "cart" | "cartItem" | "wishlist" | "wishlistItem" | "address" | "order" | "orderItem" | "payment"
+    modelProps: "user" | "category" | "product" | "productImage" | "productVariant" | "variantOption" | "productAttribute" | "inventory" | "cart" | "cartItem" | "wishlist" | "wishlistItem" | "address" | "administrativeLocation" | "shippingProvider" | "codArea" | "order" | "checkoutQuote" | "orderItem" | "payment"
     txIsolationLevel: TransactionIsolationLevel
   }
   model: {
@@ -1394,6 +1398,228 @@ export type TypeMap<ExtArgs extends runtime.Types.Extensions.InternalArgs = runt
         }
       }
     }
+    AdministrativeLocation: {
+      payload: Prisma.$AdministrativeLocationPayload<ExtArgs>
+      fields: Prisma.AdministrativeLocationFieldRefs
+      operations: {
+        findUnique: {
+          args: Prisma.AdministrativeLocationFindUniqueArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$AdministrativeLocationPayload> | null
+        }
+        findUniqueOrThrow: {
+          args: Prisma.AdministrativeLocationFindUniqueOrThrowArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$AdministrativeLocationPayload>
+        }
+        findFirst: {
+          args: Prisma.AdministrativeLocationFindFirstArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$AdministrativeLocationPayload> | null
+        }
+        findFirstOrThrow: {
+          args: Prisma.AdministrativeLocationFindFirstOrThrowArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$AdministrativeLocationPayload>
+        }
+        findMany: {
+          args: Prisma.AdministrativeLocationFindManyArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$AdministrativeLocationPayload>[]
+        }
+        create: {
+          args: Prisma.AdministrativeLocationCreateArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$AdministrativeLocationPayload>
+        }
+        createMany: {
+          args: Prisma.AdministrativeLocationCreateManyArgs<ExtArgs>
+          result: BatchPayload
+        }
+        createManyAndReturn: {
+          args: Prisma.AdministrativeLocationCreateManyAndReturnArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$AdministrativeLocationPayload>[]
+        }
+        delete: {
+          args: Prisma.AdministrativeLocationDeleteArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$AdministrativeLocationPayload>
+        }
+        update: {
+          args: Prisma.AdministrativeLocationUpdateArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$AdministrativeLocationPayload>
+        }
+        deleteMany: {
+          args: Prisma.AdministrativeLocationDeleteManyArgs<ExtArgs>
+          result: BatchPayload
+        }
+        updateMany: {
+          args: Prisma.AdministrativeLocationUpdateManyArgs<ExtArgs>
+          result: BatchPayload
+        }
+        updateManyAndReturn: {
+          args: Prisma.AdministrativeLocationUpdateManyAndReturnArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$AdministrativeLocationPayload>[]
+        }
+        upsert: {
+          args: Prisma.AdministrativeLocationUpsertArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$AdministrativeLocationPayload>
+        }
+        aggregate: {
+          args: Prisma.AdministrativeLocationAggregateArgs<ExtArgs>
+          result: runtime.Types.Utils.Optional<Prisma.AggregateAdministrativeLocation>
+        }
+        groupBy: {
+          args: Prisma.AdministrativeLocationGroupByArgs<ExtArgs>
+          result: runtime.Types.Utils.Optional<Prisma.AdministrativeLocationGroupByOutputType>[]
+        }
+        count: {
+          args: Prisma.AdministrativeLocationCountArgs<ExtArgs>
+          result: runtime.Types.Utils.Optional<Prisma.AdministrativeLocationCountAggregateOutputType> | number
+        }
+      }
+    }
+    ShippingProvider: {
+      payload: Prisma.$ShippingProviderPayload<ExtArgs>
+      fields: Prisma.ShippingProviderFieldRefs
+      operations: {
+        findUnique: {
+          args: Prisma.ShippingProviderFindUniqueArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$ShippingProviderPayload> | null
+        }
+        findUniqueOrThrow: {
+          args: Prisma.ShippingProviderFindUniqueOrThrowArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$ShippingProviderPayload>
+        }
+        findFirst: {
+          args: Prisma.ShippingProviderFindFirstArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$ShippingProviderPayload> | null
+        }
+        findFirstOrThrow: {
+          args: Prisma.ShippingProviderFindFirstOrThrowArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$ShippingProviderPayload>
+        }
+        findMany: {
+          args: Prisma.ShippingProviderFindManyArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$ShippingProviderPayload>[]
+        }
+        create: {
+          args: Prisma.ShippingProviderCreateArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$ShippingProviderPayload>
+        }
+        createMany: {
+          args: Prisma.ShippingProviderCreateManyArgs<ExtArgs>
+          result: BatchPayload
+        }
+        createManyAndReturn: {
+          args: Prisma.ShippingProviderCreateManyAndReturnArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$ShippingProviderPayload>[]
+        }
+        delete: {
+          args: Prisma.ShippingProviderDeleteArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$ShippingProviderPayload>
+        }
+        update: {
+          args: Prisma.ShippingProviderUpdateArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$ShippingProviderPayload>
+        }
+        deleteMany: {
+          args: Prisma.ShippingProviderDeleteManyArgs<ExtArgs>
+          result: BatchPayload
+        }
+        updateMany: {
+          args: Prisma.ShippingProviderUpdateManyArgs<ExtArgs>
+          result: BatchPayload
+        }
+        updateManyAndReturn: {
+          args: Prisma.ShippingProviderUpdateManyAndReturnArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$ShippingProviderPayload>[]
+        }
+        upsert: {
+          args: Prisma.ShippingProviderUpsertArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$ShippingProviderPayload>
+        }
+        aggregate: {
+          args: Prisma.ShippingProviderAggregateArgs<ExtArgs>
+          result: runtime.Types.Utils.Optional<Prisma.AggregateShippingProvider>
+        }
+        groupBy: {
+          args: Prisma.ShippingProviderGroupByArgs<ExtArgs>
+          result: runtime.Types.Utils.Optional<Prisma.ShippingProviderGroupByOutputType>[]
+        }
+        count: {
+          args: Prisma.ShippingProviderCountArgs<ExtArgs>
+          result: runtime.Types.Utils.Optional<Prisma.ShippingProviderCountAggregateOutputType> | number
+        }
+      }
+    }
+    CodArea: {
+      payload: Prisma.$CodAreaPayload<ExtArgs>
+      fields: Prisma.CodAreaFieldRefs
+      operations: {
+        findUnique: {
+          args: Prisma.CodAreaFindUniqueArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$CodAreaPayload> | null
+        }
+        findUniqueOrThrow: {
+          args: Prisma.CodAreaFindUniqueOrThrowArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$CodAreaPayload>
+        }
+        findFirst: {
+          args: Prisma.CodAreaFindFirstArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$CodAreaPayload> | null
+        }
+        findFirstOrThrow: {
+          args: Prisma.CodAreaFindFirstOrThrowArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$CodAreaPayload>
+        }
+        findMany: {
+          args: Prisma.CodAreaFindManyArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$CodAreaPayload>[]
+        }
+        create: {
+          args: Prisma.CodAreaCreateArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$CodAreaPayload>
+        }
+        createMany: {
+          args: Prisma.CodAreaCreateManyArgs<ExtArgs>
+          result: BatchPayload
+        }
+        createManyAndReturn: {
+          args: Prisma.CodAreaCreateManyAndReturnArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$CodAreaPayload>[]
+        }
+        delete: {
+          args: Prisma.CodAreaDeleteArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$CodAreaPayload>
+        }
+        update: {
+          args: Prisma.CodAreaUpdateArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$CodAreaPayload>
+        }
+        deleteMany: {
+          args: Prisma.CodAreaDeleteManyArgs<ExtArgs>
+          result: BatchPayload
+        }
+        updateMany: {
+          args: Prisma.CodAreaUpdateManyArgs<ExtArgs>
+          result: BatchPayload
+        }
+        updateManyAndReturn: {
+          args: Prisma.CodAreaUpdateManyAndReturnArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$CodAreaPayload>[]
+        }
+        upsert: {
+          args: Prisma.CodAreaUpsertArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$CodAreaPayload>
+        }
+        aggregate: {
+          args: Prisma.CodAreaAggregateArgs<ExtArgs>
+          result: runtime.Types.Utils.Optional<Prisma.AggregateCodArea>
+        }
+        groupBy: {
+          args: Prisma.CodAreaGroupByArgs<ExtArgs>
+          result: runtime.Types.Utils.Optional<Prisma.CodAreaGroupByOutputType>[]
+        }
+        count: {
+          args: Prisma.CodAreaCountArgs<ExtArgs>
+          result: runtime.Types.Utils.Optional<Prisma.CodAreaCountAggregateOutputType> | number
+        }
+      }
+    }
     Order: {
       payload: Prisma.$OrderPayload<ExtArgs>
       fields: Prisma.OrderFieldRefs
@@ -1465,6 +1691,80 @@ export type TypeMap<ExtArgs extends runtime.Types.Extensions.InternalArgs = runt
         count: {
           args: Prisma.OrderCountArgs<ExtArgs>
           result: runtime.Types.Utils.Optional<Prisma.OrderCountAggregateOutputType> | number
+        }
+      }
+    }
+    CheckoutQuote: {
+      payload: Prisma.$CheckoutQuotePayload<ExtArgs>
+      fields: Prisma.CheckoutQuoteFieldRefs
+      operations: {
+        findUnique: {
+          args: Prisma.CheckoutQuoteFindUniqueArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$CheckoutQuotePayload> | null
+        }
+        findUniqueOrThrow: {
+          args: Prisma.CheckoutQuoteFindUniqueOrThrowArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$CheckoutQuotePayload>
+        }
+        findFirst: {
+          args: Prisma.CheckoutQuoteFindFirstArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$CheckoutQuotePayload> | null
+        }
+        findFirstOrThrow: {
+          args: Prisma.CheckoutQuoteFindFirstOrThrowArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$CheckoutQuotePayload>
+        }
+        findMany: {
+          args: Prisma.CheckoutQuoteFindManyArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$CheckoutQuotePayload>[]
+        }
+        create: {
+          args: Prisma.CheckoutQuoteCreateArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$CheckoutQuotePayload>
+        }
+        createMany: {
+          args: Prisma.CheckoutQuoteCreateManyArgs<ExtArgs>
+          result: BatchPayload
+        }
+        createManyAndReturn: {
+          args: Prisma.CheckoutQuoteCreateManyAndReturnArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$CheckoutQuotePayload>[]
+        }
+        delete: {
+          args: Prisma.CheckoutQuoteDeleteArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$CheckoutQuotePayload>
+        }
+        update: {
+          args: Prisma.CheckoutQuoteUpdateArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$CheckoutQuotePayload>
+        }
+        deleteMany: {
+          args: Prisma.CheckoutQuoteDeleteManyArgs<ExtArgs>
+          result: BatchPayload
+        }
+        updateMany: {
+          args: Prisma.CheckoutQuoteUpdateManyArgs<ExtArgs>
+          result: BatchPayload
+        }
+        updateManyAndReturn: {
+          args: Prisma.CheckoutQuoteUpdateManyAndReturnArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$CheckoutQuotePayload>[]
+        }
+        upsert: {
+          args: Prisma.CheckoutQuoteUpsertArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$CheckoutQuotePayload>
+        }
+        aggregate: {
+          args: Prisma.CheckoutQuoteAggregateArgs<ExtArgs>
+          result: runtime.Types.Utils.Optional<Prisma.AggregateCheckoutQuote>
+        }
+        groupBy: {
+          args: Prisma.CheckoutQuoteGroupByArgs<ExtArgs>
+          result: runtime.Types.Utils.Optional<Prisma.CheckoutQuoteGroupByOutputType>[]
+        }
+        count: {
+          args: Prisma.CheckoutQuoteCountArgs<ExtArgs>
+          result: runtime.Types.Utils.Optional<Prisma.CheckoutQuoteCountAggregateOutputType> | number
         }
       }
     }
@@ -1819,6 +2119,7 @@ export const AddressScalarFieldEnum = {
   addressLine2: 'addressLine2',
   city: 'city',
   stateProvince: 'stateProvince',
+  administrativeLocationPcode: 'administrativeLocationPcode',
   postalCode: 'postalCode',
   countryCode: 'countryCode',
   isDefault: 'isDefault',
@@ -1827,6 +2128,46 @@ export const AddressScalarFieldEnum = {
 } as const
 
 export type AddressScalarFieldEnum = (typeof AddressScalarFieldEnum)[keyof typeof AddressScalarFieldEnum]
+
+
+export const AdministrativeLocationScalarFieldEnum = {
+  pcode: 'pcode',
+  parentPcode: 'parentPcode',
+  adminLevel: 'adminLevel',
+  nameEn: 'nameEn',
+  nameKm: 'nameKm',
+  datasetVersion: 'datasetVersion',
+  codEnabledOverride: 'codEnabledOverride'
+} as const
+
+export type AdministrativeLocationScalarFieldEnum = (typeof AdministrativeLocationScalarFieldEnum)[keyof typeof AdministrativeLocationScalarFieldEnum]
+
+
+export const ShippingProviderScalarFieldEnum = {
+  id: 'id',
+  code: 'code',
+  name: 'name',
+  description: 'description',
+  baseFee: 'baseFee',
+  isActive: 'isActive',
+  supportsCod: 'supportsCod',
+  createdAt: 'createdAt',
+  updatedAt: 'updatedAt'
+} as const
+
+export type ShippingProviderScalarFieldEnum = (typeof ShippingProviderScalarFieldEnum)[keyof typeof ShippingProviderScalarFieldEnum]
+
+
+export const CodAreaScalarFieldEnum = {
+  id: 'id',
+  code: 'code',
+  name: 'name',
+  codEnabled: 'codEnabled',
+  createdAt: 'createdAt',
+  updatedAt: 'updatedAt'
+} as const
+
+export type CodAreaScalarFieldEnum = (typeof CodAreaScalarFieldEnum)[keyof typeof CodAreaScalarFieldEnum]
 
 
 export const OrderScalarFieldEnum = {
@@ -1839,12 +2180,21 @@ export const OrderScalarFieldEnum = {
   discountAmount: 'discountAmount',
   totalAmount: 'totalAmount',
   currency: 'currency',
+  paymentMethod: 'paymentMethod',
+  shippingProviderId: 'shippingProviderId',
+  shippingProviderCode: 'shippingProviderCode',
+  shippingProviderName: 'shippingProviderName',
+  codAreaId: 'codAreaId',
+  codAreaCode: 'codAreaCode',
+  codAreaName: 'codAreaName',
   shippingRecipientName: 'shippingRecipientName',
   shippingPhone: 'shippingPhone',
   shippingAddressLine1: 'shippingAddressLine1',
   shippingAddressLine2: 'shippingAddressLine2',
   shippingCity: 'shippingCity',
   shippingStateProvince: 'shippingStateProvince',
+  shippingLocationPcode: 'shippingLocationPcode',
+  shippingLocationSnapshot: 'shippingLocationSnapshot',
   shippingPostalCode: 'shippingPostalCode',
   shippingCountryCode: 'shippingCountryCode',
   createdAt: 'createdAt',
@@ -1852,6 +2202,35 @@ export const OrderScalarFieldEnum = {
 } as const
 
 export type OrderScalarFieldEnum = (typeof OrderScalarFieldEnum)[keyof typeof OrderScalarFieldEnum]
+
+
+export const CheckoutQuoteScalarFieldEnum = {
+  id: 'id',
+  userId: 'userId',
+  addressId: 'addressId',
+  addressSnapshot: 'addressSnapshot',
+  shippingProviderId: 'shippingProviderId',
+  shippingProviderCode: 'shippingProviderCode',
+  shippingProviderName: 'shippingProviderName',
+  codAreaId: 'codAreaId',
+  codAreaCode: 'codAreaCode',
+  codAreaName: 'codAreaName',
+  paymentMethod: 'paymentMethod',
+  cartSnapshot: 'cartSnapshot',
+  subtotal: 'subtotal',
+  shippingFee: 'shippingFee',
+  discountAmount: 'discountAmount',
+  totalAmount: 'totalAmount',
+  currency: 'currency',
+  expiresAt: 'expiresAt',
+  consumedAt: 'consumedAt',
+  idempotencyKey: 'idempotencyKey',
+  orderId: 'orderId',
+  createdAt: 'createdAt',
+  updatedAt: 'updatedAt'
+} as const
+
+export type CheckoutQuoteScalarFieldEnum = (typeof CheckoutQuoteScalarFieldEnum)[keyof typeof CheckoutQuoteScalarFieldEnum]
 
 
 export const OrderItemScalarFieldEnum = {
@@ -1897,19 +2276,19 @@ export const SortOrder = {
 export type SortOrder = (typeof SortOrder)[keyof typeof SortOrder]
 
 
-export const JsonNullValueInput = {
-  JsonNull: JsonNull
-} as const
-
-export type JsonNullValueInput = (typeof JsonNullValueInput)[keyof typeof JsonNullValueInput]
-
-
 export const NullableJsonNullValueInput = {
   DbNull: DbNull,
   JsonNull: JsonNull
 } as const
 
 export type NullableJsonNullValueInput = (typeof NullableJsonNullValueInput)[keyof typeof NullableJsonNullValueInput]
+
+
+export const JsonNullValueInput = {
+  JsonNull: JsonNull
+} as const
+
+export type JsonNullValueInput = (typeof JsonNullValueInput)[keyof typeof JsonNullValueInput]
 
 
 export const QueryMode = {
@@ -2211,7 +2590,11 @@ export type GlobalOmitConfig = {
   wishlist?: Prisma.WishlistOmit
   wishlistItem?: Prisma.WishlistItemOmit
   address?: Prisma.AddressOmit
+  administrativeLocation?: Prisma.AdministrativeLocationOmit
+  shippingProvider?: Prisma.ShippingProviderOmit
+  codArea?: Prisma.CodAreaOmit
   order?: Prisma.OrderOmit
+  checkoutQuote?: Prisma.CheckoutQuoteOmit
   orderItem?: Prisma.OrderItemOmit
   payment?: Prisma.PaymentOmit
 }
