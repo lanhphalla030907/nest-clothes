@@ -428,6 +428,7 @@ describe('Orders (PostgreSQL)', () => {
           'shippingCity',
           'shippingCountryCode',
           'shippingFee',
+          'shippingLocationPath',
           'shippingRecipientName',
           'status',
           'subtotal',
@@ -535,6 +536,9 @@ describe('Orders (PostgreSQL)', () => {
 
       expect(Object.keys(res.body).sort()).toEqual(
         [
+          'codAreaCode',
+          'codAreaId',
+          'codAreaName',
           'createdAt',
           'currency',
           'discountAmount',
@@ -542,13 +546,18 @@ describe('Orders (PostgreSQL)', () => {
           'itemCount',
           'items',
           'orderNumber',
+          'paymentMethod',
           'shippingAddressLine1',
           'shippingAddressLine2',
           'shippingCity',
           'shippingCountryCode',
           'shippingFee',
+          'shippingLocationPath',
           'shippingPhone',
           'shippingPostalCode',
+          'shippingProviderCode',
+          'shippingProviderId',
+          'shippingProviderName',
           'shippingRecipientName',
           'shippingStateProvince',
           'status',
@@ -722,9 +731,8 @@ describe('Orders (PostgreSQL)', () => {
       );
     });
 
-    it('exposes no route that transitions a status', async () => {
+    it('exposes no generic status-transition route', async () => {
       for (const path of [
-        `/orders/${olderOrderId}/cancel`,
         `/orders/${olderOrderId}/status`,
         `/orders/${olderOrderId}/confirm`,
       ]) {
@@ -1076,6 +1084,13 @@ describe('Orders (PostgreSQL)', () => {
           pg_get_constraintdef: 'CHECK ((unit_price > (0)::numeric))',
         },
         {
+          // Replaces the earlier `orders_cod_area_snapshot_required`: a COD order
+          // now carries exactly one delivery destination, either a COD area or an
+          // administrative-location snapshot.
+          conname: 'orders_cod_delivery_snapshot_required',
+          pg_get_constraintdef: `CHECK ((((payment_method)::text <> 'COD'::text) OR (((cod_area_id IS NOT NULL) AND (cod_area_code IS NOT NULL) AND (cod_area_name IS NOT NULL) AND (shipping_location_pcode IS NULL) AND (shipping_location_snapshot IS NULL)) OR ((cod_area_id IS NULL) AND (cod_area_code IS NULL) AND (cod_area_name IS NULL) AND (shipping_location_pcode IS NOT NULL) AND (shipping_location_snapshot IS NOT NULL)))))`,
+        },
+        {
           conname: 'orders_currency_iso_4217_shape',
           pg_get_constraintdef: `CHECK ((currency ~ '^[A-Z]{3}$'::text))`,
         },
@@ -1084,12 +1099,28 @@ describe('Orders (PostgreSQL)', () => {
           pg_get_constraintdef: 'CHECK ((discount_amount >= (0)::numeric))',
         },
         {
+          conname: 'orders_non_cod_area_snapshot_absent',
+          pg_get_constraintdef: `CHECK ((((payment_method)::text <> 'ABA_PAYWAY'::text) OR ((cod_area_id IS NULL) AND (cod_area_code IS NULL) AND (cod_area_name IS NULL))))`,
+        },
+        {
+          conname: 'orders_payment_method_allowed',
+          pg_get_constraintdef: `CHECK (((payment_method IS NULL) OR ((payment_method)::text = ANY ((ARRAY['ABA_PAYWAY'::character varying, 'COD'::character varying])::text[]))))`,
+        },
+        {
+          conname: 'orders_payment_shipping_snapshot_required',
+          pg_get_constraintdef: `CHECK (((payment_method IS NULL) OR ((shipping_provider_id IS NOT NULL) AND (shipping_provider_code IS NOT NULL) AND (shipping_provider_name IS NOT NULL))))`,
+        },
+        {
           conname: 'orders_shipping_country_code_iso_3166_shape',
           pg_get_constraintdef: `CHECK ((shipping_country_code ~ '^[A-Z]{2}$'::text))`,
         },
         {
           conname: 'orders_shipping_fee_non_negative',
           pg_get_constraintdef: 'CHECK ((shipping_fee >= (0)::numeric))',
+        },
+        {
+          conname: 'orders_shipping_location_snapshot_consistent',
+          pg_get_constraintdef: `CHECK ((((shipping_location_pcode IS NULL) AND (shipping_location_snapshot IS NULL)) OR ((shipping_location_pcode IS NOT NULL) AND (shipping_location_snapshot IS NOT NULL))))`,
         },
         {
           conname: 'orders_subtotal_non_negative',
@@ -1232,9 +1263,12 @@ describe('Orders (PostgreSQL)', () => {
       // listing, and the two indexes that serve the administrative listing:
       // global newest-first, and the same order narrowed by status.
       expect(orders.map((row) => row.indexname).sort()).toEqual([
+        'orders_cod_area_id_idx',
         'orders_created_at_id_idx',
         'orders_order_number_key',
         'orders_pkey',
+        'orders_shipping_location_pcode_idx',
+        'orders_shipping_provider_id_idx',
         'orders_status_created_at_id_idx',
         'orders_user_id_created_at_id_idx',
       ]);

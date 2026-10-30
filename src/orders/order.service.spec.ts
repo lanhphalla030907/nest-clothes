@@ -7,6 +7,7 @@ import { Test, TestingModule } from '@nestjs/testing';
 import { Prisma } from '../generated/prisma/client.js';
 import { UsersRepository } from '../users/repositories/users.repository.js';
 import { DEFAULT_ORDER_CURRENCY } from './constants/order-status.constants.js';
+import { OrderResponseDto } from './dto/order-response.dto.js';
 import { OrderInventoryService } from './order-inventory.service.js';
 import { OrderNumberGenerator } from './order-number.generator.js';
 import { OrderService, type PlaceOrderInput } from './order.service.js';
@@ -174,7 +175,9 @@ describe('OrderService', () => {
   let orderFindAdminPage: ReturnType<typeof vi.fn>;
   let orderFindAdminById: ReturnType<typeof vi.fn>;
   let orderFindStatusById: ReturnType<typeof vi.fn>;
+  let orderFindStatusByIdForUser: ReturnType<typeof vi.fn>;
   let orderTransitionStatus: ReturnType<typeof vi.fn>;
+  let orderTransitionStatusForUser: ReturnType<typeof vi.fn>;
   let orderHasPaidPayment: ReturnType<typeof vi.fn>;
   let orderExistsOrderNumber: ReturnType<typeof vi.fn>;
   let orderFindVariantForCheckout: ReturnType<typeof vi.fn>;
@@ -193,7 +196,9 @@ describe('OrderService', () => {
     orderFindAdminPage = vi.fn();
     orderFindAdminById = vi.fn();
     orderFindStatusById = vi.fn();
+    orderFindStatusByIdForUser = vi.fn();
     orderTransitionStatus = vi.fn();
+    orderTransitionStatusForUser = vi.fn();
     orderHasPaidPayment = vi.fn();
     orderExistsOrderNumber = vi.fn();
     orderFindVariantForCheckout = vi.fn();
@@ -217,7 +222,9 @@ describe('OrderService', () => {
             findAdminPage: orderFindAdminPage,
             findAdminById: orderFindAdminById,
             findStatusById: orderFindStatusById,
+            findStatusByIdForUser: orderFindStatusByIdForUser,
             transitionStatus: orderTransitionStatus,
+            transitionStatusForUser: orderTransitionStatusForUser,
             hasPaidPayment: orderHasPaidPayment,
             findByOrderNumber: vi.fn(),
             existsOrderNumber: orderExistsOrderNumber,
@@ -249,7 +256,9 @@ describe('OrderService', () => {
     orderFindAdminById.mockResolvedValue(null);
     orderFindById.mockResolvedValue(null);
     orderFindStatusById.mockResolvedValue(null);
+    orderFindStatusByIdForUser.mockResolvedValue(null);
     orderTransitionStatus.mockResolvedValue(true);
+    orderTransitionStatusForUser.mockResolvedValue(true);
     orderHasPaidPayment.mockResolvedValue(false);
     inventoryReleaseReserved.mockResolvedValue(undefined);
     inventoryCommitReserved.mockResolvedValue(undefined);
@@ -668,6 +677,125 @@ describe('OrderService', () => {
       // The repository transaction owns the rollback; the service must not swallow
       // the failure or return a half-cancelled order.
       expect(orderFindAdminById).not.toHaveBeenCalled();
+    });
+  });
+
+  describe('cancelOrder', () => {
+    beforeEach(() => {
+      orderFindStatusByIdForUser.mockResolvedValue({
+        id: ORDER_ID,
+        status: 'PENDING',
+      });
+      orderFindById.mockResolvedValue(buildOrder({ status: 'CANCELLED' }));
+    });
+
+    it('cancels the caller\'s own pending unpaid order and returns the updated DTO', async () => {
+      const result = await service.cancelOrder(USER_ID, ORDER_ID);
+
+      expect(userFindById).toHaveBeenCalledWith(USER_ID);
+      expect(orderRunInTransaction).toHaveBeenCalledTimes(1);
+      expect(orderFindStatusByIdForUser).toHaveBeenCalledWith(
+        ORDER_ID,
+        USER_ID,
+        TRANSACTION,
+      );
+      expect(orderTransitionStatusForUser).toHaveBeenCalledWith(
+        ORDER_ID,
+        USER_ID,
+        'PENDING',
+        'CANCELLED',
+        TRANSACTION,
+      );
+      expect(orderFindStatusById).not.toHaveBeenCalled();
+      expect(orderTransitionStatus).not.toHaveBeenCalled();
+      expect(inventoryReleaseReserved).toHaveBeenCalledWith(
+        ORDER_ID,
+        TRANSACTION,
+      );
+      expect(orderFindById).toHaveBeenCalledWith(ORDER_ID, TRANSACTION);
+      expect(result).toBeInstanceOf(OrderResponseDto);
+      expect(result.id).toBe(ORDER_ID);
+      expect(result.status).toBe('CANCELLED');
+    });
+
+    it('moves the status before touching inventory', async () => {
+      await service.cancelOrder(USER_ID, ORDER_ID);
+
+      expect(
+        orderTransitionStatusForUser.mock.invocationCallOrder[0],
+      ).toBeLessThan(inventoryReleaseReserved.mock.invocationCallOrder[0]);
+    });
+
+    it('404s a claimed user that does not exist before starting a transaction', async () => {
+      userFindById.mockResolvedValue(null);
+
+      await expect(service.cancelOrder(USER_ID, ORDER_ID)).rejects.toBeInstanceOf(
+        NotFoundException,
+      );
+      expect(orderRunInTransaction).not.toHaveBeenCalled();
+      expect(inventoryReleaseReserved).not.toHaveBeenCalled();
+    });
+
+    it('404s another customer\'s order without releasing its stock', async () => {
+      orderFindStatusByIdForUser.mockResolvedValue(null);
+
+      await expect(
+        service.cancelOrder(OTHER_USER_ID, ORDER_ID),
+      ).rejects.toBeInstanceOf(NotFoundException);
+      expect(orderFindStatusByIdForUser).toHaveBeenCalledWith(
+        ORDER_ID,
+        OTHER_USER_ID,
+        TRANSACTION,
+      );
+      expect(orderTransitionStatusForUser).not.toHaveBeenCalled();
+      expect(inventoryReleaseReserved).not.toHaveBeenCalled();
+    });
+
+    it.each(['CONFIRMED', 'PROCESSING', 'SHIPPED', 'DELIVERED', 'CANCELLED'])(
+      'refuses an order in %s, including a repeated cancellation',
+      async (status) => {
+        orderFindStatusByIdForUser.mockResolvedValue({
+          id: ORDER_ID,
+          status,
+        });
+
+        await expect(
+          service.cancelOrder(USER_ID, ORDER_ID),
+        ).rejects.toBeInstanceOf(ConflictException);
+        expect(orderTransitionStatusForUser).not.toHaveBeenCalled();
+        expect(inventoryReleaseReserved).not.toHaveBeenCalled();
+      },
+    );
+
+    it('refuses a PENDING order that has a verified payment', async () => {
+      orderHasPaidPayment.mockResolvedValue(true);
+
+      await expect(
+        service.cancelOrder(USER_ID, ORDER_ID),
+      ).rejects.toBeInstanceOf(ConflictException);
+      expect(orderTransitionStatusForUser).not.toHaveBeenCalled();
+      expect(inventoryReleaseReserved).not.toHaveBeenCalled();
+    });
+
+    it('refuses when a concurrent request already claimed the transition', async () => {
+      orderTransitionStatusForUser.mockResolvedValue(false);
+
+      await expect(
+        service.cancelOrder(USER_ID, ORDER_ID),
+      ).rejects.toBeInstanceOf(ConflictException);
+      expect(inventoryReleaseReserved).not.toHaveBeenCalled();
+      expect(orderFindById).not.toHaveBeenCalled();
+    });
+
+    it('propagates an inventory failure so the status update rolls back', async () => {
+      inventoryReleaseReserved.mockRejectedValue(
+        new ConflictException('inconsistent inventory'),
+      );
+
+      await expect(
+        service.cancelOrder(USER_ID, ORDER_ID),
+      ).rejects.toBeInstanceOf(ConflictException);
+      expect(orderFindById).not.toHaveBeenCalled();
     });
   });
 

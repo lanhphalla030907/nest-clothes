@@ -445,6 +445,37 @@ export type CodArea = Prisma.CodAreaModel
  */
 export type Order = Prisma.OrderModel
 /**
+ * Model DeliveryAssignment
+ * One courier assignment for an order.
+ * 
+ * ## History is append-only
+ * 
+ * Reassignment creates a new row; it never updates the previous one. There is
+ * therefore deliberately no unique constraint on `orderId`, and no unique
+ * `(orderId, deliveryStaffId)` pair: a parcel may be assigned to the same courier
+ * twice after a failed attempt, and both assignments are facts worth keeping. The
+ * current assignment is the newest row for the order, which is why the index ends
+ * in the same `assignedAt DESC, id DESC` ordering used elsewhere for deterministic
+ * pagination.
+ * 
+ * ## Status belongs to the assignment, not the order
+ * 
+ * `DeliveryStatus` tracks courier progress — assigned, out for delivery, delivered,
+ * failed, returned — while `Order.status` tracks the sale. A failed delivery does
+ * not cancel a paid order, and a delivered parcel does not rewrite the order's own
+ * lifecycle. The default is `ASSIGNED` because a row is created only when a courier
+ * is known; `PENDING_ASSIGNMENT` is available to workflows that record the request
+ * before work starts.
+ * 
+ * ## Delete behaviour
+ * 
+ * Every relation is `RESTRICT`. An assignment names the courier who handled a parcel
+ * and the manager who sent it, so deleting either user must not erase that history.
+ * For the same reason the order cannot be deleted while its assignment history
+ * exists; orders themselves already restrict deletion for the same reason.
+ */
+export type DeliveryAssignment = Prisma.DeliveryAssignmentModel
+/**
  * Model CheckoutQuote
  * A short-lived, server-calculated checkout offer. The immutable snapshots bind
  * the accepted amount to the cart, address, provider, and delivery eligibility.
@@ -544,3 +575,28 @@ export type OrderItem = Prisma.OrderItemModel
  * the only provider-derived values kept, and both are non-secret by construction.
  */
 export type Payment = Prisma.PaymentModel
+/**
+ * Model CodCollection
+ * Cash actually collected for a COD order.
+ * 
+ * This is not a payment attempt: it is written only after an authorised delivery
+ * user confirms that cash was received. Keeping it separate from `Payment` is what
+ * preserves the rule that PayWay can never mark a COD order paid — the provider has
+ * no record to settle, so the collection row is the evidence instead.
+ * 
+ * ## One collection per order, one collection per payment
+ * 
+ * `orderId` and `paymentId` are both unique. The first makes a second collection for
+ * the same order impossible even if two couriers submit at once; the second stops a
+ * single payment attempt from being claimed by two collections. `paymentId` is
+ * nullable because a COD order may have no `Payment` row at all, and optional
+ * unique columns still permit any number of nulls in PostgreSQL.
+ * 
+ * ## Money and history
+ * 
+ * `amount` and `currency` are copied at collection time rather than read through the
+ * order, for the same reason `Payment` stores its own amount: the figure the courier
+ * actually received must remain a fact even if the order is later adjusted. Delete
+ * behaviour is `RESTRICT` throughout, because this row is financial evidence.
+ */
+export type CodCollection = Prisma.CodCollectionModel

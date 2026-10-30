@@ -243,6 +243,9 @@ export type UserWhereInput = {
   wishlist?: Prisma.XOR<Prisma.WishlistNullableScalarRelationFilter, Prisma.WishlistWhereInput> | null
   orders?: Prisma.OrderListRelationFilter
   checkoutQuotes?: Prisma.CheckoutQuoteListRelationFilter
+  deliveryAssignments?: Prisma.DeliveryAssignmentListRelationFilter
+  assignmentsMade?: Prisma.DeliveryAssignmentListRelationFilter
+  codCollections?: Prisma.CodCollectionListRelationFilter
 }
 
 export type UserOrderByWithRelationInput = {
@@ -263,6 +266,9 @@ export type UserOrderByWithRelationInput = {
   wishlist?: Prisma.WishlistOrderByWithRelationInput
   orders?: Prisma.OrderOrderByRelationAggregateInput
   checkoutQuotes?: Prisma.CheckoutQuoteOrderByRelationAggregateInput
+  deliveryAssignments?: Prisma.DeliveryAssignmentOrderByRelationAggregateInput
+  assignmentsMade?: Prisma.DeliveryAssignmentOrderByRelationAggregateInput
+  codCollections?: Prisma.CodCollectionOrderByRelationAggregateInput
 }
 
 export type UserWhereUniqueInput = Prisma.AtLeast<{
@@ -286,6 +292,9 @@ export type UserWhereUniqueInput = Prisma.AtLeast<{
   wishlist?: Prisma.XOR<Prisma.WishlistNullableScalarRelationFilter, Prisma.WishlistWhereInput> | null
   orders?: Prisma.OrderListRelationFilter
   checkoutQuotes?: Prisma.CheckoutQuoteListRelationFilter
+  deliveryAssignments?: Prisma.DeliveryAssignmentListRelationFilter
+  assignmentsMade?: Prisma.DeliveryAssignmentListRelationFilter
+  codCollections?: Prisma.CodCollectionListRelationFilter
 }, "id" | "email">
 
 export type UserOrderByWithAggregationInput = {
@@ -342,6 +351,9 @@ export type UserCreateInput = {
   wishlist?: Prisma.WishlistCreateNestedOneWithoutUserInput
   orders?: Prisma.OrderCreateNestedManyWithoutUserInput
   checkoutQuotes?: Prisma.CheckoutQuoteCreateNestedManyWithoutUserInput
+  deliveryAssignments?: Prisma.DeliveryAssignmentCreateNestedManyWithoutDeliveryStaffInput
+  assignmentsMade?: Prisma.DeliveryAssignmentCreateNestedManyWithoutAssignedByInput
+  codCollections?: Prisma.CodCollectionCreateNestedManyWithoutCollectedByInput
 }
 
 export type UserUncheckedCreateInput = {
@@ -362,6 +374,9 @@ export type UserUncheckedCreateInput = {
   wishlist?: Prisma.WishlistUncheckedCreateNestedOneWithoutUserInput
   orders?: Prisma.OrderUncheckedCreateNestedManyWithoutUserInput
   checkoutQuotes?: Prisma.CheckoutQuoteUncheckedCreateNestedManyWithoutUserInput
+  deliveryAssignments?: Prisma.DeliveryAssignmentUncheckedCreateNestedManyWithoutDeliveryStaffInput
+  assignmentsMade?: Prisma.DeliveryAssignmentUncheckedCreateNestedManyWithoutAssignedByInput
+  codCollections?: Prisma.CodCollectionUncheckedCreateNestedManyWithoutCollectedByInput
 }
 
 export type UserUpdateInput = {
@@ -382,6 +397,9 @@ export type UserUpdateInput = {
   wishlist?: Prisma.WishlistUpdateOneWithoutUserNestedInput
   orders?: Prisma.OrderUpdateManyWithoutUserNestedInput
   checkoutQuotes?: Prisma.CheckoutQuoteUpdateManyWithoutUserNestedInput
+  deliveryAssignments?: Prisma.DeliveryAssignmentUpdateManyWithoutDeliveryStaffNestedInput
+  assignmentsMade?: Prisma.DeliveryAssignmentUpdateManyWithoutAssignedByNestedInput
+  codCollections?: Prisma.CodCollectionUpdateManyWithoutCollectedByNestedInput
 }
 
 export type UserUncheckedUpdateInput = {
@@ -402,6 +420,9 @@ export type UserUncheckedUpdateInput = {
   wishlist?: Prisma.WishlistUncheckedUpdateOneWithoutUserNestedInput
   orders?: Prisma.OrderUncheckedUpdateManyWithoutUserNestedInput
   checkoutQuotes?: Prisma.CheckoutQuoteUncheckedUpdateManyWithoutUserNestedInput
+  deliveryAssignments?: Prisma.DeliveryAssignmentUncheckedUpdateManyWithoutDeliveryStaffNestedInput
+  assignmentsMade?: Prisma.DeliveryAssignmentUncheckedUpdateManyWithoutAssignedByNestedInput
+  codCollections?: Prisma.CodCollectionUncheckedUpdateManyWithoutCollectedByNestedInput
 }
 
 export type UserCreateManyInput = {
@@ -575,6 +596,34 @@ export type UserUpdateOneRequiredWithoutOrdersNestedInput = {
   update?: Prisma.XOR<Prisma.XOR<Prisma.UserUpdateToOneWithWhereWithoutOrdersInput, Prisma.UserUpdateWithoutOrdersInput>, Prisma.UserUncheckedUpdateWithoutOrdersInput>
 }
 
+export type UserCreateNestedOneWithoutDeliveryAssignmentsInput = {
+  create?: Prisma.XOR<Prisma.UserCreateWithoutDeliveryAssignmentsInput, Prisma.UserUncheckedCreateWithoutDeliveryAssignmentsInput>
+  connectOrCreate?: Prisma.UserCreateOrConnectWithoutDeliveryAssignmentsInput
+  connect?: Prisma.UserWhereUniqueInput
+}
+
+export type UserCreateNestedOneWithoutAssignmentsMadeInput = {
+  create?: Prisma.XOR<Prisma.UserCreateWithoutAssignmentsMadeInput, Prisma.UserUncheckedCreateWithoutAssignmentsMadeInput>
+  connectOrCreate?: Prisma.UserCreateOrConnectWithoutAssignmentsMadeInput
+  connect?: Prisma.UserWhereUniqueInput
+}
+
+export type UserUpdateOneRequiredWithoutDeliveryAssignmentsNestedInput = {
+  create?: Prisma.XOR<Prisma.UserCreateWithoutDeliveryAssignmentsInput, Prisma.UserUncheckedCreateWithoutDeliveryAssignmentsInput>
+  connectOrCreate?: Prisma.UserCreateOrConnectWithoutDeliveryAssignmentsInput
+  upsert?: Prisma.UserUpsertWithoutDeliveryAssignmentsInput
+  connect?: Prisma.UserWhereUniqueInput
+  update?: Prisma.XOR<Prisma.XOR<Prisma.UserUpdateToOneWithWhereWithoutDeliveryAssignmentsInput, Prisma.UserUpdateWithoutDeliveryAssignmentsInput>, Prisma.UserUncheckedUpdateWithoutDeliveryAssignmentsInput>
+}
+
+export type UserUpdateOneRequiredWithoutAssignmentsMadeNestedInput = {
+  create?: Prisma.XOR<Prisma.UserCreateWithoutAssignmentsMadeInput, Prisma.UserUncheckedCreateWithoutAssignmentsMadeInput>
+  connectOrCreate?: Prisma.UserCreateOrConnectWithoutAssignmentsMadeInput
+  upsert?: Prisma.UserUpsertWithoutAssignmentsMadeInput
+  connect?: Prisma.UserWhereUniqueInput
+  update?: Prisma.XOR<Prisma.XOR<Prisma.UserUpdateToOneWithWhereWithoutAssignmentsMadeInput, Prisma.UserUpdateWithoutAssignmentsMadeInput>, Prisma.UserUncheckedUpdateWithoutAssignmentsMadeInput>
+}
+
 export type UserCreateNestedOneWithoutCheckoutQuotesInput = {
   create?: Prisma.XOR<Prisma.UserCreateWithoutCheckoutQuotesInput, Prisma.UserUncheckedCreateWithoutCheckoutQuotesInput>
   connectOrCreate?: Prisma.UserCreateOrConnectWithoutCheckoutQuotesInput
@@ -587,6 +636,20 @@ export type UserUpdateOneRequiredWithoutCheckoutQuotesNestedInput = {
   upsert?: Prisma.UserUpsertWithoutCheckoutQuotesInput
   connect?: Prisma.UserWhereUniqueInput
   update?: Prisma.XOR<Prisma.XOR<Prisma.UserUpdateToOneWithWhereWithoutCheckoutQuotesInput, Prisma.UserUpdateWithoutCheckoutQuotesInput>, Prisma.UserUncheckedUpdateWithoutCheckoutQuotesInput>
+}
+
+export type UserCreateNestedOneWithoutCodCollectionsInput = {
+  create?: Prisma.XOR<Prisma.UserCreateWithoutCodCollectionsInput, Prisma.UserUncheckedCreateWithoutCodCollectionsInput>
+  connectOrCreate?: Prisma.UserCreateOrConnectWithoutCodCollectionsInput
+  connect?: Prisma.UserWhereUniqueInput
+}
+
+export type UserUpdateOneRequiredWithoutCodCollectionsNestedInput = {
+  create?: Prisma.XOR<Prisma.UserCreateWithoutCodCollectionsInput, Prisma.UserUncheckedCreateWithoutCodCollectionsInput>
+  connectOrCreate?: Prisma.UserCreateOrConnectWithoutCodCollectionsInput
+  upsert?: Prisma.UserUpsertWithoutCodCollectionsInput
+  connect?: Prisma.UserWhereUniqueInput
+  update?: Prisma.XOR<Prisma.XOR<Prisma.UserUpdateToOneWithWhereWithoutCodCollectionsInput, Prisma.UserUpdateWithoutCodCollectionsInput>, Prisma.UserUncheckedUpdateWithoutCodCollectionsInput>
 }
 
 export type UserCreateWithoutCartInput = {
@@ -606,6 +669,9 @@ export type UserCreateWithoutCartInput = {
   wishlist?: Prisma.WishlistCreateNestedOneWithoutUserInput
   orders?: Prisma.OrderCreateNestedManyWithoutUserInput
   checkoutQuotes?: Prisma.CheckoutQuoteCreateNestedManyWithoutUserInput
+  deliveryAssignments?: Prisma.DeliveryAssignmentCreateNestedManyWithoutDeliveryStaffInput
+  assignmentsMade?: Prisma.DeliveryAssignmentCreateNestedManyWithoutAssignedByInput
+  codCollections?: Prisma.CodCollectionCreateNestedManyWithoutCollectedByInput
 }
 
 export type UserUncheckedCreateWithoutCartInput = {
@@ -625,6 +691,9 @@ export type UserUncheckedCreateWithoutCartInput = {
   wishlist?: Prisma.WishlistUncheckedCreateNestedOneWithoutUserInput
   orders?: Prisma.OrderUncheckedCreateNestedManyWithoutUserInput
   checkoutQuotes?: Prisma.CheckoutQuoteUncheckedCreateNestedManyWithoutUserInput
+  deliveryAssignments?: Prisma.DeliveryAssignmentUncheckedCreateNestedManyWithoutDeliveryStaffInput
+  assignmentsMade?: Prisma.DeliveryAssignmentUncheckedCreateNestedManyWithoutAssignedByInput
+  codCollections?: Prisma.CodCollectionUncheckedCreateNestedManyWithoutCollectedByInput
 }
 
 export type UserCreateOrConnectWithoutCartInput = {
@@ -660,6 +729,9 @@ export type UserUpdateWithoutCartInput = {
   wishlist?: Prisma.WishlistUpdateOneWithoutUserNestedInput
   orders?: Prisma.OrderUpdateManyWithoutUserNestedInput
   checkoutQuotes?: Prisma.CheckoutQuoteUpdateManyWithoutUserNestedInput
+  deliveryAssignments?: Prisma.DeliveryAssignmentUpdateManyWithoutDeliveryStaffNestedInput
+  assignmentsMade?: Prisma.DeliveryAssignmentUpdateManyWithoutAssignedByNestedInput
+  codCollections?: Prisma.CodCollectionUpdateManyWithoutCollectedByNestedInput
 }
 
 export type UserUncheckedUpdateWithoutCartInput = {
@@ -679,6 +751,9 @@ export type UserUncheckedUpdateWithoutCartInput = {
   wishlist?: Prisma.WishlistUncheckedUpdateOneWithoutUserNestedInput
   orders?: Prisma.OrderUncheckedUpdateManyWithoutUserNestedInput
   checkoutQuotes?: Prisma.CheckoutQuoteUncheckedUpdateManyWithoutUserNestedInput
+  deliveryAssignments?: Prisma.DeliveryAssignmentUncheckedUpdateManyWithoutDeliveryStaffNestedInput
+  assignmentsMade?: Prisma.DeliveryAssignmentUncheckedUpdateManyWithoutAssignedByNestedInput
+  codCollections?: Prisma.CodCollectionUncheckedUpdateManyWithoutCollectedByNestedInput
 }
 
 export type UserCreateWithoutWishlistInput = {
@@ -698,6 +773,9 @@ export type UserCreateWithoutWishlistInput = {
   cart?: Prisma.CartCreateNestedOneWithoutUserInput
   orders?: Prisma.OrderCreateNestedManyWithoutUserInput
   checkoutQuotes?: Prisma.CheckoutQuoteCreateNestedManyWithoutUserInput
+  deliveryAssignments?: Prisma.DeliveryAssignmentCreateNestedManyWithoutDeliveryStaffInput
+  assignmentsMade?: Prisma.DeliveryAssignmentCreateNestedManyWithoutAssignedByInput
+  codCollections?: Prisma.CodCollectionCreateNestedManyWithoutCollectedByInput
 }
 
 export type UserUncheckedCreateWithoutWishlistInput = {
@@ -717,6 +795,9 @@ export type UserUncheckedCreateWithoutWishlistInput = {
   cart?: Prisma.CartUncheckedCreateNestedOneWithoutUserInput
   orders?: Prisma.OrderUncheckedCreateNestedManyWithoutUserInput
   checkoutQuotes?: Prisma.CheckoutQuoteUncheckedCreateNestedManyWithoutUserInput
+  deliveryAssignments?: Prisma.DeliveryAssignmentUncheckedCreateNestedManyWithoutDeliveryStaffInput
+  assignmentsMade?: Prisma.DeliveryAssignmentUncheckedCreateNestedManyWithoutAssignedByInput
+  codCollections?: Prisma.CodCollectionUncheckedCreateNestedManyWithoutCollectedByInput
 }
 
 export type UserCreateOrConnectWithoutWishlistInput = {
@@ -752,6 +833,9 @@ export type UserUpdateWithoutWishlistInput = {
   cart?: Prisma.CartUpdateOneWithoutUserNestedInput
   orders?: Prisma.OrderUpdateManyWithoutUserNestedInput
   checkoutQuotes?: Prisma.CheckoutQuoteUpdateManyWithoutUserNestedInput
+  deliveryAssignments?: Prisma.DeliveryAssignmentUpdateManyWithoutDeliveryStaffNestedInput
+  assignmentsMade?: Prisma.DeliveryAssignmentUpdateManyWithoutAssignedByNestedInput
+  codCollections?: Prisma.CodCollectionUpdateManyWithoutCollectedByNestedInput
 }
 
 export type UserUncheckedUpdateWithoutWishlistInput = {
@@ -771,6 +855,9 @@ export type UserUncheckedUpdateWithoutWishlistInput = {
   cart?: Prisma.CartUncheckedUpdateOneWithoutUserNestedInput
   orders?: Prisma.OrderUncheckedUpdateManyWithoutUserNestedInput
   checkoutQuotes?: Prisma.CheckoutQuoteUncheckedUpdateManyWithoutUserNestedInput
+  deliveryAssignments?: Prisma.DeliveryAssignmentUncheckedUpdateManyWithoutDeliveryStaffNestedInput
+  assignmentsMade?: Prisma.DeliveryAssignmentUncheckedUpdateManyWithoutAssignedByNestedInput
+  codCollections?: Prisma.CodCollectionUncheckedUpdateManyWithoutCollectedByNestedInput
 }
 
 export type UserCreateWithoutAddressesInput = {
@@ -790,6 +877,9 @@ export type UserCreateWithoutAddressesInput = {
   wishlist?: Prisma.WishlistCreateNestedOneWithoutUserInput
   orders?: Prisma.OrderCreateNestedManyWithoutUserInput
   checkoutQuotes?: Prisma.CheckoutQuoteCreateNestedManyWithoutUserInput
+  deliveryAssignments?: Prisma.DeliveryAssignmentCreateNestedManyWithoutDeliveryStaffInput
+  assignmentsMade?: Prisma.DeliveryAssignmentCreateNestedManyWithoutAssignedByInput
+  codCollections?: Prisma.CodCollectionCreateNestedManyWithoutCollectedByInput
 }
 
 export type UserUncheckedCreateWithoutAddressesInput = {
@@ -809,6 +899,9 @@ export type UserUncheckedCreateWithoutAddressesInput = {
   wishlist?: Prisma.WishlistUncheckedCreateNestedOneWithoutUserInput
   orders?: Prisma.OrderUncheckedCreateNestedManyWithoutUserInput
   checkoutQuotes?: Prisma.CheckoutQuoteUncheckedCreateNestedManyWithoutUserInput
+  deliveryAssignments?: Prisma.DeliveryAssignmentUncheckedCreateNestedManyWithoutDeliveryStaffInput
+  assignmentsMade?: Prisma.DeliveryAssignmentUncheckedCreateNestedManyWithoutAssignedByInput
+  codCollections?: Prisma.CodCollectionUncheckedCreateNestedManyWithoutCollectedByInput
 }
 
 export type UserCreateOrConnectWithoutAddressesInput = {
@@ -844,6 +937,9 @@ export type UserUpdateWithoutAddressesInput = {
   wishlist?: Prisma.WishlistUpdateOneWithoutUserNestedInput
   orders?: Prisma.OrderUpdateManyWithoutUserNestedInput
   checkoutQuotes?: Prisma.CheckoutQuoteUpdateManyWithoutUserNestedInput
+  deliveryAssignments?: Prisma.DeliveryAssignmentUpdateManyWithoutDeliveryStaffNestedInput
+  assignmentsMade?: Prisma.DeliveryAssignmentUpdateManyWithoutAssignedByNestedInput
+  codCollections?: Prisma.CodCollectionUpdateManyWithoutCollectedByNestedInput
 }
 
 export type UserUncheckedUpdateWithoutAddressesInput = {
@@ -863,6 +959,9 @@ export type UserUncheckedUpdateWithoutAddressesInput = {
   wishlist?: Prisma.WishlistUncheckedUpdateOneWithoutUserNestedInput
   orders?: Prisma.OrderUncheckedUpdateManyWithoutUserNestedInput
   checkoutQuotes?: Prisma.CheckoutQuoteUncheckedUpdateManyWithoutUserNestedInput
+  deliveryAssignments?: Prisma.DeliveryAssignmentUncheckedUpdateManyWithoutDeliveryStaffNestedInput
+  assignmentsMade?: Prisma.DeliveryAssignmentUncheckedUpdateManyWithoutAssignedByNestedInput
+  codCollections?: Prisma.CodCollectionUncheckedUpdateManyWithoutCollectedByNestedInput
 }
 
 export type UserCreateWithoutOrdersInput = {
@@ -882,6 +981,9 @@ export type UserCreateWithoutOrdersInput = {
   cart?: Prisma.CartCreateNestedOneWithoutUserInput
   wishlist?: Prisma.WishlistCreateNestedOneWithoutUserInput
   checkoutQuotes?: Prisma.CheckoutQuoteCreateNestedManyWithoutUserInput
+  deliveryAssignments?: Prisma.DeliveryAssignmentCreateNestedManyWithoutDeliveryStaffInput
+  assignmentsMade?: Prisma.DeliveryAssignmentCreateNestedManyWithoutAssignedByInput
+  codCollections?: Prisma.CodCollectionCreateNestedManyWithoutCollectedByInput
 }
 
 export type UserUncheckedCreateWithoutOrdersInput = {
@@ -901,6 +1003,9 @@ export type UserUncheckedCreateWithoutOrdersInput = {
   cart?: Prisma.CartUncheckedCreateNestedOneWithoutUserInput
   wishlist?: Prisma.WishlistUncheckedCreateNestedOneWithoutUserInput
   checkoutQuotes?: Prisma.CheckoutQuoteUncheckedCreateNestedManyWithoutUserInput
+  deliveryAssignments?: Prisma.DeliveryAssignmentUncheckedCreateNestedManyWithoutDeliveryStaffInput
+  assignmentsMade?: Prisma.DeliveryAssignmentUncheckedCreateNestedManyWithoutAssignedByInput
+  codCollections?: Prisma.CodCollectionUncheckedCreateNestedManyWithoutCollectedByInput
 }
 
 export type UserCreateOrConnectWithoutOrdersInput = {
@@ -936,6 +1041,9 @@ export type UserUpdateWithoutOrdersInput = {
   cart?: Prisma.CartUpdateOneWithoutUserNestedInput
   wishlist?: Prisma.WishlistUpdateOneWithoutUserNestedInput
   checkoutQuotes?: Prisma.CheckoutQuoteUpdateManyWithoutUserNestedInput
+  deliveryAssignments?: Prisma.DeliveryAssignmentUpdateManyWithoutDeliveryStaffNestedInput
+  assignmentsMade?: Prisma.DeliveryAssignmentUpdateManyWithoutAssignedByNestedInput
+  codCollections?: Prisma.CodCollectionUpdateManyWithoutCollectedByNestedInput
 }
 
 export type UserUncheckedUpdateWithoutOrdersInput = {
@@ -955,6 +1063,217 @@ export type UserUncheckedUpdateWithoutOrdersInput = {
   cart?: Prisma.CartUncheckedUpdateOneWithoutUserNestedInput
   wishlist?: Prisma.WishlistUncheckedUpdateOneWithoutUserNestedInput
   checkoutQuotes?: Prisma.CheckoutQuoteUncheckedUpdateManyWithoutUserNestedInput
+  deliveryAssignments?: Prisma.DeliveryAssignmentUncheckedUpdateManyWithoutDeliveryStaffNestedInput
+  assignmentsMade?: Prisma.DeliveryAssignmentUncheckedUpdateManyWithoutAssignedByNestedInput
+  codCollections?: Prisma.CodCollectionUncheckedUpdateManyWithoutCollectedByNestedInput
+}
+
+export type UserCreateWithoutDeliveryAssignmentsInput = {
+  id?: string
+  firstName: string
+  lastName: string
+  email: string
+  passwordHash: string
+  phone?: string | null
+  status: string
+  role?: $Enums.Role
+  emailVerifiedAt?: Date | string | null
+  lastLoginAt?: Date | string | null
+  createdAt?: Date | string
+  updatedAt?: Date | string
+  addresses?: Prisma.AddressCreateNestedManyWithoutUserInput
+  cart?: Prisma.CartCreateNestedOneWithoutUserInput
+  wishlist?: Prisma.WishlistCreateNestedOneWithoutUserInput
+  orders?: Prisma.OrderCreateNestedManyWithoutUserInput
+  checkoutQuotes?: Prisma.CheckoutQuoteCreateNestedManyWithoutUserInput
+  assignmentsMade?: Prisma.DeliveryAssignmentCreateNestedManyWithoutAssignedByInput
+  codCollections?: Prisma.CodCollectionCreateNestedManyWithoutCollectedByInput
+}
+
+export type UserUncheckedCreateWithoutDeliveryAssignmentsInput = {
+  id?: string
+  firstName: string
+  lastName: string
+  email: string
+  passwordHash: string
+  phone?: string | null
+  status: string
+  role?: $Enums.Role
+  emailVerifiedAt?: Date | string | null
+  lastLoginAt?: Date | string | null
+  createdAt?: Date | string
+  updatedAt?: Date | string
+  addresses?: Prisma.AddressUncheckedCreateNestedManyWithoutUserInput
+  cart?: Prisma.CartUncheckedCreateNestedOneWithoutUserInput
+  wishlist?: Prisma.WishlistUncheckedCreateNestedOneWithoutUserInput
+  orders?: Prisma.OrderUncheckedCreateNestedManyWithoutUserInput
+  checkoutQuotes?: Prisma.CheckoutQuoteUncheckedCreateNestedManyWithoutUserInput
+  assignmentsMade?: Prisma.DeliveryAssignmentUncheckedCreateNestedManyWithoutAssignedByInput
+  codCollections?: Prisma.CodCollectionUncheckedCreateNestedManyWithoutCollectedByInput
+}
+
+export type UserCreateOrConnectWithoutDeliveryAssignmentsInput = {
+  where: Prisma.UserWhereUniqueInput
+  create: Prisma.XOR<Prisma.UserCreateWithoutDeliveryAssignmentsInput, Prisma.UserUncheckedCreateWithoutDeliveryAssignmentsInput>
+}
+
+export type UserCreateWithoutAssignmentsMadeInput = {
+  id?: string
+  firstName: string
+  lastName: string
+  email: string
+  passwordHash: string
+  phone?: string | null
+  status: string
+  role?: $Enums.Role
+  emailVerifiedAt?: Date | string | null
+  lastLoginAt?: Date | string | null
+  createdAt?: Date | string
+  updatedAt?: Date | string
+  addresses?: Prisma.AddressCreateNestedManyWithoutUserInput
+  cart?: Prisma.CartCreateNestedOneWithoutUserInput
+  wishlist?: Prisma.WishlistCreateNestedOneWithoutUserInput
+  orders?: Prisma.OrderCreateNestedManyWithoutUserInput
+  checkoutQuotes?: Prisma.CheckoutQuoteCreateNestedManyWithoutUserInput
+  deliveryAssignments?: Prisma.DeliveryAssignmentCreateNestedManyWithoutDeliveryStaffInput
+  codCollections?: Prisma.CodCollectionCreateNestedManyWithoutCollectedByInput
+}
+
+export type UserUncheckedCreateWithoutAssignmentsMadeInput = {
+  id?: string
+  firstName: string
+  lastName: string
+  email: string
+  passwordHash: string
+  phone?: string | null
+  status: string
+  role?: $Enums.Role
+  emailVerifiedAt?: Date | string | null
+  lastLoginAt?: Date | string | null
+  createdAt?: Date | string
+  updatedAt?: Date | string
+  addresses?: Prisma.AddressUncheckedCreateNestedManyWithoutUserInput
+  cart?: Prisma.CartUncheckedCreateNestedOneWithoutUserInput
+  wishlist?: Prisma.WishlistUncheckedCreateNestedOneWithoutUserInput
+  orders?: Prisma.OrderUncheckedCreateNestedManyWithoutUserInput
+  checkoutQuotes?: Prisma.CheckoutQuoteUncheckedCreateNestedManyWithoutUserInput
+  deliveryAssignments?: Prisma.DeliveryAssignmentUncheckedCreateNestedManyWithoutDeliveryStaffInput
+  codCollections?: Prisma.CodCollectionUncheckedCreateNestedManyWithoutCollectedByInput
+}
+
+export type UserCreateOrConnectWithoutAssignmentsMadeInput = {
+  where: Prisma.UserWhereUniqueInput
+  create: Prisma.XOR<Prisma.UserCreateWithoutAssignmentsMadeInput, Prisma.UserUncheckedCreateWithoutAssignmentsMadeInput>
+}
+
+export type UserUpsertWithoutDeliveryAssignmentsInput = {
+  update: Prisma.XOR<Prisma.UserUpdateWithoutDeliveryAssignmentsInput, Prisma.UserUncheckedUpdateWithoutDeliveryAssignmentsInput>
+  create: Prisma.XOR<Prisma.UserCreateWithoutDeliveryAssignmentsInput, Prisma.UserUncheckedCreateWithoutDeliveryAssignmentsInput>
+  where?: Prisma.UserWhereInput
+}
+
+export type UserUpdateToOneWithWhereWithoutDeliveryAssignmentsInput = {
+  where?: Prisma.UserWhereInput
+  data: Prisma.XOR<Prisma.UserUpdateWithoutDeliveryAssignmentsInput, Prisma.UserUncheckedUpdateWithoutDeliveryAssignmentsInput>
+}
+
+export type UserUpdateWithoutDeliveryAssignmentsInput = {
+  id?: Prisma.StringFieldUpdateOperationsInput | string
+  firstName?: Prisma.StringFieldUpdateOperationsInput | string
+  lastName?: Prisma.StringFieldUpdateOperationsInput | string
+  email?: Prisma.StringFieldUpdateOperationsInput | string
+  passwordHash?: Prisma.StringFieldUpdateOperationsInput | string
+  phone?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  status?: Prisma.StringFieldUpdateOperationsInput | string
+  role?: Prisma.EnumRoleFieldUpdateOperationsInput | $Enums.Role
+  emailVerifiedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  lastLoginAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  addresses?: Prisma.AddressUpdateManyWithoutUserNestedInput
+  cart?: Prisma.CartUpdateOneWithoutUserNestedInput
+  wishlist?: Prisma.WishlistUpdateOneWithoutUserNestedInput
+  orders?: Prisma.OrderUpdateManyWithoutUserNestedInput
+  checkoutQuotes?: Prisma.CheckoutQuoteUpdateManyWithoutUserNestedInput
+  assignmentsMade?: Prisma.DeliveryAssignmentUpdateManyWithoutAssignedByNestedInput
+  codCollections?: Prisma.CodCollectionUpdateManyWithoutCollectedByNestedInput
+}
+
+export type UserUncheckedUpdateWithoutDeliveryAssignmentsInput = {
+  id?: Prisma.StringFieldUpdateOperationsInput | string
+  firstName?: Prisma.StringFieldUpdateOperationsInput | string
+  lastName?: Prisma.StringFieldUpdateOperationsInput | string
+  email?: Prisma.StringFieldUpdateOperationsInput | string
+  passwordHash?: Prisma.StringFieldUpdateOperationsInput | string
+  phone?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  status?: Prisma.StringFieldUpdateOperationsInput | string
+  role?: Prisma.EnumRoleFieldUpdateOperationsInput | $Enums.Role
+  emailVerifiedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  lastLoginAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  addresses?: Prisma.AddressUncheckedUpdateManyWithoutUserNestedInput
+  cart?: Prisma.CartUncheckedUpdateOneWithoutUserNestedInput
+  wishlist?: Prisma.WishlistUncheckedUpdateOneWithoutUserNestedInput
+  orders?: Prisma.OrderUncheckedUpdateManyWithoutUserNestedInput
+  checkoutQuotes?: Prisma.CheckoutQuoteUncheckedUpdateManyWithoutUserNestedInput
+  assignmentsMade?: Prisma.DeliveryAssignmentUncheckedUpdateManyWithoutAssignedByNestedInput
+  codCollections?: Prisma.CodCollectionUncheckedUpdateManyWithoutCollectedByNestedInput
+}
+
+export type UserUpsertWithoutAssignmentsMadeInput = {
+  update: Prisma.XOR<Prisma.UserUpdateWithoutAssignmentsMadeInput, Prisma.UserUncheckedUpdateWithoutAssignmentsMadeInput>
+  create: Prisma.XOR<Prisma.UserCreateWithoutAssignmentsMadeInput, Prisma.UserUncheckedCreateWithoutAssignmentsMadeInput>
+  where?: Prisma.UserWhereInput
+}
+
+export type UserUpdateToOneWithWhereWithoutAssignmentsMadeInput = {
+  where?: Prisma.UserWhereInput
+  data: Prisma.XOR<Prisma.UserUpdateWithoutAssignmentsMadeInput, Prisma.UserUncheckedUpdateWithoutAssignmentsMadeInput>
+}
+
+export type UserUpdateWithoutAssignmentsMadeInput = {
+  id?: Prisma.StringFieldUpdateOperationsInput | string
+  firstName?: Prisma.StringFieldUpdateOperationsInput | string
+  lastName?: Prisma.StringFieldUpdateOperationsInput | string
+  email?: Prisma.StringFieldUpdateOperationsInput | string
+  passwordHash?: Prisma.StringFieldUpdateOperationsInput | string
+  phone?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  status?: Prisma.StringFieldUpdateOperationsInput | string
+  role?: Prisma.EnumRoleFieldUpdateOperationsInput | $Enums.Role
+  emailVerifiedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  lastLoginAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  addresses?: Prisma.AddressUpdateManyWithoutUserNestedInput
+  cart?: Prisma.CartUpdateOneWithoutUserNestedInput
+  wishlist?: Prisma.WishlistUpdateOneWithoutUserNestedInput
+  orders?: Prisma.OrderUpdateManyWithoutUserNestedInput
+  checkoutQuotes?: Prisma.CheckoutQuoteUpdateManyWithoutUserNestedInput
+  deliveryAssignments?: Prisma.DeliveryAssignmentUpdateManyWithoutDeliveryStaffNestedInput
+  codCollections?: Prisma.CodCollectionUpdateManyWithoutCollectedByNestedInput
+}
+
+export type UserUncheckedUpdateWithoutAssignmentsMadeInput = {
+  id?: Prisma.StringFieldUpdateOperationsInput | string
+  firstName?: Prisma.StringFieldUpdateOperationsInput | string
+  lastName?: Prisma.StringFieldUpdateOperationsInput | string
+  email?: Prisma.StringFieldUpdateOperationsInput | string
+  passwordHash?: Prisma.StringFieldUpdateOperationsInput | string
+  phone?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  status?: Prisma.StringFieldUpdateOperationsInput | string
+  role?: Prisma.EnumRoleFieldUpdateOperationsInput | $Enums.Role
+  emailVerifiedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  lastLoginAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  addresses?: Prisma.AddressUncheckedUpdateManyWithoutUserNestedInput
+  cart?: Prisma.CartUncheckedUpdateOneWithoutUserNestedInput
+  wishlist?: Prisma.WishlistUncheckedUpdateOneWithoutUserNestedInput
+  orders?: Prisma.OrderUncheckedUpdateManyWithoutUserNestedInput
+  checkoutQuotes?: Prisma.CheckoutQuoteUncheckedUpdateManyWithoutUserNestedInput
+  deliveryAssignments?: Prisma.DeliveryAssignmentUncheckedUpdateManyWithoutDeliveryStaffNestedInput
+  codCollections?: Prisma.CodCollectionUncheckedUpdateManyWithoutCollectedByNestedInput
 }
 
 export type UserCreateWithoutCheckoutQuotesInput = {
@@ -974,6 +1293,9 @@ export type UserCreateWithoutCheckoutQuotesInput = {
   cart?: Prisma.CartCreateNestedOneWithoutUserInput
   wishlist?: Prisma.WishlistCreateNestedOneWithoutUserInput
   orders?: Prisma.OrderCreateNestedManyWithoutUserInput
+  deliveryAssignments?: Prisma.DeliveryAssignmentCreateNestedManyWithoutDeliveryStaffInput
+  assignmentsMade?: Prisma.DeliveryAssignmentCreateNestedManyWithoutAssignedByInput
+  codCollections?: Prisma.CodCollectionCreateNestedManyWithoutCollectedByInput
 }
 
 export type UserUncheckedCreateWithoutCheckoutQuotesInput = {
@@ -993,6 +1315,9 @@ export type UserUncheckedCreateWithoutCheckoutQuotesInput = {
   cart?: Prisma.CartUncheckedCreateNestedOneWithoutUserInput
   wishlist?: Prisma.WishlistUncheckedCreateNestedOneWithoutUserInput
   orders?: Prisma.OrderUncheckedCreateNestedManyWithoutUserInput
+  deliveryAssignments?: Prisma.DeliveryAssignmentUncheckedCreateNestedManyWithoutDeliveryStaffInput
+  assignmentsMade?: Prisma.DeliveryAssignmentUncheckedCreateNestedManyWithoutAssignedByInput
+  codCollections?: Prisma.CodCollectionUncheckedCreateNestedManyWithoutCollectedByInput
 }
 
 export type UserCreateOrConnectWithoutCheckoutQuotesInput = {
@@ -1028,6 +1353,9 @@ export type UserUpdateWithoutCheckoutQuotesInput = {
   cart?: Prisma.CartUpdateOneWithoutUserNestedInput
   wishlist?: Prisma.WishlistUpdateOneWithoutUserNestedInput
   orders?: Prisma.OrderUpdateManyWithoutUserNestedInput
+  deliveryAssignments?: Prisma.DeliveryAssignmentUpdateManyWithoutDeliveryStaffNestedInput
+  assignmentsMade?: Prisma.DeliveryAssignmentUpdateManyWithoutAssignedByNestedInput
+  codCollections?: Prisma.CodCollectionUpdateManyWithoutCollectedByNestedInput
 }
 
 export type UserUncheckedUpdateWithoutCheckoutQuotesInput = {
@@ -1047,6 +1375,113 @@ export type UserUncheckedUpdateWithoutCheckoutQuotesInput = {
   cart?: Prisma.CartUncheckedUpdateOneWithoutUserNestedInput
   wishlist?: Prisma.WishlistUncheckedUpdateOneWithoutUserNestedInput
   orders?: Prisma.OrderUncheckedUpdateManyWithoutUserNestedInput
+  deliveryAssignments?: Prisma.DeliveryAssignmentUncheckedUpdateManyWithoutDeliveryStaffNestedInput
+  assignmentsMade?: Prisma.DeliveryAssignmentUncheckedUpdateManyWithoutAssignedByNestedInput
+  codCollections?: Prisma.CodCollectionUncheckedUpdateManyWithoutCollectedByNestedInput
+}
+
+export type UserCreateWithoutCodCollectionsInput = {
+  id?: string
+  firstName: string
+  lastName: string
+  email: string
+  passwordHash: string
+  phone?: string | null
+  status: string
+  role?: $Enums.Role
+  emailVerifiedAt?: Date | string | null
+  lastLoginAt?: Date | string | null
+  createdAt?: Date | string
+  updatedAt?: Date | string
+  addresses?: Prisma.AddressCreateNestedManyWithoutUserInput
+  cart?: Prisma.CartCreateNestedOneWithoutUserInput
+  wishlist?: Prisma.WishlistCreateNestedOneWithoutUserInput
+  orders?: Prisma.OrderCreateNestedManyWithoutUserInput
+  checkoutQuotes?: Prisma.CheckoutQuoteCreateNestedManyWithoutUserInput
+  deliveryAssignments?: Prisma.DeliveryAssignmentCreateNestedManyWithoutDeliveryStaffInput
+  assignmentsMade?: Prisma.DeliveryAssignmentCreateNestedManyWithoutAssignedByInput
+}
+
+export type UserUncheckedCreateWithoutCodCollectionsInput = {
+  id?: string
+  firstName: string
+  lastName: string
+  email: string
+  passwordHash: string
+  phone?: string | null
+  status: string
+  role?: $Enums.Role
+  emailVerifiedAt?: Date | string | null
+  lastLoginAt?: Date | string | null
+  createdAt?: Date | string
+  updatedAt?: Date | string
+  addresses?: Prisma.AddressUncheckedCreateNestedManyWithoutUserInput
+  cart?: Prisma.CartUncheckedCreateNestedOneWithoutUserInput
+  wishlist?: Prisma.WishlistUncheckedCreateNestedOneWithoutUserInput
+  orders?: Prisma.OrderUncheckedCreateNestedManyWithoutUserInput
+  checkoutQuotes?: Prisma.CheckoutQuoteUncheckedCreateNestedManyWithoutUserInput
+  deliveryAssignments?: Prisma.DeliveryAssignmentUncheckedCreateNestedManyWithoutDeliveryStaffInput
+  assignmentsMade?: Prisma.DeliveryAssignmentUncheckedCreateNestedManyWithoutAssignedByInput
+}
+
+export type UserCreateOrConnectWithoutCodCollectionsInput = {
+  where: Prisma.UserWhereUniqueInput
+  create: Prisma.XOR<Prisma.UserCreateWithoutCodCollectionsInput, Prisma.UserUncheckedCreateWithoutCodCollectionsInput>
+}
+
+export type UserUpsertWithoutCodCollectionsInput = {
+  update: Prisma.XOR<Prisma.UserUpdateWithoutCodCollectionsInput, Prisma.UserUncheckedUpdateWithoutCodCollectionsInput>
+  create: Prisma.XOR<Prisma.UserCreateWithoutCodCollectionsInput, Prisma.UserUncheckedCreateWithoutCodCollectionsInput>
+  where?: Prisma.UserWhereInput
+}
+
+export type UserUpdateToOneWithWhereWithoutCodCollectionsInput = {
+  where?: Prisma.UserWhereInput
+  data: Prisma.XOR<Prisma.UserUpdateWithoutCodCollectionsInput, Prisma.UserUncheckedUpdateWithoutCodCollectionsInput>
+}
+
+export type UserUpdateWithoutCodCollectionsInput = {
+  id?: Prisma.StringFieldUpdateOperationsInput | string
+  firstName?: Prisma.StringFieldUpdateOperationsInput | string
+  lastName?: Prisma.StringFieldUpdateOperationsInput | string
+  email?: Prisma.StringFieldUpdateOperationsInput | string
+  passwordHash?: Prisma.StringFieldUpdateOperationsInput | string
+  phone?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  status?: Prisma.StringFieldUpdateOperationsInput | string
+  role?: Prisma.EnumRoleFieldUpdateOperationsInput | $Enums.Role
+  emailVerifiedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  lastLoginAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  addresses?: Prisma.AddressUpdateManyWithoutUserNestedInput
+  cart?: Prisma.CartUpdateOneWithoutUserNestedInput
+  wishlist?: Prisma.WishlistUpdateOneWithoutUserNestedInput
+  orders?: Prisma.OrderUpdateManyWithoutUserNestedInput
+  checkoutQuotes?: Prisma.CheckoutQuoteUpdateManyWithoutUserNestedInput
+  deliveryAssignments?: Prisma.DeliveryAssignmentUpdateManyWithoutDeliveryStaffNestedInput
+  assignmentsMade?: Prisma.DeliveryAssignmentUpdateManyWithoutAssignedByNestedInput
+}
+
+export type UserUncheckedUpdateWithoutCodCollectionsInput = {
+  id?: Prisma.StringFieldUpdateOperationsInput | string
+  firstName?: Prisma.StringFieldUpdateOperationsInput | string
+  lastName?: Prisma.StringFieldUpdateOperationsInput | string
+  email?: Prisma.StringFieldUpdateOperationsInput | string
+  passwordHash?: Prisma.StringFieldUpdateOperationsInput | string
+  phone?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  status?: Prisma.StringFieldUpdateOperationsInput | string
+  role?: Prisma.EnumRoleFieldUpdateOperationsInput | $Enums.Role
+  emailVerifiedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  lastLoginAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  addresses?: Prisma.AddressUncheckedUpdateManyWithoutUserNestedInput
+  cart?: Prisma.CartUncheckedUpdateOneWithoutUserNestedInput
+  wishlist?: Prisma.WishlistUncheckedUpdateOneWithoutUserNestedInput
+  orders?: Prisma.OrderUncheckedUpdateManyWithoutUserNestedInput
+  checkoutQuotes?: Prisma.CheckoutQuoteUncheckedUpdateManyWithoutUserNestedInput
+  deliveryAssignments?: Prisma.DeliveryAssignmentUncheckedUpdateManyWithoutDeliveryStaffNestedInput
+  assignmentsMade?: Prisma.DeliveryAssignmentUncheckedUpdateManyWithoutAssignedByNestedInput
 }
 
 
@@ -1058,12 +1493,18 @@ export type UserCountOutputType = {
   addresses: number
   orders: number
   checkoutQuotes: number
+  deliveryAssignments: number
+  assignmentsMade: number
+  codCollections: number
 }
 
 export type UserCountOutputTypeSelect<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
   addresses?: boolean | UserCountOutputTypeCountAddressesArgs
   orders?: boolean | UserCountOutputTypeCountOrdersArgs
   checkoutQuotes?: boolean | UserCountOutputTypeCountCheckoutQuotesArgs
+  deliveryAssignments?: boolean | UserCountOutputTypeCountDeliveryAssignmentsArgs
+  assignmentsMade?: boolean | UserCountOutputTypeCountAssignmentsMadeArgs
+  codCollections?: boolean | UserCountOutputTypeCountCodCollectionsArgs
 }
 
 /**
@@ -1097,6 +1538,27 @@ export type UserCountOutputTypeCountCheckoutQuotesArgs<ExtArgs extends runtime.T
   where?: Prisma.CheckoutQuoteWhereInput
 }
 
+/**
+ * UserCountOutputType without action
+ */
+export type UserCountOutputTypeCountDeliveryAssignmentsArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
+  where?: Prisma.DeliveryAssignmentWhereInput
+}
+
+/**
+ * UserCountOutputType without action
+ */
+export type UserCountOutputTypeCountAssignmentsMadeArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
+  where?: Prisma.DeliveryAssignmentWhereInput
+}
+
+/**
+ * UserCountOutputType without action
+ */
+export type UserCountOutputTypeCountCodCollectionsArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
+  where?: Prisma.CodCollectionWhereInput
+}
+
 
 export type UserSelect<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetSelect<{
   id?: boolean
@@ -1116,6 +1578,9 @@ export type UserSelect<ExtArgs extends runtime.Types.Extensions.InternalArgs = r
   wishlist?: boolean | Prisma.User$wishlistArgs<ExtArgs>
   orders?: boolean | Prisma.User$ordersArgs<ExtArgs>
   checkoutQuotes?: boolean | Prisma.User$checkoutQuotesArgs<ExtArgs>
+  deliveryAssignments?: boolean | Prisma.User$deliveryAssignmentsArgs<ExtArgs>
+  assignmentsMade?: boolean | Prisma.User$assignmentsMadeArgs<ExtArgs>
+  codCollections?: boolean | Prisma.User$codCollectionsArgs<ExtArgs>
   _count?: boolean | Prisma.UserCountOutputTypeDefaultArgs<ExtArgs>
 }, ExtArgs["result"]["user"]>
 
@@ -1171,6 +1636,9 @@ export type UserInclude<ExtArgs extends runtime.Types.Extensions.InternalArgs = 
   wishlist?: boolean | Prisma.User$wishlistArgs<ExtArgs>
   orders?: boolean | Prisma.User$ordersArgs<ExtArgs>
   checkoutQuotes?: boolean | Prisma.User$checkoutQuotesArgs<ExtArgs>
+  deliveryAssignments?: boolean | Prisma.User$deliveryAssignmentsArgs<ExtArgs>
+  assignmentsMade?: boolean | Prisma.User$assignmentsMadeArgs<ExtArgs>
+  codCollections?: boolean | Prisma.User$codCollectionsArgs<ExtArgs>
   _count?: boolean | Prisma.UserCountOutputTypeDefaultArgs<ExtArgs>
 }
 export type UserIncludeCreateManyAndReturn<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {}
@@ -1184,6 +1652,18 @@ export type $UserPayload<ExtArgs extends runtime.Types.Extensions.InternalArgs =
     wishlist: Prisma.$WishlistPayload<ExtArgs> | null
     orders: Prisma.$OrderPayload<ExtArgs>[]
     checkoutQuotes: Prisma.$CheckoutQuotePayload<ExtArgs>[]
+    /**
+     * Assignments where this user is the courier, and history is never overwritten.
+     */
+    deliveryAssignments: Prisma.$DeliveryAssignmentPayload<ExtArgs>[]
+    /**
+     * Assignments this user (a delivery manager) made for couriers.
+     */
+    assignmentsMade: Prisma.$DeliveryAssignmentPayload<ExtArgs>[]
+    /**
+     * COD cash collections this user confirmed.
+     */
+    codCollections: Prisma.$CodCollectionPayload<ExtArgs>[]
   }
   scalars: runtime.Types.Extensions.GetPayloadResult<{
     id: string
@@ -1597,6 +2077,9 @@ export interface Prisma__UserClient<T, Null = never, ExtArgs extends runtime.Typ
   wishlist<T extends Prisma.User$wishlistArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.User$wishlistArgs<ExtArgs>>): Prisma.Prisma__WishlistClient<runtime.Types.Result.GetResult<Prisma.$WishlistPayload<ExtArgs>, T, "findUniqueOrThrow", GlobalOmitOptions> | null, null, ExtArgs, GlobalOmitOptions>
   orders<T extends Prisma.User$ordersArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.User$ordersArgs<ExtArgs>>): Prisma.PrismaPromise<runtime.Types.Result.GetResult<Prisma.$OrderPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
   checkoutQuotes<T extends Prisma.User$checkoutQuotesArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.User$checkoutQuotesArgs<ExtArgs>>): Prisma.PrismaPromise<runtime.Types.Result.GetResult<Prisma.$CheckoutQuotePayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
+  deliveryAssignments<T extends Prisma.User$deliveryAssignmentsArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.User$deliveryAssignmentsArgs<ExtArgs>>): Prisma.PrismaPromise<runtime.Types.Result.GetResult<Prisma.$DeliveryAssignmentPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
+  assignmentsMade<T extends Prisma.User$assignmentsMadeArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.User$assignmentsMadeArgs<ExtArgs>>): Prisma.PrismaPromise<runtime.Types.Result.GetResult<Prisma.$DeliveryAssignmentPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
+  codCollections<T extends Prisma.User$codCollectionsArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.User$codCollectionsArgs<ExtArgs>>): Prisma.PrismaPromise<runtime.Types.Result.GetResult<Prisma.$CodCollectionPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
   /**
    * Attaches callbacks for the resolution and/or rejection of the Promise.
    * @param onfulfilled The callback to execute when the Promise is resolved.
@@ -2138,6 +2621,78 @@ export type User$checkoutQuotesArgs<ExtArgs extends runtime.Types.Extensions.Int
   take?: number
   skip?: number
   distinct?: Prisma.CheckoutQuoteScalarFieldEnum | Prisma.CheckoutQuoteScalarFieldEnum[]
+}
+
+/**
+ * User.deliveryAssignments
+ */
+export type User$deliveryAssignmentsArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
+  /**
+   * Select specific fields to fetch from the DeliveryAssignment
+   */
+  select?: Prisma.DeliveryAssignmentSelect<ExtArgs> | null
+  /**
+   * Omit specific fields from the DeliveryAssignment
+   */
+  omit?: Prisma.DeliveryAssignmentOmit<ExtArgs> | null
+  /**
+   * Choose, which related nodes to fetch as well
+   */
+  include?: Prisma.DeliveryAssignmentInclude<ExtArgs> | null
+  where?: Prisma.DeliveryAssignmentWhereInput
+  orderBy?: Prisma.DeliveryAssignmentOrderByWithRelationInput | Prisma.DeliveryAssignmentOrderByWithRelationInput[]
+  cursor?: Prisma.DeliveryAssignmentWhereUniqueInput
+  take?: number
+  skip?: number
+  distinct?: Prisma.DeliveryAssignmentScalarFieldEnum | Prisma.DeliveryAssignmentScalarFieldEnum[]
+}
+
+/**
+ * User.assignmentsMade
+ */
+export type User$assignmentsMadeArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
+  /**
+   * Select specific fields to fetch from the DeliveryAssignment
+   */
+  select?: Prisma.DeliveryAssignmentSelect<ExtArgs> | null
+  /**
+   * Omit specific fields from the DeliveryAssignment
+   */
+  omit?: Prisma.DeliveryAssignmentOmit<ExtArgs> | null
+  /**
+   * Choose, which related nodes to fetch as well
+   */
+  include?: Prisma.DeliveryAssignmentInclude<ExtArgs> | null
+  where?: Prisma.DeliveryAssignmentWhereInput
+  orderBy?: Prisma.DeliveryAssignmentOrderByWithRelationInput | Prisma.DeliveryAssignmentOrderByWithRelationInput[]
+  cursor?: Prisma.DeliveryAssignmentWhereUniqueInput
+  take?: number
+  skip?: number
+  distinct?: Prisma.DeliveryAssignmentScalarFieldEnum | Prisma.DeliveryAssignmentScalarFieldEnum[]
+}
+
+/**
+ * User.codCollections
+ */
+export type User$codCollectionsArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
+  /**
+   * Select specific fields to fetch from the CodCollection
+   */
+  select?: Prisma.CodCollectionSelect<ExtArgs> | null
+  /**
+   * Omit specific fields from the CodCollection
+   */
+  omit?: Prisma.CodCollectionOmit<ExtArgs> | null
+  /**
+   * Choose, which related nodes to fetch as well
+   */
+  include?: Prisma.CodCollectionInclude<ExtArgs> | null
+  where?: Prisma.CodCollectionWhereInput
+  orderBy?: Prisma.CodCollectionOrderByWithRelationInput | Prisma.CodCollectionOrderByWithRelationInput[]
+  cursor?: Prisma.CodCollectionWhereUniqueInput
+  take?: number
+  skip?: number
+  distinct?: Prisma.CodCollectionScalarFieldEnum | Prisma.CodCollectionScalarFieldEnum[]
 }
 
 /**

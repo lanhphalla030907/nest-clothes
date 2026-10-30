@@ -19,11 +19,12 @@
  *
  * ## Which transitions are actually exposed
  *
- * The lifecycle above documents the aggregate, not a menu of API actions. Two
- * administrator-only transitions are implemented:
+ * The lifecycle above documents the aggregate, not a menu of API actions. Three
+ * transitions are implemented:
  *
- * - `PENDING -> CANCELLED`, releasing the inventory reservation.
- * - `CONFIRMED -> SHIPPED`, committing the reserved stock.
+ * - `PENDING -> CANCELLED` by the owning customer, releasing the reservation.
+ * - `PENDING -> CANCELLED` by an administrator, releasing the reservation.
+ * - `CONFIRMED -> SHIPPED` by an administrator, committing the reserved stock.
  *
  * Payment is still the only writer of `PENDING -> CONFIRMED`. A `CONFIRMED` order
  * has a verified `PAID` payment, and this application has no refund workflow, so

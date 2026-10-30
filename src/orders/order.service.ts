@@ -170,6 +170,8 @@ export interface ResolvedOrderLine {
  * | Token whose user no longer exists           | 401       | Rejected by `JwtAuthGuard`, before the service.   |
  * | Malformed `:id` in the path                  | 400       | Rejected by `ParseUUIDPipe`, before the service.  |
  * | Order absent, or owned by another user       | 404       | Same 404, so ownership cannot be probed.           |
+ * | Order not cancellable in its current state   | 409       | The lifecycle, not client input, decides.          |
+ * | Order has a verified paid payment            | 409       | No refund workflow exists, so money is not lost.   |
  * | Negative money value                         | 400       | `InvalidMoneyValueError`; also a `CHECK` below.    |
  * | Zero, negative or fractional line quantity   | 400       | `InvalidMoneyValueError`; also a `CHECK` below.    |
  * | Zero unit price                              | 400       | A free line is not a discount.                     |
@@ -184,13 +186,13 @@ export interface ResolvedOrderLine {
  * wrong — a genuine fault that must surface as a 500 rather than invite a blind
  * retry.
  *
- * ## Nothing here is public yet
+ * ## Which writes are exposed
  *
- * {@link placeOrder} is internal: it is not on any controller, and no route
- * creates, modifies or cancels an order. Status, prices, totals, items and
- * snapshots are therefore unreachable from a client. That is the point of this
- * phase's boundary — the rules are written and tested now, and the checkout that
- * will call them arrives later, once money and stock handling are settled.
+ * Checkout calls {@link placeOrder} internally to create an order. The only
+ * customer-visible mutation is {@link cancelOrder}, and it can only move one of
+ * the caller's own `PENDING`, unpaid orders to `CANCELLED`. No route can assign
+ * an arbitrary status, change prices, totals, items or snapshots, or mark a
+ * payment as paid.
  */
 @Injectable()
 export class OrderService {
@@ -370,44 +372,43 @@ export class OrderService {
    */
   cancelOrderForAdmin(orderId: string): Promise<AdminOrderDetailResponseDto> {
     return this.orderRepository.runInTransaction(async (tx) => {
-      const order = await this.orderRepository.findStatusById(orderId, tx);
+      await this.cancelPendingUnpaidOrder(orderId, tx);
 
-      if (order === null) {
+      return this.readAdminOrder(orderId, tx);
+    });
+  }
+
+  /**
+   * Cancels one of the caller's own unpaid orders and returns its new state.
+   *
+   * This is the customer-facing counterpart to {@link cancelOrderForAdmin}. It
+   * applies exactly the same lifecycle and payment rules through the shared helper
+   * below, but both the status read and the guarded transition are scoped to
+   * `userId`. Another customer's order is therefore indistinguishable from an
+   * absent one: both are a 404, and neither can reach the inventory release.
+   *
+   * The returned DTO is the same safe projection used by `GET /orders/:id`; it
+   * contains no payment attempts or QR data, so a response cannot disclose more
+   * than the customer could already read.
+   */
+  async cancelOrder(
+    userId: string,
+    orderId: string,
+  ): Promise<OrderResponseDto> {
+    await this.requireUser(userId);
+
+    return this.orderRepository.runInTransaction(async (tx) => {
+      await this.cancelPendingUnpaidOrder(orderId, tx, userId);
+
+      const updated = await this.orderRepository.findById(orderId, tx);
+
+      // The owner-scoped update above makes this unreachable; the check keeps a
+      // future repository change from turning it into a cross-account read.
+      if (updated === null || updated.userId !== userId) {
         throw this.orderNotFound(orderId);
       }
 
-      if (
-        !CANCELLABLE_ORDER_STATUSES.some(
-          (cancellable) => cancellable === order.status,
-        )
-      ) {
-        throw new ConflictException(
-          `Order ${orderId} is ${order.status} and cannot be cancelled`,
-        );
-      }
-
-      if (await this.orderRepository.hasPaidPayment(orderId, tx)) {
-        throw new ConflictException(
-          `Order ${orderId} has a verified payment and cannot be cancelled without a refund`,
-        );
-      }
-
-      const transitioned = await this.orderRepository.transitionStatus(
-        orderId,
-        order.status,
-        ORDER_STATUS.CANCELLED,
-        tx,
-      );
-
-      if (!transitioned) {
-        throw this.transitionConflict(orderId);
-      }
-
-      // The reservation is derived from the persisted order lines inside
-      // `OrderInventoryService`; the request body never supplies a quantity.
-      await this.orderInventory.releaseReservedForOrder(orderId, tx);
-
-      return this.readAdminOrder(orderId, tx);
+      return OrderResponseDto.fromEntity(updated);
     });
   }
 
@@ -783,6 +784,77 @@ export class OrderService {
     }
 
     return order;
+  }
+
+  /**
+   * Shared cancellation policy for the customer and administrator routes.
+   *
+   * When `ownerUserId` is supplied, both the status read and the guarded update
+   * are scoped to that customer. The administrator path omits it and intentionally
+   * crosses accounts, because `RolesGuard` on the admin route is its authority.
+   *
+   * The guarded transition is the concurrency control: two callers may both read
+   * `PENDING`, but only the first `UPDATE` matches, and only that caller releases
+   * the reservation. Everything runs on the supplied transaction, so an inventory
+   * failure rolls the status change back with it.
+   */
+  private async cancelPendingUnpaidOrder(
+    orderId: string,
+    tx: OrderTransactionClient,
+    ownerUserId?: string,
+  ): Promise<void> {
+    const order =
+      ownerUserId === undefined
+        ? await this.orderRepository.findStatusById(orderId, tx)
+        : await this.orderRepository.findStatusByIdForUser(
+            orderId,
+            ownerUserId,
+            tx,
+          );
+
+    if (order === null) {
+      throw this.orderNotFound(orderId);
+    }
+
+    if (
+      !CANCELLABLE_ORDER_STATUSES.some(
+        (cancellable) => cancellable === order.status,
+      )
+    ) {
+      throw new ConflictException(
+        `Order ${orderId} is ${order.status} and cannot be cancelled`,
+      );
+    }
+
+    if (await this.orderRepository.hasPaidPayment(orderId, tx)) {
+      throw new ConflictException(
+        `Order ${orderId} has a verified payment and cannot be cancelled without a refund`,
+      );
+    }
+
+    const transitioned =
+      ownerUserId === undefined
+        ? await this.orderRepository.transitionStatus(
+            orderId,
+            order.status,
+            ORDER_STATUS.CANCELLED,
+            tx,
+          )
+        : await this.orderRepository.transitionStatusForUser(
+            orderId,
+            ownerUserId,
+            order.status,
+            ORDER_STATUS.CANCELLED,
+            tx,
+          );
+
+    if (!transitioned) {
+      throw this.transitionConflict(orderId);
+    }
+
+    // The reservation is derived from the persisted order lines inside
+    // `OrderInventoryService`; the request body never supplies a quantity.
+    await this.orderInventory.releaseReservedForOrder(orderId, tx);
   }
 
   /**

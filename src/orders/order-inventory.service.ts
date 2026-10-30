@@ -65,10 +65,11 @@ interface VariantQuantity {
  * ## What this service deliberately does not do
  *
  * It does not decide *whether* an order may be cancelled or shipped, and it does
- * not choose the resulting status. `OrderService.cancelOrderForAdmin` and
- * `shipOrderForAdmin` own those rules and call these methods inside the same
- * transaction as their guarded status update. That guard is what makes a repeated
- * request a conflict before inventory moves, rather than a second movement.
+ * not choose the resulting status. The customer cancellation, administrator
+ * cancellation and shipment paths in `OrderService` own those rules and call these
+ * methods inside the same transaction as their guarded status update. That guard
+ * is what makes a repeated request a conflict before inventory moves, rather than
+ * a second movement.
  */
 @Injectable()
 export class OrderInventoryService {

@@ -398,6 +398,25 @@ export class OrderRepository {
   }
 
   /**
+   * Returns the status of one order only when it belongs to `userId`.
+   *
+   * This is the owner-scoped counterpart to {@link findStatusById}. Scoping the
+   * query rather than reading by id and comparing afterwards means another user's
+   * order is never loaded into the service at all, and an absent order and one
+   * owned by somebody else produce the same `null` for the same public 404.
+   */
+  findStatusByIdForUser(
+    id: string,
+    userId: string,
+    client: OrderTransactionClient = this.prisma,
+  ): Promise<{ id: string; status: string } | null> {
+    return client.order.findFirst({
+      where: { id, userId },
+      select: { id: true, status: true },
+    });
+  }
+
+  /**
    * Returns one user's orders, newest first, each with its items.
    *
    * Scoped by `userId` in the query rather than fetched and filtered in the
@@ -732,6 +751,29 @@ export class OrderRepository {
   ): Promise<boolean> {
     const updated = await client.order.updateMany({
       where: { id, status: from },
+      data: { status: to },
+    });
+
+    return updated.count === 1;
+  }
+
+  /**
+   * Owner-scoped counterpart to {@link transitionStatus}.
+   *
+   * The ownership predicate is part of the guarded `UPDATE`, not a check made
+   * before it. A request for somebody else's order therefore affects zero rows
+   * even if the service's earlier read and this write race with a change to the
+   * row, and it can never release that order's inventory.
+   */
+  async transitionStatusForUser(
+    id: string,
+    userId: string,
+    from: string,
+    to: string,
+    client: OrderTransactionClient = this.prisma,
+  ): Promise<boolean> {
+    const updated = await client.order.updateMany({
+      where: { id, userId, status: from },
       data: { status: to },
     });
 

@@ -57,6 +57,7 @@ describe('OrderRepository', () => {
   let prisma: {
     order: {
       findUnique: Mock;
+      findFirst: Mock;
       findMany: Mock;
       create: Mock;
       count: Mock;
@@ -74,6 +75,7 @@ describe('OrderRepository', () => {
     prisma = {
       order: {
         findUnique: vi.fn().mockResolvedValue(null),
+        findFirst: vi.fn().mockResolvedValue(null),
         findMany: vi.fn().mockResolvedValue([]),
         create: vi.fn().mockResolvedValue(null),
         count: vi.fn().mockResolvedValue(0),
@@ -187,6 +189,44 @@ describe('OrderRepository', () => {
 
       expect(client.order.findUnique).toHaveBeenCalledTimes(1);
       expect(prisma.order.findUnique).not.toHaveBeenCalled();
+    });
+  });
+
+  describe('findStatusByIdForUser', () => {
+    it('puts ownership in the WHERE clause and selects only the key and status', async () => {
+      prisma.order.findFirst.mockResolvedValue({
+        id: ORDER_ID,
+        status: 'PENDING',
+      });
+
+      const result = await repository.findStatusByIdForUser(ORDER_ID, USER_ID);
+
+      expect(prisma.order.findFirst).toHaveBeenCalledWith({
+        where: { id: ORDER_ID, userId: USER_ID },
+        select: { id: true, status: true },
+      });
+      expect(result).toEqual({ id: ORDER_ID, status: 'PENDING' });
+    });
+
+    it('returns null for an order owned by somebody else', async () => {
+      prisma.order.findFirst.mockResolvedValue(null);
+
+      await expect(
+        repository.findStatusByIdForUser(ORDER_ID, USER_ID),
+      ).resolves.toBeNull();
+    });
+
+    it('uses the supplied transaction client', async () => {
+      const client = { order: { findFirst: vi.fn().mockResolvedValue(null) } };
+
+      await repository.findStatusByIdForUser(
+        ORDER_ID,
+        USER_ID,
+        client as never,
+      );
+
+      expect(client.order.findFirst).toHaveBeenCalledTimes(1);
+      expect(prisma.order.findFirst).not.toHaveBeenCalled();
     });
   });
 
@@ -315,6 +355,55 @@ describe('OrderRepository', () => {
         ORDER_ID,
         'CONFIRMED',
         'SHIPPED',
+        client as never,
+      );
+
+      expect(client.order.updateMany).toHaveBeenCalledTimes(1);
+      expect(prisma.order.updateMany).not.toHaveBeenCalled();
+    });
+  });
+
+  describe('transitionStatusForUser', () => {
+    it('guards both ownership and the source status in the WHERE clause', async () => {
+      prisma.order.updateMany.mockResolvedValue({ count: 1 });
+
+      const result = await repository.transitionStatusForUser(
+        ORDER_ID,
+        USER_ID,
+        'PENDING',
+        'CANCELLED',
+      );
+
+      expect(result).toBe(true);
+      expect(prisma.order.updateMany).toHaveBeenCalledWith({
+        where: { id: ORDER_ID, userId: USER_ID, status: 'PENDING' },
+        data: { status: 'CANCELLED' },
+      });
+    });
+
+    it('reports a lost race or a different owner as no claim', async () => {
+      prisma.order.updateMany.mockResolvedValue({ count: 0 });
+
+      await expect(
+        repository.transitionStatusForUser(
+          ORDER_ID,
+          USER_ID,
+          'PENDING',
+          'CANCELLED',
+        ),
+      ).resolves.toBe(false);
+    });
+
+    it('uses the supplied transaction client', async () => {
+      const client = {
+        order: { updateMany: vi.fn().mockResolvedValue({ count: 1 }) },
+      };
+
+      await repository.transitionStatusForUser(
+        ORDER_ID,
+        USER_ID,
+        'PENDING',
+        'CANCELLED',
         client as never,
       );
 

@@ -11,7 +11,21 @@
 
 export const Role = {
   CUSTOMER: 'CUSTOMER',
-  ADMIN: 'ADMIN'
+  ADMIN: 'ADMIN',
+  DELIVERY_MANAGER: 'DELIVERY_MANAGER',
+  DELIVERY_STAFF: 'DELIVERY_STAFF'
 } as const
 
 export type Role = (typeof Role)[keyof typeof Role]
+
+
+export const DeliveryStatus = {
+  PENDING_ASSIGNMENT: 'PENDING_ASSIGNMENT',
+  ASSIGNED: 'ASSIGNED',
+  OUT_FOR_DELIVERY: 'OUT_FOR_DELIVERY',
+  DELIVERED: 'DELIVERED',
+  FAILED_DELIVERY: 'FAILED_DELIVERY',
+  RETURNED: 'RETURNED'
+} as const
+
+export type DeliveryStatus = (typeof DeliveryStatus)[keyof typeof DeliveryStatus]

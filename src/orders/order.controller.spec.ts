@@ -94,6 +94,7 @@ const buildOrder = (
 const buildServiceMock = () => ({
   listOrders: vi.fn(),
   getOrder: vi.fn(),
+  cancelOrder: vi.fn(),
 });
 
 /**
@@ -337,15 +338,59 @@ describe('OrderController (HTTP)', () => {
     });
   });
 
-  describe('the surface is read-only', () => {
+  describe('POST /orders/:id/cancel', () => {
+    it('returns 200 with the caller\'s updated order', async () => {
+      service.cancelOrder.mockResolvedValue(buildOrder({ status: 'CANCELLED' }));
+
+      const res = await request('POST', `/orders/${ORDER_ID}/cancel`, {
+        user: USER_ID,
+      });
+      const body = await res.json();
+
+      expect(res.status).toBe(HttpStatus.OK);
+      expect(service.cancelOrder).toHaveBeenCalledWith(USER_ID, ORDER_ID);
+      expect(body).toMatchObject({ id: ORDER_ID, status: 'CANCELLED' });
+    });
+
+    it('rejects a request with no access token before the service', async () => {
+      const res = await request('POST', `/orders/${ORDER_ID}/cancel`);
+
+      expect(res.status).toBe(HttpStatus.UNAUTHORIZED);
+      expect(service.cancelOrder).not.toHaveBeenCalled();
+    });
+
+    it('rejects a malformed order id before the service', async () => {
+      const res = await request('POST', '/orders/not-a-uuid/cancel', {
+        user: USER_ID,
+      });
+
+      expect(res.status).toBe(HttpStatus.BAD_REQUEST);
+      expect(service.cancelOrder).not.toHaveBeenCalled();
+    });
+
+    it('passes the caller identity through so the service can enforce ownership', async () => {
+      service.cancelOrder.mockRejectedValue(
+        new NotFoundException(`Order ${ORDER_ID} does not exist`),
+      );
+
+      const res = await request('POST', `/orders/${ORDER_ID}/cancel`, {
+        user: OTHER_USER_ID,
+      });
+
+      expect(res.status).toBe(HttpStatus.NOT_FOUND);
+      expect(service.cancelOrder).toHaveBeenCalledWith(OTHER_USER_ID, ORDER_ID);
+    });
+  });
+
+  describe('the surface exposes only cancellation', () => {
     it.each([
       ['POST', '/orders'],
       ['POST', `/orders/${ORDER_ID}`],
       ['PUT', `/orders/${ORDER_ID}`],
       ['PATCH', `/orders/${ORDER_ID}`],
       ['DELETE', `/orders/${ORDER_ID}`],
-      ['POST', `/orders/${ORDER_ID}/cancel`],
       ['PATCH', `/orders/${ORDER_ID}/status`],
+      ['POST', `/orders/${ORDER_ID}/confirm`],
     ])('%s %s is not routed', async (method, path) => {
       const res = await request(method, path, {
         user: USER_ID,
@@ -355,9 +400,10 @@ describe('OrderController (HTTP)', () => {
       expect(res.status).toBe(HttpStatus.NOT_FOUND);
       expect(service.listOrders).not.toHaveBeenCalled();
       expect(service.getOrder).not.toHaveBeenCalled();
+      expect(service.cancelOrder).not.toHaveBeenCalled();
     });
 
-    it('is mounted at /orders and declares no other route', () => {
+    it('is mounted at /orders and declares exactly the two reads and cancellation', () => {
       expect(Reflect.getMetadata('path', OrderController)).toBe('orders');
 
       const prototype =
@@ -378,8 +424,7 @@ describe('OrderController (HTTP)', () => {
         })
         .sort();
 
-      // Two handlers, both GET: there is no mutation route to advertise.
-      expect(routes).toEqual(['GET /', 'GET :id']);
+      expect(routes).toEqual(['GET /', 'GET :id', 'POST :id/cancel']);
     });
   });
 });

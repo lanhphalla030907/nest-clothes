@@ -68,9 +68,11 @@ export const ModelName = {
   ShippingProvider: 'ShippingProvider',
   CodArea: 'CodArea',
   Order: 'Order',
+  DeliveryAssignment: 'DeliveryAssignment',
   CheckoutQuote: 'CheckoutQuote',
   OrderItem: 'OrderItem',
-  Payment: 'Payment'
+  Payment: 'Payment',
+  CodCollection: 'CodCollection'
 } as const
 
 export type ModelName = (typeof ModelName)[keyof typeof ModelName]
@@ -338,6 +340,23 @@ export const OrderScalarFieldEnum = {
 export type OrderScalarFieldEnum = (typeof OrderScalarFieldEnum)[keyof typeof OrderScalarFieldEnum]
 
 
+export const DeliveryAssignmentScalarFieldEnum = {
+  id: 'id',
+  orderId: 'orderId',
+  deliveryStaffId: 'deliveryStaffId',
+  assignedById: 'assignedById',
+  status: 'status',
+  assignedAt: 'assignedAt',
+  startedAt: 'startedAt',
+  deliveredAt: 'deliveredAt',
+  endedAt: 'endedAt',
+  notes: 'notes',
+  deliveryProof: 'deliveryProof'
+} as const
+
+export type DeliveryAssignmentScalarFieldEnum = (typeof DeliveryAssignmentScalarFieldEnum)[keyof typeof DeliveryAssignmentScalarFieldEnum]
+
+
 export const CheckoutQuoteScalarFieldEnum = {
   id: 'id',
   userId: 'userId',
@@ -400,6 +419,21 @@ export const PaymentScalarFieldEnum = {
 } as const
 
 export type PaymentScalarFieldEnum = (typeof PaymentScalarFieldEnum)[keyof typeof PaymentScalarFieldEnum]
+
+
+export const CodCollectionScalarFieldEnum = {
+  id: 'id',
+  orderId: 'orderId',
+  paymentId: 'paymentId',
+  collectedById: 'collectedById',
+  amount: 'amount',
+  currency: 'currency',
+  collectedAt: 'collectedAt',
+  notes: 'notes',
+  receiptProof: 'receiptProof'
+} as const
+
+export type CodCollectionScalarFieldEnum = (typeof CodCollectionScalarFieldEnum)[keyof typeof CodCollectionScalarFieldEnum]
 
 
 export const SortOrder = {

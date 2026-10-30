@@ -52,8 +52,9 @@ import {
  * - **`addressId`.** There is no such column and there never will be — see the
  *   snapshot note above.
  * - **Any mutation affordance.** No `links`, no `actions`, no `canCancel`. The
- *   API exposes no way to change an order, so advertising a capability would be a
- *   promise this phase does not keep.
+ *   only customer write is the explicit `POST /orders/:id/cancel`, whose rules
+ *   live in the service. A client derives visibility from `status`; the server
+ *   still re-checks ownership, state and payment before changing anything.
  */
 export class OrderResponseDto {
   id: string;

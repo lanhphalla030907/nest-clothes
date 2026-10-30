@@ -124,6 +124,9 @@ function isAccessTokenPayload(payload: unknown): payload is AccessTokenPayload {
     typeof candidate.sub === 'string' &&
     candidate.sub.length > 0 &&
     typeof candidate.email === 'string' &&
-    (candidate.role === Role.CUSTOMER || candidate.role === Role.ADMIN)
+    (candidate.role === Role.CUSTOMER ||
+      candidate.role === Role.ADMIN ||
+      candidate.role === Role.DELIVERY_MANAGER ||
+      candidate.role === Role.DELIVERY_STAFF)
   );
 }

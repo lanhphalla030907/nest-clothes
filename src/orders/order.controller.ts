@@ -1,8 +1,11 @@
 import {
   Controller,
   Get,
+  HttpCode,
+  HttpStatus,
   Param,
   ParseUUIDPipe,
+  Post,
   UseGuards,
 } from '@nestjs/common';
 import { CurrentUser } from '../auth/decorators/current-user.decorator.js';
@@ -17,24 +20,26 @@ import { OrderService } from './order.service.js';
  * No business rules and no database access lives here.
  *
  * The controller is mounted under `/orders`, so every route acts on *the caller's*
- * orders. It is mounted with nothing else — no `POST`, `PATCH` or `DELETE` handler
- * exists, and there is no route anywhere in this feature that changes an order's
- * status, prices, totals, items or snapshots. That absence is deliberate and is the
- * reason the DTOs have no mutation affordances to advertise.
+ * orders. The only mutation is cancellation, and it is deliberately narrow: the
+ * service decides the allowed state and releases inventory transactionally. There
+ * is still no route that assigns an arbitrary status, edits prices, totals, items
+ * or snapshots, or touches a payment.
  *
  * ## Identity
  *
  * The caller is {@link CurrentUser}, resolved from a verified access token by
  * `JwtAuthGuard`. It replaced an `X-User-Id` header, which any caller could assert;
  * a request with no valid `Authorization: Bearer` header is now a 401 and the old
- * header is ignored, so there is no way to read another customer's orders.
+ * header is ignored, so there is no way to read or cancel another customer's orders.
  *
  * ## Which errors come from where
  *
  * `:id` runs through `ParseUUIDPipe`, so a malformed identifier is a 400 before the
- * service is reached. That keeps 404 reserved for a well-formed id that is absent or
- * not the caller's — and "absent" and "not yours" are deliberately the same 404, so
- * this endpoint cannot be used to probe for the existence of another user's order.
+ * service is reached. That leaves 404 for a well-formed id that is absent or not
+ * the caller's — and "absent" and "not yours" are deliberately the same 404, so
+ * these endpoints cannot be used to probe for another user's order. A cancellation
+ * refused by the lifecycle or payment policy is a 409; the server remains the
+ * authority even if a client sends the request directly.
  */
 @UseGuards(JwtAuthGuard)
 @Controller('orders')
@@ -65,5 +70,22 @@ export class OrderController {
     @Param('id', ParseUUIDPipe) id: string,
   ): Promise<OrderResponseDto> {
     return this.orderService.getOrder(user.id, id);
+  }
+
+  /**
+   * `POST /orders/:id/cancel` — cancel one of the caller's unpaid orders.
+   *
+   * Ownership is part of the service's reads and guarded update, not a check the
+   * frontend performs. Only a `PENDING` order with no verified payment can move to
+   * `CANCELLED`; that transition and the inventory release share one transaction.
+   * A repeat, a concurrent winner or a paid order is a 409, never a second release.
+   */
+  @Post(':id/cancel')
+  @HttpCode(HttpStatus.OK)
+  cancelOrder(
+    @CurrentUser() user: AuthenticatedUser,
+    @Param('id', ParseUUIDPipe) id: string,
+  ): Promise<OrderResponseDto> {
+    return this.orderService.cancelOrder(user.id, id);
   }
 }

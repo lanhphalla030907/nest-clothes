@@ -414,9 +414,11 @@ export const ModelName = {
   ShippingProvider: 'ShippingProvider',
   CodArea: 'CodArea',
   Order: 'Order',
+  DeliveryAssignment: 'DeliveryAssignment',
   CheckoutQuote: 'CheckoutQuote',
   OrderItem: 'OrderItem',
-  Payment: 'Payment'
+  Payment: 'Payment',
+  CodCollection: 'CodCollection'
 } as const
 
 export type ModelName = (typeof ModelName)[keyof typeof ModelName]
@@ -432,7 +434,7 @@ export type TypeMap<ExtArgs extends runtime.Types.Extensions.InternalArgs = runt
     omit: GlobalOmitOptions
   }
   meta: {
-    modelProps: "user" | "category" | "product" | "productImage" | "productVariant" | "variantOption" | "productAttribute" | "inventory" | "cart" | "cartItem" | "wishlist" | "wishlistItem" | "address" | "administrativeLocation" | "shippingProvider" | "codArea" | "order" | "checkoutQuote" | "orderItem" | "payment"
+    modelProps: "user" | "category" | "product" | "productImage" | "productVariant" | "variantOption" | "productAttribute" | "inventory" | "cart" | "cartItem" | "wishlist" | "wishlistItem" | "address" | "administrativeLocation" | "shippingProvider" | "codArea" | "order" | "deliveryAssignment" | "checkoutQuote" | "orderItem" | "payment" | "codCollection"
     txIsolationLevel: TransactionIsolationLevel
   }
   model: {
@@ -1694,6 +1696,80 @@ export type TypeMap<ExtArgs extends runtime.Types.Extensions.InternalArgs = runt
         }
       }
     }
+    DeliveryAssignment: {
+      payload: Prisma.$DeliveryAssignmentPayload<ExtArgs>
+      fields: Prisma.DeliveryAssignmentFieldRefs
+      operations: {
+        findUnique: {
+          args: Prisma.DeliveryAssignmentFindUniqueArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$DeliveryAssignmentPayload> | null
+        }
+        findUniqueOrThrow: {
+          args: Prisma.DeliveryAssignmentFindUniqueOrThrowArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$DeliveryAssignmentPayload>
+        }
+        findFirst: {
+          args: Prisma.DeliveryAssignmentFindFirstArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$DeliveryAssignmentPayload> | null
+        }
+        findFirstOrThrow: {
+          args: Prisma.DeliveryAssignmentFindFirstOrThrowArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$DeliveryAssignmentPayload>
+        }
+        findMany: {
+          args: Prisma.DeliveryAssignmentFindManyArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$DeliveryAssignmentPayload>[]
+        }
+        create: {
+          args: Prisma.DeliveryAssignmentCreateArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$DeliveryAssignmentPayload>
+        }
+        createMany: {
+          args: Prisma.DeliveryAssignmentCreateManyArgs<ExtArgs>
+          result: BatchPayload
+        }
+        createManyAndReturn: {
+          args: Prisma.DeliveryAssignmentCreateManyAndReturnArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$DeliveryAssignmentPayload>[]
+        }
+        delete: {
+          args: Prisma.DeliveryAssignmentDeleteArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$DeliveryAssignmentPayload>
+        }
+        update: {
+          args: Prisma.DeliveryAssignmentUpdateArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$DeliveryAssignmentPayload>
+        }
+        deleteMany: {
+          args: Prisma.DeliveryAssignmentDeleteManyArgs<ExtArgs>
+          result: BatchPayload
+        }
+        updateMany: {
+          args: Prisma.DeliveryAssignmentUpdateManyArgs<ExtArgs>
+          result: BatchPayload
+        }
+        updateManyAndReturn: {
+          args: Prisma.DeliveryAssignmentUpdateManyAndReturnArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$DeliveryAssignmentPayload>[]
+        }
+        upsert: {
+          args: Prisma.DeliveryAssignmentUpsertArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$DeliveryAssignmentPayload>
+        }
+        aggregate: {
+          args: Prisma.DeliveryAssignmentAggregateArgs<ExtArgs>
+          result: runtime.Types.Utils.Optional<Prisma.AggregateDeliveryAssignment>
+        }
+        groupBy: {
+          args: Prisma.DeliveryAssignmentGroupByArgs<ExtArgs>
+          result: runtime.Types.Utils.Optional<Prisma.DeliveryAssignmentGroupByOutputType>[]
+        }
+        count: {
+          args: Prisma.DeliveryAssignmentCountArgs<ExtArgs>
+          result: runtime.Types.Utils.Optional<Prisma.DeliveryAssignmentCountAggregateOutputType> | number
+        }
+      }
+    }
     CheckoutQuote: {
       payload: Prisma.$CheckoutQuotePayload<ExtArgs>
       fields: Prisma.CheckoutQuoteFieldRefs
@@ -1913,6 +1989,80 @@ export type TypeMap<ExtArgs extends runtime.Types.Extensions.InternalArgs = runt
         count: {
           args: Prisma.PaymentCountArgs<ExtArgs>
           result: runtime.Types.Utils.Optional<Prisma.PaymentCountAggregateOutputType> | number
+        }
+      }
+    }
+    CodCollection: {
+      payload: Prisma.$CodCollectionPayload<ExtArgs>
+      fields: Prisma.CodCollectionFieldRefs
+      operations: {
+        findUnique: {
+          args: Prisma.CodCollectionFindUniqueArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$CodCollectionPayload> | null
+        }
+        findUniqueOrThrow: {
+          args: Prisma.CodCollectionFindUniqueOrThrowArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$CodCollectionPayload>
+        }
+        findFirst: {
+          args: Prisma.CodCollectionFindFirstArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$CodCollectionPayload> | null
+        }
+        findFirstOrThrow: {
+          args: Prisma.CodCollectionFindFirstOrThrowArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$CodCollectionPayload>
+        }
+        findMany: {
+          args: Prisma.CodCollectionFindManyArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$CodCollectionPayload>[]
+        }
+        create: {
+          args: Prisma.CodCollectionCreateArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$CodCollectionPayload>
+        }
+        createMany: {
+          args: Prisma.CodCollectionCreateManyArgs<ExtArgs>
+          result: BatchPayload
+        }
+        createManyAndReturn: {
+          args: Prisma.CodCollectionCreateManyAndReturnArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$CodCollectionPayload>[]
+        }
+        delete: {
+          args: Prisma.CodCollectionDeleteArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$CodCollectionPayload>
+        }
+        update: {
+          args: Prisma.CodCollectionUpdateArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$CodCollectionPayload>
+        }
+        deleteMany: {
+          args: Prisma.CodCollectionDeleteManyArgs<ExtArgs>
+          result: BatchPayload
+        }
+        updateMany: {
+          args: Prisma.CodCollectionUpdateManyArgs<ExtArgs>
+          result: BatchPayload
+        }
+        updateManyAndReturn: {
+          args: Prisma.CodCollectionUpdateManyAndReturnArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$CodCollectionPayload>[]
+        }
+        upsert: {
+          args: Prisma.CodCollectionUpsertArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$CodCollectionPayload>
+        }
+        aggregate: {
+          args: Prisma.CodCollectionAggregateArgs<ExtArgs>
+          result: runtime.Types.Utils.Optional<Prisma.AggregateCodCollection>
+        }
+        groupBy: {
+          args: Prisma.CodCollectionGroupByArgs<ExtArgs>
+          result: runtime.Types.Utils.Optional<Prisma.CodCollectionGroupByOutputType>[]
+        }
+        count: {
+          args: Prisma.CodCollectionCountArgs<ExtArgs>
+          result: runtime.Types.Utils.Optional<Prisma.CodCollectionCountAggregateOutputType> | number
         }
       }
     }
@@ -2204,6 +2354,23 @@ export const OrderScalarFieldEnum = {
 export type OrderScalarFieldEnum = (typeof OrderScalarFieldEnum)[keyof typeof OrderScalarFieldEnum]
 
 
+export const DeliveryAssignmentScalarFieldEnum = {
+  id: 'id',
+  orderId: 'orderId',
+  deliveryStaffId: 'deliveryStaffId',
+  assignedById: 'assignedById',
+  status: 'status',
+  assignedAt: 'assignedAt',
+  startedAt: 'startedAt',
+  deliveredAt: 'deliveredAt',
+  endedAt: 'endedAt',
+  notes: 'notes',
+  deliveryProof: 'deliveryProof'
+} as const
+
+export type DeliveryAssignmentScalarFieldEnum = (typeof DeliveryAssignmentScalarFieldEnum)[keyof typeof DeliveryAssignmentScalarFieldEnum]
+
+
 export const CheckoutQuoteScalarFieldEnum = {
   id: 'id',
   userId: 'userId',
@@ -2266,6 +2433,21 @@ export const PaymentScalarFieldEnum = {
 } as const
 
 export type PaymentScalarFieldEnum = (typeof PaymentScalarFieldEnum)[keyof typeof PaymentScalarFieldEnum]
+
+
+export const CodCollectionScalarFieldEnum = {
+  id: 'id',
+  orderId: 'orderId',
+  paymentId: 'paymentId',
+  collectedById: 'collectedById',
+  amount: 'amount',
+  currency: 'currency',
+  collectedAt: 'collectedAt',
+  notes: 'notes',
+  receiptProof: 'receiptProof'
+} as const
+
+export type CodCollectionScalarFieldEnum = (typeof CodCollectionScalarFieldEnum)[keyof typeof CodCollectionScalarFieldEnum]
 
 
 export const SortOrder = {
@@ -2410,6 +2592,20 @@ export type JsonFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel, 'J
  * Reference to a field of type 'QueryMode'
  */
 export type EnumQueryModeFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel, 'QueryMode'>
+    
+
+
+/**
+ * Reference to a field of type 'DeliveryStatus'
+ */
+export type EnumDeliveryStatusFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel, 'DeliveryStatus'>
+    
+
+
+/**
+ * Reference to a field of type 'DeliveryStatus[]'
+ */
+export type ListEnumDeliveryStatusFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel, 'DeliveryStatus[]'>
     
 
 
@@ -2594,9 +2790,11 @@ export type GlobalOmitConfig = {
   shippingProvider?: Prisma.ShippingProviderOmit
   codArea?: Prisma.CodAreaOmit
   order?: Prisma.OrderOmit
+  deliveryAssignment?: Prisma.DeliveryAssignmentOmit
   checkoutQuote?: Prisma.CheckoutQuoteOmit
   orderItem?: Prisma.OrderItemOmit
   payment?: Prisma.PaymentOmit
+  codCollection?: Prisma.CodCollectionOmit
 }
 
 /* Types for Logging */

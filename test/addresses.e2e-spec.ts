@@ -229,9 +229,13 @@ describe('Addresses (PostgreSQL)', () => {
         [
           'addressLine1',
           'addressLine2',
+          'administrativeLocationPath',
+          'administrativeLocationPcode',
           'city',
+          'commune',
           'countryCode',
           'createdAt',
+          'district',
           'id',
           'isDefault',
           'label',

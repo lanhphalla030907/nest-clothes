@@ -534,6 +534,9 @@ describe('Checkout (PostgreSQL)', () => {
       expect(res.body.itemCount).toBe(2);
       expect(Object.keys(res.body).sort()).toEqual(
         [
+          'codAreaCode',
+          'codAreaId',
+          'codAreaName',
           'createdAt',
           'currency',
           'discountAmount',
@@ -541,13 +544,18 @@ describe('Checkout (PostgreSQL)', () => {
           'itemCount',
           'items',
           'orderNumber',
+          'paymentMethod',
           'shippingAddressLine1',
           'shippingAddressLine2',
           'shippingCity',
           'shippingCountryCode',
           'shippingFee',
+          'shippingLocationPath',
           'shippingPhone',
           'shippingPostalCode',
+          'shippingProviderCode',
+          'shippingProviderId',
+          'shippingProviderName',
           'shippingRecipientName',
           'shippingStateProvince',
           'status',

@@ -151,6 +151,17 @@ describe('AccessTokenService', () => {
     });
   });
 
+  it.each([Role.DELIVERY_MANAGER, Role.DELIVERY_STAFF])(
+    'round-trips a %s token',
+    async (role) => {
+      const service = serviceFor();
+
+      await expect(
+        service.verify(service.sign({ ...USER, role })),
+      ).resolves.toMatchObject({ role });
+    },
+  );
+
   it('refuses a token signed with a different key', async () => {
     const other = new AccessTokenService(
       new JwtService({}),
