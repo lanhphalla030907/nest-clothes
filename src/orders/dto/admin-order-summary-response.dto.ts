@@ -40,6 +40,8 @@ export class AdminOrderSummaryResponseDto {
   payment: AdminOrderPaymentSummaryDto | null;
   /** Whether any attempt on this order has reached `PAID`. */
   hasPaidPayment: boolean;
+  /** The payment channel selected at checkout, independent of any attempt. */
+  paymentMethod: string | null;
   createdAt: Date;
   updatedAt: Date;
 
@@ -72,6 +74,7 @@ export class AdminOrderSummaryResponseDto {
         ? null
         : AdminOrderPaymentSummaryDto.fromEntity(latestPayment);
     dto.hasPaidPayment = order._count.payments > 0;
+    dto.paymentMethod = order.paymentMethod ?? null;
     dto.createdAt = order.createdAt;
     dto.updatedAt = order.updatedAt;
     return dto;

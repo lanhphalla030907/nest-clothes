@@ -49,6 +49,8 @@ export class AdminOrderDetailResponseDto {
   lineCount: number;
   createdAt: Date;
   updatedAt: Date;
+  /** The payment channel selected at checkout, independent of any attempt. */
+  paymentMethod: string | null;
 
   static fromEntity(order: AdminOrderDetailRow): AdminOrderDetailResponseDto {
     const dto = new AdminOrderDetailResponseDto();
@@ -85,6 +87,7 @@ export class AdminOrderDetailResponseDto {
     dto.lineCount = items.length;
     dto.createdAt = order.createdAt;
     dto.updatedAt = order.updatedAt;
+    dto.paymentMethod = order.paymentMethod ?? null;
     return dto;
   }
 }

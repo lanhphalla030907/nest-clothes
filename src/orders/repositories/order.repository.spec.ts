@@ -580,6 +580,7 @@ describe('OrderRepository', () => {
           id: true,
           orderNumber: true,
           status: true,
+          paymentMethod: true,
           user: {
             select: {
               id: true,
@@ -702,6 +703,9 @@ describe('OrderRepository', () => {
         select: expect.objectContaining({
           id: true,
           userId: true,
+          orderNumber: true,
+          status: true,
+          paymentMethod: true,
           shippingAddressLine1: true,
           user: {
             select: {

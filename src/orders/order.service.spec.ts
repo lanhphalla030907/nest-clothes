@@ -79,6 +79,7 @@ const buildAdminOrderRow = (overrides: Record<string, unknown> = {}) => ({
   id: ORDER_ID,
   orderNumber: 'ORD-20260104-AAAAAA',
   status: 'PENDING',
+  paymentMethod: 'ABA_PAYWAY',
   subtotal: new Prisma.Decimal('129.00'),
   shippingFee: new Prisma.Decimal('7.50'),
   discountAmount: new Prisma.Decimal('8.00'),
@@ -114,6 +115,7 @@ const buildAdminOrderRow = (overrides: Record<string, unknown> = {}) => ({
 
 const buildAdminDetailRow = (overrides: Record<string, unknown> = {}) => ({
   ...buildOrder(),
+  paymentMethod: 'ABA_PAYWAY',
   user: {
     id: USER_ID,
     firstName: 'Ada',
@@ -492,6 +494,7 @@ describe('OrderService', () => {
         itemCount: 3,
         lineCount: 2,
         hasPaidPayment: true,
+        paymentMethod: 'ABA_PAYWAY',
       });
       expect(result.items[0].customer).toEqual({
         id: USER_ID,
@@ -556,6 +559,7 @@ describe('OrderService', () => {
       expect(result.payments[0].transactionId).toBe('PAY-20260104-AAAAAA');
       expect(JSON.stringify(result)).not.toContain('qrPayload');
       expect(JSON.stringify(result)).not.toContain('passwordHash');
+      expect(result.paymentMethod).toBe('ABA_PAYWAY');
     });
 
     it('404s an unknown order', async () => {

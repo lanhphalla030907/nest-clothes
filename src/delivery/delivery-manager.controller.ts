@@ -11,17 +11,17 @@ import {
 import { Roles } from '../auth/decorators/roles.decorator.js';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard.js';
 import { RolesGuard } from '../auth/guards/roles.guard.js';
-import { Role } from '../generated/prisma/enums.js';
 import { CurrentUser } from '../auth/decorators/current-user.decorator.js';
 import type { AuthenticatedUser } from '../auth/types/authenticated-user.js';
 import { DeliveryService } from './delivery.service.js';
+import { DELIVERY_MANAGER_ROLES } from './constants/delivery-authorization.constants.js';
 import { AssignDeliveryDto } from './dto/assign-delivery.dto.js';
 import { ReassignDeliveryDto } from './dto/reassign-delivery.dto.js';
 import { DeliveryQueryDto } from './dto/delivery-query.dto.js';
 
 @Controller('delivery/manager')
 @UseGuards(JwtAuthGuard, RolesGuard)
-@Roles(Role.DELIVERY_MANAGER)
+@Roles(...DELIVERY_MANAGER_ROLES)
 export class DeliveryManagerController {
   constructor(private readonly deliveryService: DeliveryService) {}
 

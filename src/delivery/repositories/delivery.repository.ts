@@ -1,8 +1,19 @@
 import { Injectable } from '@nestjs/common';
 import { Prisma } from '../../generated/prisma/client.js';
+import { DeliveryStatus } from '../../generated/prisma/enums.js';
+import { PAYMENT_STATUS } from '../../payments/constants/payment-status.constants.js';
 import { PrismaService } from '../../prisma/prisma.service.js';
 
 export type DeliveryTransactionClient = Prisma.TransactionClient;
+
+/** The assignment columns needed to authorise and validate a COD collection. */
+export interface LockedAssignmentRow {
+  id: string;
+  order_id: string;
+  delivery_staff_id: string;
+  status: DeliveryStatus;
+  ended_at: Date | null;
+}
 
 @Injectable()
 export class DeliveryRepository {
@@ -54,6 +65,63 @@ export class DeliveryRepository {
       SELECT * FROM "orders" WHERE "id" = ${orderId}::uuid FOR UPDATE
     `;
     return rows[0] || null;
+  }
+
+  /**
+   * Locks an order row and returns only its id.
+   *
+   * COD collection takes this lock first, matching the order-first locking order
+   * used by assignment and reassignment, so a collection cannot deadlock with a
+   * concurrent reassignment of the same order.
+   */
+  async lockOrderForUpdate(
+    orderId: string,
+    tx: DeliveryTransactionClient,
+  ): Promise<{ id: string } | null> {
+    const rows = await tx.$queryRaw<Array<{ id: string }>>`
+      SELECT "id" FROM "orders" WHERE "id" = ${orderId}::uuid FOR UPDATE
+    `;
+
+    return rows[0] ?? null;
+  }
+
+  /**
+   * Locks an assignment row and returns the columns a COD collection checks.
+   *
+   * `$queryRaw` returns database column names, so the shape is declared here
+   * rather than reusing the Prisma model type.
+   */
+  async lockAssignmentForUpdate(
+    assignmentId: string,
+    tx: DeliveryTransactionClient,
+  ): Promise<LockedAssignmentRow | null> {
+    const rows = await tx.$queryRaw<Array<LockedAssignmentRow>>`
+      SELECT "id", "order_id", "delivery_staff_id", "status", "ended_at"
+      FROM "delivery_assignments"
+      WHERE "id" = ${assignmentId}::uuid
+      FOR UPDATE
+    `;
+
+    return rows[0] ?? null;
+  }
+
+  /**
+   * Reads the order fields COD collection validates, without the customer and
+   * assignment graph `findOrderById` includes.
+   */
+  async findOrderForCodCollection(
+    orderId: string,
+    tx: DeliveryTransactionClient,
+  ) {
+    return tx.order.findUnique({
+      where: { id: orderId },
+      select: {
+        id: true,
+        paymentMethod: true,
+        totalAmount: true,
+        currency: true,
+      },
+    });
   }
 
   async findActiveAssignmentForUpdate(orderId: string, tx: DeliveryTransactionClient) {
@@ -272,6 +340,52 @@ export class DeliveryRepository {
     });
   }
 
+  /**
+   * Returns the newest payment attempt for an order, if one exists.
+   *
+   * COD checkout normally creates no `Payment` row at all. This read exists so a
+   * collection can link and settle a pre-existing row without inventing one.
+   */
+  async findPaymentForOrder(
+    orderId: string,
+    tx?: DeliveryTransactionClient,
+  ) {
+    const client = tx ?? this.prisma;
+    return client.payment.findFirst({
+      where: { orderId },
+      orderBy: [{ createdAt: 'desc' }, { id: 'desc' }],
+      select: { id: true, status: true },
+    });
+  }
+
+  /**
+   * Marks a linked payment `PAID` as part of a COD collection.
+   *
+   * Guarded on both the order and `status != PAID`; returns whether this call was
+   * the writer. A concurrent settlement therefore matches zero rows instead of
+   * overwriting `paidAt`.
+   */
+  async markPaymentPaidForCodCollection(
+    paymentId: string,
+    orderId: string,
+    tx: DeliveryTransactionClient,
+  ): Promise<boolean> {
+    const updated = await tx.payment.updateMany({
+      where: {
+        id: paymentId,
+        orderId,
+        status: { not: PAYMENT_STATUS.PAID },
+      },
+      data: {
+        status: PAYMENT_STATUS.PAID,
+        paidAt: new Date(),
+        paymentMethod: 'COD',
+      },
+    });
+
+    return updated.count === 1;
+  }
+
   async findCodCollectionByOrderId(orderId: string, tx?: DeliveryTransactionClient) {
     const client = tx ?? this.prisma;
     return client.codCollection.findUnique({
@@ -291,10 +405,10 @@ export class DeliveryRepository {
       orderId: string;
       paymentId?: string | null;
       collectedById: string;
-      amount: any;
+      amount: Prisma.Decimal | string;
       currency: string;
       notes?: string;
-      receiptProof?: any;
+      receiptProof?: Prisma.InputJsonValue;
     },
     tx?: DeliveryTransactionClient,
   ) {
@@ -302,9 +416,29 @@ export class DeliveryRepository {
     return client.codCollection.create({
       data,
       include: {
-        order: true,
-        payment: true,
-        collectedBy: true,
+        order: {
+          select: {
+            id: true,
+            orderNumber: true,
+            status: true,
+            paymentMethod: true,
+            totalAmount: true,
+            currency: true,
+          },
+        },
+        payment: {
+          select: {
+            id: true,
+            status: true,
+            amount: true,
+            currency: true,
+            paymentMethod: true,
+            paidAt: true,
+          },
+        },
+        collectedBy: {
+          select: { id: true, firstName: true, lastName: true, email: true },
+        },
       },
     });
   }
