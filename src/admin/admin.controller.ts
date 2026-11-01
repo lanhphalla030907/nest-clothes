@@ -1,17 +1,24 @@
-import { Controller, Get, Param, ParseUUIDPipe, UseGuards } from '@nestjs/common';
+import {
+  Body,
+  Controller,
+  Get,
+  Param,
+  ParseUUIDPipe,
+  Post,
+  UseGuards,
+} from '@nestjs/common';
 import { Roles } from '../auth/decorators/roles.decorator.js';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard.js';
 import { RolesGuard } from '../auth/guards/roles.guard.js';
 import { Role } from '../generated/prisma/enums.js';
 import { UserResponseDto } from '../users/dto/user-response.dto.js';
+import { CreateUserDto } from '../users/dto/create-user.dto.js';
 import { UsersService } from '../users/users.service.js';
 
 /**
  * The administrative surface.
  *
- * One route, and it exists to make role authorisation observable end to end: without an
- * endpoint that only an `ADMIN` may reach, `@Roles(Role.ADMIN)` and `RolesGuard` would be
- * code nothing exercised, and "it rejects a customer" would be an untested claim.
+ * The administrative user surface: read a user by id and create delivery staff.
  *
  * It reads a user **other than the caller**, which is the one place in this application
  * where that is legitimate — and it is legitimate precisely because the caller's role is
@@ -38,5 +45,14 @@ export class AdminController {
   @Roles(Role.ADMIN)
   findUser(@Param('id', ParseUUIDPipe) id: string): Promise<UserResponseDto> {
     return this.usersService.findOne(id);
+  }
+
+  @Post('users')
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles(Role.ADMIN)
+  createDeliveryStaff(
+    @Body() dto: CreateUserDto,
+  ): Promise<UserResponseDto> {
+    return this.usersService.createDeliveryStaff(dto);
   }
 }

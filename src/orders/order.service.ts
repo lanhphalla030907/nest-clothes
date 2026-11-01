@@ -224,17 +224,24 @@ export class OrderService {
 
     const orders = await this.orderRepository.findByUserId(userId);
 
-    if (this.paymentsService && orders.some((o) => o.status === ORDER_STATUS.PENDING)) {
+    if (
+      this.paymentsService &&
+      orders.some((o) => o.status === ORDER_STATUS.PENDING)
+    ) {
       let anyPromoted = false;
       for (const order of orders) {
         if (order.status === ORDER_STATUS.PENDING) {
-          const promoted = await this.paymentsService.verifyOrderPayment(order.id);
+          const promoted = await this.paymentsService.verifyOrderPayment(
+            order.id,
+          );
           if (promoted) anyPromoted = true;
         }
       }
       if (anyPromoted) {
         const refreshed = await this.orderRepository.findByUserId(userId);
-        return refreshed.map((order) => OrderSummaryResponseDto.fromEntity(order));
+        return refreshed.map((order) =>
+          OrderSummaryResponseDto.fromEntity(order),
+        );
       }
     }
 
@@ -379,6 +386,49 @@ export class OrderService {
   }
 
   /**
+   * Confirms a COD order without recording payment: cash remains unpaid until the
+   * authorized delivery collection flow records it. The guarded update is the
+   * concurrency control, and confirmation deliberately does not move inventory.
+   */
+  confirmCodOrderForAdmin(
+    orderId: string,
+  ): Promise<AdminOrderDetailResponseDto> {
+    return this.orderRepository.runInTransaction(async (tx) => {
+      const order = await this.orderRepository.findOrderConfirmationState(
+        orderId,
+        tx,
+      );
+
+      if (order === null) {
+        throw this.orderNotFound(orderId);
+      }
+
+      if (order.status !== ORDER_STATUS.PENDING) {
+        throw new ConflictException(
+          `Order ${orderId} is ${order.status} and cannot be confirmed`,
+        );
+      }
+
+      if (order.paymentMethod !== 'COD') {
+        throw new ConflictException(
+          `Order ${orderId} is not a COD order and cannot use COD confirmation`,
+        );
+      }
+
+      const confirmed = await this.orderRepository.confirmPendingCodOrder(
+        orderId,
+        tx,
+      );
+
+      if (!confirmed) {
+        throw this.transitionConflict(orderId);
+      }
+
+      return this.readAdminOrder(orderId, tx);
+    });
+  }
+
+  /**
    * Cancels one of the caller's own unpaid orders and returns its new state.
    *
    * This is the customer-facing counterpart to {@link cancelOrderForAdmin}. It
@@ -413,29 +463,31 @@ export class OrderService {
   }
 
   /**
-   * Ships a paid, confirmed order and commits its reserved stock exactly once.
+   * Ships a confirmed order and commits its reserved stock exactly once.
    *
    * ## The rules
    *
    * The only shippable state is `CONFIRMED`, written exclusively by the verified
    * PayWay callback after it has checked the transaction against the order's amount
-   * and currency. Shipment additionally requires at least one `PAID` payment, so a
-   * malformed or manually altered `CONFIRMED` order cannot ship without evidence
-   * that money was collected. No refund, payment mutation or status assignment is
-   * exposed here.
+   * and currency, or by the explicit COD confirmation action. COD orders do not
+   * require an online payment record; their collection is recorded separately by
+   * the authorized delivery collection flow. Online orders still require a
+   * verified `PAID` payment. Every order also needs an open assignment to an
+   * active delivery staff account.
    *
    * ## Atomicity and concurrency
    *
-   * The same pattern as cancellation: read for 404/409, check the payment policy,
-   * claim `CONFIRMED -> SHIPPED` with a guarded update, then call
-   * `commitReservedForOrder` on the same transaction. The guarded update is the
-   * concurrency control; the preceding read is only there to give a precise error.
-   * A repeated or losing request affects zero rows and is rejected before inventory
-   * moves. An inventory failure rolls the status change back.
+   * The order row is locked before checking assignment, matching the manager's
+   * assignment lock order. Payment, assignment validation, status transition and
+   * inventory commitment all happen in this transaction, so assignment and
+   * shipment cannot race past one another.
    */
   shipOrderForAdmin(orderId: string): Promise<AdminOrderDetailResponseDto> {
     return this.orderRepository.runInTransaction(async (tx) => {
-      const order = await this.orderRepository.findStatusById(orderId, tx);
+      const order = await this.orderRepository.lockShippingStateById(
+        orderId,
+        tx,
+      );
 
       if (order === null) {
         throw this.orderNotFound(orderId);
@@ -447,7 +499,18 @@ export class OrderService {
         );
       }
 
-      if (!(await this.orderRepository.hasPaidPayment(orderId, tx))) {
+      if (
+        !(await this.orderRepository.hasActiveDeliveryAssignment(orderId, tx))
+      ) {
+        throw new ConflictException(
+          `Order ${orderId} has no active delivery assignment and cannot be shipped`,
+        );
+      }
+
+      if (
+        order.paymentMethod !== 'COD' &&
+        !(await this.orderRepository.hasPaidPayment(orderId, tx))
+      ) {
         throw new ConflictException(
           `Order ${orderId} has no verified payment and cannot be shipped`,
         );

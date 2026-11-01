@@ -21,6 +21,8 @@ import { DELIVERY_STAFF_ROLES } from './constants/delivery-authorization.constan
 import { CollectCodDto } from './dto/collect-cod.dto.js';
 import { UpdateDeliveryStatusDto } from './dto/update-delivery-status.dto.js';
 import { DeliveryQueryDto } from './dto/delivery-query.dto.js';
+import { CodCollectionsQueryDto } from './dto/cod-collections-query.dto.js';
+import { CodCollectionsSummaryQueryDto } from './dto/cod-collections-summary-query.dto.js';
 import { CodReceiptUploadInterceptor } from './interceptors/cod-receipt-upload.interceptor.js';
 import type { UploadedReceiptFile } from './interfaces/uploaded-receipt-file.js';
 
@@ -76,5 +78,30 @@ export class DeliveryStaffController {
       dto,
       receiptProof,
     );
+  }
+
+  /**
+   * `GET /delivery/staff/cod-collections` — the caller's own COD collection
+   * history, paginated and filtered. Staff identity comes from the JWT, so a
+   * caller can only ever page through their own collections.
+   */
+  @Get('cod-collections')
+  getMyCodCollections(
+    @CurrentUser() user: AuthenticatedUser,
+    @Query() query: CodCollectionsQueryDto,
+  ) {
+    return this.deliveryService.getMyCodCollections(user.id, query);
+  }
+
+  /**
+   * `GET /delivery/staff/cod-collections/summary` — aggregated COD collection
+   * totals for the caller, with amounts kept separate per currency.
+   */
+  @Get('cod-collections/summary')
+  getMyCodCollectionsSummary(
+    @CurrentUser() user: AuthenticatedUser,
+    @Query() query: CodCollectionsSummaryQueryDto,
+  ) {
+    return this.deliveryService.getMyCodCollectionsSummary(user.id, query);
   }
 }

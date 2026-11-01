@@ -17,6 +17,8 @@ export default defineConfig({
     include: [
       'test/delivery.integration.test.ts',
       'test/delivery-cod.integration.test.ts',
+      'test/admin-cod-reconciliation.integration.test.ts',
+      'test/cod-reconciliation.repository.integration.test.ts',
     ],
     setupFiles: ['./test/support/test-db-env.ts'],
     fileParallelism: false,

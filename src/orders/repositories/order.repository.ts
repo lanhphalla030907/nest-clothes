@@ -1,9 +1,6 @@
 import { Injectable } from '@nestjs/common';
 import { Prisma } from '../../generated/prisma/client.js';
-import type {
-  Order,
-  OrderItem,
-} from '../../generated/prisma/client.js';
+import type { Order, OrderItem } from '../../generated/prisma/client.js';
 import { PAYMENT_STATUS } from '../../payments/constants/payment-status.constants.js';
 import { PrismaService } from '../../prisma/prisma.service.js';
 import { ORDER_STATUS } from '../constants/order-status.constants.js';
@@ -399,6 +396,80 @@ export class OrderRepository {
     });
   }
 
+  findShippingStateById(
+    id: string,
+    client: OrderTransactionClient = this.prisma,
+  ): Promise<{
+    id: string;
+    status: string;
+    paymentMethod: string | null;
+  } | null> {
+    return client.order.findUnique({
+      where: { id },
+      select: { id: true, status: true, paymentMethod: true },
+    });
+  }
+
+  async lockShippingStateById(
+    id: string,
+    client: OrderTransactionClient,
+  ): Promise<{
+    id: string;
+    status: string;
+    paymentMethod: string | null;
+  } | null> {
+    const rows = await client.$queryRaw<
+      Array<{ id: string; status: string; payment_method: string | null }>
+    >`
+      SELECT "id", "status", "payment_method"
+      FROM "orders"
+      WHERE "id" = ${id}::uuid
+      FOR UPDATE
+    `;
+    const order = rows[0];
+    return order
+      ? {
+          id: order.id,
+          status: order.status,
+          paymentMethod: order.payment_method,
+        }
+      : null;
+  }
+
+  hasActiveDeliveryAssignment(
+    orderId: string,
+    client: OrderTransactionClient = this.prisma,
+  ): Promise<boolean> {
+    return client.deliveryAssignment
+      .findFirst({
+        where: {
+          orderId,
+          endedAt: null,
+          status: { notIn: ['DELIVERED', 'RETURNED'] },
+          deliveryStaff: {
+            role: 'DELIVERY_STAFF',
+            status: 'ACTIVE',
+          },
+        },
+        select: { id: true },
+      })
+      .then((assignment) => assignment !== null);
+  }
+
+  findOrderConfirmationState(
+    id: string,
+    client: OrderTransactionClient = this.prisma,
+  ): Promise<{
+    id: string;
+    status: string;
+    paymentMethod: string | null;
+  } | null> {
+    return client.order.findUnique({
+      where: { id },
+      select: { id: true, status: true, paymentMethod: true },
+    });
+  }
+
   /**
    * Returns the status of one order only when it belongs to `userId`.
    *
@@ -708,6 +779,18 @@ export class OrderRepository {
   ): Promise<boolean> {
     const updated = await client.order.updateMany({
       where: { id, status: ORDER_STATUS.PENDING },
+      data: { status: ORDER_STATUS.CONFIRMED },
+    });
+
+    return updated.count === 1;
+  }
+
+  async confirmPendingCodOrder(
+    id: string,
+    client: OrderTransactionClient = this.prisma,
+  ): Promise<boolean> {
+    const updated = await client.order.updateMany({
+      where: { id, status: ORDER_STATUS.PENDING, paymentMethod: 'COD' },
       data: { status: ORDER_STATUS.CONFIRMED },
     });
 

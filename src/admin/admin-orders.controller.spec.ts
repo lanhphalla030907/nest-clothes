@@ -52,8 +52,8 @@ const listResponse = {
 };
 
 /**
- * `GET /admin/orders`, `GET /admin/orders/:id`, `POST /admin/orders/:id/cancel`
- * and `POST /admin/orders/:id/ship` over real HTTP.
+ * `GET /admin/orders`, `GET /admin/orders/:id`, and the named order status
+ * actions over real HTTP.
  *
  * The repository and service are stubbed, so this file is about the HTTP
  * contract: the authorisation matrix, query validation, UUID parsing and the
@@ -67,6 +67,7 @@ describe('AdminOrdersController (HTTP)', () => {
     listOrdersForAdmin: ReturnType<typeof vi.fn>;
     getOrderForAdmin: ReturnType<typeof vi.fn>;
     cancelOrderForAdmin: ReturnType<typeof vi.fn>;
+    confirmCodOrderForAdmin: ReturnType<typeof vi.fn>;
     shipOrderForAdmin: ReturnType<typeof vi.fn>;
   };
   let identities: TestIdentityRegistry;
@@ -84,6 +85,11 @@ describe('AdminOrdersController (HTTP)', () => {
         id: ORDER_ID,
         orderNumber: 'ORD-20260104-AAAAAA',
         status: 'CANCELLED',
+      }),
+      confirmCodOrderForAdmin: vi.fn().mockResolvedValue({
+        id: ORDER_ID,
+        orderNumber: 'ORD-20260104-AAAAAA',
+        status: 'CONFIRMED',
       }),
       shipOrderForAdmin: vi.fn().mockResolvedValue({
         id: ORDER_ID,
@@ -141,6 +147,11 @@ describe('AdminOrdersController (HTTP)', () => {
       id: ORDER_ID,
       orderNumber: 'ORD-20260104-AAAAAA',
       status: 'CANCELLED',
+    });
+    orderService.confirmCodOrderForAdmin.mockResolvedValue({
+      id: ORDER_ID,
+      orderNumber: 'ORD-20260104-AAAAAA',
+      status: 'CONFIRMED',
     });
     orderService.shipOrderForAdmin.mockResolvedValue({
       id: ORDER_ID,
@@ -225,7 +236,7 @@ describe('AdminOrdersController (HTTP)', () => {
       expect(orderService.getOrderForAdmin).not.toHaveBeenCalled();
     });
 
-    it.each(['/cancel', '/ship'])(
+    it.each(['/cancel', '/confirm-cod', '/ship'])(
       'refuses an unauthenticated caller on POST %s with 401',
       async (action) => {
         const res = await post(`/admin/orders/${ORDER_ID}${action}`);
@@ -234,7 +245,7 @@ describe('AdminOrdersController (HTTP)', () => {
       },
     );
 
-    it.each(['/cancel', '/ship'])(
+    it.each(['/cancel', '/confirm-cod', '/ship'])(
       'refuses a customer on POST %s with 403',
       async (action) => {
         const res = await post(
@@ -251,6 +262,14 @@ describe('AdminOrdersController (HTTP)', () => {
 
       expect(res.status).toBe(HttpStatus.OK);
       expect(orderService.cancelOrderForAdmin).toHaveBeenCalledWith(ORDER_ID);
+    });
+
+    it('lets an admin confirm a COD order', async () => {
+      const res = await post(`/admin/orders/${ORDER_ID}/confirm-cod`, ADMIN_ID);
+
+      expect(res.status).toBe(HttpStatus.OK);
+      expect(await res.json()).toMatchObject({ status: 'CONFIRMED' });
+      expect(orderService.confirmCodOrderForAdmin).toHaveBeenCalledWith(ORDER_ID);
     });
 
     it('lets an admin ship an order', async () => {
@@ -354,19 +373,21 @@ describe('AdminOrdersController (HTTP)', () => {
   });
 
   describe('the status actions', () => {
-    it.each(['cancel', 'ship'])(
+    it.each(['cancel', 'confirm-cod', 'ship'])(
       'rejects a malformed id on %s with 400 before the service',
       async (action) => {
         const res = await post(`/admin/orders/not-a-uuid/${action}`, ADMIN_ID);
 
         expect(res.status).toBe(HttpStatus.BAD_REQUEST);
         expect(orderService.cancelOrderForAdmin).not.toHaveBeenCalled();
+        expect(orderService.confirmCodOrderForAdmin).not.toHaveBeenCalled();
         expect(orderService.shipOrderForAdmin).not.toHaveBeenCalled();
       },
     );
 
     it.each([
       ['cancel', 'cancelOrderForAdmin'],
+      ['confirm-cod', 'confirmCodOrderForAdmin'],
       ['ship', 'shipOrderForAdmin'],
     ] as const)('passes a 404 through for %s', async (action, method) => {
       orderService[method].mockRejectedValue(
@@ -380,6 +401,7 @@ describe('AdminOrdersController (HTTP)', () => {
 
     it.each([
       ['cancel', 'cancelOrderForAdmin'],
+      ['confirm-cod', 'confirmCodOrderForAdmin'],
       ['ship', 'shipOrderForAdmin'],
     ] as const)(
       'passes an unsupported-transition 409 through for %s',

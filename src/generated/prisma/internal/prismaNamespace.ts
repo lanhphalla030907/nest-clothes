@@ -418,7 +418,8 @@ export const ModelName = {
   CheckoutQuote: 'CheckoutQuote',
   OrderItem: 'OrderItem',
   Payment: 'Payment',
-  CodCollection: 'CodCollection'
+  CodCollection: 'CodCollection',
+  CodReconciliationRun: 'CodReconciliationRun'
 } as const
 
 export type ModelName = (typeof ModelName)[keyof typeof ModelName]
@@ -434,7 +435,7 @@ export type TypeMap<ExtArgs extends runtime.Types.Extensions.InternalArgs = runt
     omit: GlobalOmitOptions
   }
   meta: {
-    modelProps: "user" | "category" | "product" | "productImage" | "productVariant" | "variantOption" | "productAttribute" | "inventory" | "cart" | "cartItem" | "wishlist" | "wishlistItem" | "address" | "administrativeLocation" | "shippingProvider" | "codArea" | "order" | "deliveryAssignment" | "checkoutQuote" | "orderItem" | "payment" | "codCollection"
+    modelProps: "user" | "category" | "product" | "productImage" | "productVariant" | "variantOption" | "productAttribute" | "inventory" | "cart" | "cartItem" | "wishlist" | "wishlistItem" | "address" | "administrativeLocation" | "shippingProvider" | "codArea" | "order" | "deliveryAssignment" | "checkoutQuote" | "orderItem" | "payment" | "codCollection" | "codReconciliationRun"
     txIsolationLevel: TransactionIsolationLevel
   }
   model: {
@@ -2066,6 +2067,80 @@ export type TypeMap<ExtArgs extends runtime.Types.Extensions.InternalArgs = runt
         }
       }
     }
+    CodReconciliationRun: {
+      payload: Prisma.$CodReconciliationRunPayload<ExtArgs>
+      fields: Prisma.CodReconciliationRunFieldRefs
+      operations: {
+        findUnique: {
+          args: Prisma.CodReconciliationRunFindUniqueArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$CodReconciliationRunPayload> | null
+        }
+        findUniqueOrThrow: {
+          args: Prisma.CodReconciliationRunFindUniqueOrThrowArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$CodReconciliationRunPayload>
+        }
+        findFirst: {
+          args: Prisma.CodReconciliationRunFindFirstArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$CodReconciliationRunPayload> | null
+        }
+        findFirstOrThrow: {
+          args: Prisma.CodReconciliationRunFindFirstOrThrowArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$CodReconciliationRunPayload>
+        }
+        findMany: {
+          args: Prisma.CodReconciliationRunFindManyArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$CodReconciliationRunPayload>[]
+        }
+        create: {
+          args: Prisma.CodReconciliationRunCreateArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$CodReconciliationRunPayload>
+        }
+        createMany: {
+          args: Prisma.CodReconciliationRunCreateManyArgs<ExtArgs>
+          result: BatchPayload
+        }
+        createManyAndReturn: {
+          args: Prisma.CodReconciliationRunCreateManyAndReturnArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$CodReconciliationRunPayload>[]
+        }
+        delete: {
+          args: Prisma.CodReconciliationRunDeleteArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$CodReconciliationRunPayload>
+        }
+        update: {
+          args: Prisma.CodReconciliationRunUpdateArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$CodReconciliationRunPayload>
+        }
+        deleteMany: {
+          args: Prisma.CodReconciliationRunDeleteManyArgs<ExtArgs>
+          result: BatchPayload
+        }
+        updateMany: {
+          args: Prisma.CodReconciliationRunUpdateManyArgs<ExtArgs>
+          result: BatchPayload
+        }
+        updateManyAndReturn: {
+          args: Prisma.CodReconciliationRunUpdateManyAndReturnArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$CodReconciliationRunPayload>[]
+        }
+        upsert: {
+          args: Prisma.CodReconciliationRunUpsertArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$CodReconciliationRunPayload>
+        }
+        aggregate: {
+          args: Prisma.CodReconciliationRunAggregateArgs<ExtArgs>
+          result: runtime.Types.Utils.Optional<Prisma.AggregateCodReconciliationRun>
+        }
+        groupBy: {
+          args: Prisma.CodReconciliationRunGroupByArgs<ExtArgs>
+          result: runtime.Types.Utils.Optional<Prisma.CodReconciliationRunGroupByOutputType>[]
+        }
+        count: {
+          args: Prisma.CodReconciliationRunCountArgs<ExtArgs>
+          result: runtime.Types.Utils.Optional<Prisma.CodReconciliationRunCountAggregateOutputType> | number
+        }
+      }
+    }
   }
 } & {
   other: {
@@ -2450,6 +2525,25 @@ export const CodCollectionScalarFieldEnum = {
 export type CodCollectionScalarFieldEnum = (typeof CodCollectionScalarFieldEnum)[keyof typeof CodCollectionScalarFieldEnum]
 
 
+export const CodReconciliationRunScalarFieldEnum = {
+  id: 'id',
+  triggerType: 'triggerType',
+  status: 'status',
+  windowStart: 'windowStart',
+  windowEnd: 'windowEnd',
+  processedCount: 'processedCount',
+  matchedCount: 'matchedCount',
+  discrepancyCount: 'discrepancyCount',
+  uncollectedCount: 'uncollectedCount',
+  errorMessage: 'errorMessage',
+  startedAt: 'startedAt',
+  completedAt: 'completedAt',
+  createdAt: 'createdAt'
+} as const
+
+export type CodReconciliationRunScalarFieldEnum = (typeof CodReconciliationRunScalarFieldEnum)[keyof typeof CodReconciliationRunScalarFieldEnum]
+
+
 export const SortOrder = {
   asc: 'asc',
   desc: 'desc'
@@ -2795,6 +2889,7 @@ export type GlobalOmitConfig = {
   orderItem?: Prisma.OrderItemOmit
   payment?: Prisma.PaymentOmit
   codCollection?: Prisma.CodCollectionOmit
+  codReconciliationRun?: Prisma.CodReconciliationRunOmit
 }
 
 /* Types for Logging */

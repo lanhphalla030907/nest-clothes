@@ -2,6 +2,7 @@ import { ConflictException } from '@nestjs/common';
 import { Test, TestingModule } from '@nestjs/testing';
 import { PasswordService } from '../auth/password/password.service.js';
 import { Prisma } from '../generated/prisma/client.js';
+import { Role } from '../generated/prisma/enums.js';
 import { CreateUserDto } from './dto/create-user.dto.js';
 import { UserResponseDto } from './dto/user-response.dto.js';
 import { UsersRepository } from './repositories/users.repository.js';
@@ -152,7 +153,42 @@ describe('UsersService', () => {
 
     const persisted = repositoryCreate.mock.calls[0][0];
     expect(persisted.status).toBe('ACTIVE');
+    expect(persisted.role).toBe(Role.CUSTOMER);
     expect(persisted.phone).toBeUndefined();
+  });
+
+  it('creates active delivery staff with a hashed password and a safe response', async () => {
+    const dto = buildDto();
+    repositoryCreate.mockImplementation(
+      (data: { email: string; passwordHash: string }) =>
+        Promise.resolve(buildUser({ id: 'staff-1', ...data })),
+    );
+
+    const result = await service.createDeliveryStaff(dto);
+    const persisted = repositoryCreate.mock.calls[0][0];
+
+    expect(persisted.role).toBe(Role.DELIVERY_STAFF);
+    expect(persisted.status).toBe('ACTIVE');
+    expect(persisted.passwordHash).not.toBe(dto.password);
+    expect(persisted.passwordHash.startsWith('$argon2id$')).toBe(true);
+    await expect(
+      passwordService.verify(persisted.passwordHash, dto.password),
+    ).resolves.toBe(true);
+    expect(result).toBeInstanceOf(UserResponseDto);
+    expect(result).not.toHaveProperty('passwordHash');
+    expect(JSON.stringify(result)).not.toContain(persisted.passwordHash);
+    expect(JSON.stringify(result)).not.toContain(dto.password);
+  });
+
+  it('returns a conflict for a duplicate delivery staff email', async () => {
+    repositoryCreate.mockRejectedValue(buildUniqueViolation());
+
+    await expect(
+      service.createDeliveryStaff(buildDto()),
+    ).rejects.toMatchObject({
+      status: 409,
+      message: 'A user with this email already exists',
+    });
   });
 
   it('throws ConflictException when the email already exists', async () => {

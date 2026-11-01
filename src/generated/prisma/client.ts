@@ -624,3 +624,8 @@ export type Payment = Prisma.PaymentModel
  * behaviour is `RESTRICT` throughout, because this row is financial evidence.
  */
 export type CodCollection = Prisma.CodCollectionModel
+/**
+ * Model CodReconciliationRun
+ * Durable history for automated and manually triggered COD reconciliation runs.
+ */
+export type CodReconciliationRun = Prisma.CodReconciliationRunModel

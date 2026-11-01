@@ -30,6 +30,11 @@ export class DeliveryManagerController {
     return this.deliveryService.listDeliveryOrders(query);
   }
 
+  @Get('staff')
+  listActiveDeliveryStaff() {
+    return this.deliveryService.listActiveDeliveryStaff();
+  }
+
   @Get('orders/:orderId')
   getOrderDeliveryDetails(@Param('orderId', ParseUUIDPipe) orderId: string) {
     return this.deliveryService.getOrderDeliveryDetails(orderId);

@@ -1,4 +1,5 @@
 import {
+  ConflictException,
   HttpStatus,
   NotFoundException,
   ValidationPipe,
@@ -28,7 +29,10 @@ const UNKNOWN_ID = 'd4e5f6a7-b8c9-4d03-9e2f-3a4b5c6d7e8f';
  */
 describe('AdminController (HTTP)', () => {
   let app: INestApplication;
-  let usersService: { findOne: ReturnType<typeof vi.fn> };
+  let usersService: {
+    findOne: ReturnType<typeof vi.fn>;
+    createDeliveryStaff: ReturnType<typeof vi.fn>;
+  };
   let identities: TestIdentityRegistry;
   let base: string;
 
@@ -42,6 +46,19 @@ describe('AdminController (HTTP)', () => {
         phone: null,
         status: 'ACTIVE',
         role: Role.CUSTOMER,
+        emailVerifiedAt: null,
+        lastLoginAt: null,
+        createdAt: new Date('2026-01-01T00:00:00.000Z'),
+        updatedAt: new Date('2026-01-01T00:00:00.000Z'),
+      }),
+      createDeliveryStaff: vi.fn().mockResolvedValue({
+        id: SUBJECT_ID,
+        firstName: 'Grace',
+        lastName: 'Hopper',
+        email: 'grace@example.test',
+        phone: null,
+        status: 'ACTIVE',
+        role: Role.DELIVERY_STAFF,
         emailVerifiedAt: null,
         lastLoginAt: null,
         createdAt: new Date('2026-01-01T00:00:00.000Z'),
@@ -98,6 +115,20 @@ describe('AdminController (HTTP)', () => {
     fetch(`${base}${path}`, {
       headers:
         headers ?? (userId === undefined ? {} : identities.bearerHeaderFor(userId)),
+    });
+
+  const post = (
+    path: string,
+    body: unknown,
+    userId?: string,
+  ) =>
+    fetch(`${base}${path}`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        ...(userId === undefined ? {} : identities.bearerHeaderFor(userId)),
+      },
+      body: JSON.stringify(body),
     });
 
   it('lets an admin read any user', async () => {
@@ -169,7 +200,120 @@ describe('AdminController (HTTP)', () => {
     expect(res.status).toBe(HttpStatus.NOT_FOUND);
   });
 
-  it('declares exactly one route, and it takes an id in the path', () => {
+  it('lets an admin create delivery staff and never returns authentication data', async () => {
+    const body = {
+      firstName: 'Grace',
+      lastName: 'Hopper',
+      email: 'grace@example.test',
+      password: 'a-secure-password',
+      phone: '+15555550100',
+    };
+
+    const res = await post('/admin/users', body, ADMIN_ID);
+
+    expect(res.status).toBe(HttpStatus.CREATED);
+    expect(usersService.createDeliveryStaff).toHaveBeenCalledWith(
+      expect.objectContaining(body),
+    );
+    const responseText = await res.text();
+    expect(responseText).not.toContain('password');
+    expect(responseText).not.toContain('passwordHash');
+    expect(JSON.parse(responseText)).toMatchObject({
+      id: SUBJECT_ID,
+      role: Role.DELIVERY_STAFF,
+      status: 'ACTIVE',
+    });
+  });
+
+  it('refuses non-admin callers from creating delivery staff', async () => {
+    const res = await post(
+      '/admin/users',
+      {
+        firstName: 'Grace',
+        lastName: 'Hopper',
+        email: 'grace@example.test',
+        password: 'a-secure-password',
+      },
+      CUSTOMER_ID,
+    );
+
+    expect(res.status).toBe(HttpStatus.FORBIDDEN);
+    expect(usersService.createDeliveryStaff).not.toHaveBeenCalled();
+  });
+
+  it('requires authentication to create delivery staff', async () => {
+    const res = await post('/admin/users', {
+      firstName: 'Grace',
+      lastName: 'Hopper',
+      email: 'grace@example.test',
+      password: 'a-secure-password',
+    });
+
+    expect(res.status).toBe(HttpStatus.UNAUTHORIZED);
+    expect(usersService.createDeliveryStaff).not.toHaveBeenCalled();
+  });
+
+  it.each([
+    ['role', { role: Role.ADMIN }],
+    ['status', { status: 'SUSPENDED' }],
+  ])('does not accept a client-supplied %s', async (_field, extra) => {
+    const res = await post(
+      '/admin/users',
+      {
+        firstName: 'Grace',
+        lastName: 'Hopper',
+        email: 'grace@example.test',
+        password: 'a-secure-password',
+        ...extra,
+      },
+      ADMIN_ID,
+    );
+
+    expect(res.status).toBe(HttpStatus.BAD_REQUEST);
+    expect(usersService.createDeliveryStaff).not.toHaveBeenCalled();
+  });
+
+  it.each([
+    ['missing first name', { firstName: '' }],
+    ['invalid email', { email: 'not-an-email' }],
+    ['short password', { password: 'short' }],
+  ])('rejects invalid create input: %s', async (_case, input) => {
+    const res = await post(
+      '/admin/users',
+      {
+        firstName: 'Grace',
+        lastName: 'Hopper',
+        email: 'grace@example.test',
+        password: 'a-secure-password',
+        ...input,
+      },
+      ADMIN_ID,
+    );
+
+    expect(res.status).toBe(HttpStatus.BAD_REQUEST);
+    expect(usersService.createDeliveryStaff).not.toHaveBeenCalled();
+  });
+
+  it('returns 409 when the email already exists', async () => {
+    usersService.createDeliveryStaff.mockRejectedValue(
+      new ConflictException('A user with this email already exists'),
+    );
+
+    const res = await post(
+      '/admin/users',
+      {
+        firstName: 'Grace',
+        lastName: 'Hopper',
+        email: 'grace@example.test',
+        password: 'a-secure-password',
+      },
+      ADMIN_ID,
+    );
+
+    expect(res.status).toBe(HttpStatus.CONFLICT);
+  });
+
+  it('declares user lookup and creation routes', () => {
     expect(Reflect.getMetadata('path', AdminController)).toBe('admin');
 
     const prototype = AdminController.prototype as unknown as Record<string, object>;
@@ -177,6 +321,6 @@ describe('AdminController (HTTP)', () => {
       .filter((name) => name !== 'constructor')
       .map((name) => Reflect.getMetadata('path', prototype[name]) as string);
 
-    expect(routes).toEqual(['users/:id']);
+    expect(routes).toEqual(['users/:id', 'users']);
   });
 });

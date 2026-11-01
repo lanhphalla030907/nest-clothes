@@ -20,6 +20,17 @@ export class UsersService {
   ) {}
 
   async create(dto: CreateUserDto): Promise<UserResponseDto> {
+    return this.createWithRole(dto, Role.CUSTOMER);
+  }
+
+  createDeliveryStaff(dto: CreateUserDto): Promise<UserResponseDto> {
+    return this.createWithRole(dto, Role.DELIVERY_STAFF);
+  }
+
+  private async createWithRole(
+    dto: CreateUserDto,
+    role: Role,
+  ): Promise<UserResponseDto> {
     const email = normalizeEmail(dto.email);
     const passwordHash = await this.passwordService.hash(dto.password);
 
@@ -31,7 +42,7 @@ export class UsersService {
         passwordHash,
         phone: dto.phone,
         status: ACTIVE_USER_STATUS,
-        role: Role.CUSTOMER,
+        role,
       });
 
       return UserResponseDto.fromEntity(user);

@@ -176,9 +176,13 @@ describe('OrderService', () => {
   let orderFindByUserId: ReturnType<typeof vi.fn>;
   let orderFindAdminPage: ReturnType<typeof vi.fn>;
   let orderFindAdminById: ReturnType<typeof vi.fn>;
+  let orderFindOrderConfirmationState: ReturnType<typeof vi.fn>;
+  let orderLockShippingStateById: ReturnType<typeof vi.fn>;
+  let orderHasActiveDeliveryAssignment: ReturnType<typeof vi.fn>;
   let orderFindStatusById: ReturnType<typeof vi.fn>;
   let orderFindStatusByIdForUser: ReturnType<typeof vi.fn>;
   let orderTransitionStatus: ReturnType<typeof vi.fn>;
+  let orderConfirmPendingCodOrder: ReturnType<typeof vi.fn>;
   let orderTransitionStatusForUser: ReturnType<typeof vi.fn>;
   let orderHasPaidPayment: ReturnType<typeof vi.fn>;
   let orderExistsOrderNumber: ReturnType<typeof vi.fn>;
@@ -197,9 +201,13 @@ describe('OrderService', () => {
     orderFindByUserId = vi.fn();
     orderFindAdminPage = vi.fn();
     orderFindAdminById = vi.fn();
+    orderFindOrderConfirmationState = vi.fn();
+    orderLockShippingStateById = vi.fn();
+    orderHasActiveDeliveryAssignment = vi.fn();
     orderFindStatusById = vi.fn();
     orderFindStatusByIdForUser = vi.fn();
     orderTransitionStatus = vi.fn();
+    orderConfirmPendingCodOrder = vi.fn();
     orderTransitionStatusForUser = vi.fn();
     orderHasPaidPayment = vi.fn();
     orderExistsOrderNumber = vi.fn();
@@ -223,9 +231,13 @@ describe('OrderService', () => {
             findByUserId: orderFindByUserId,
             findAdminPage: orderFindAdminPage,
             findAdminById: orderFindAdminById,
+            findOrderConfirmationState: orderFindOrderConfirmationState,
+            lockShippingStateById: orderLockShippingStateById,
+            hasActiveDeliveryAssignment: orderHasActiveDeliveryAssignment,
             findStatusById: orderFindStatusById,
             findStatusByIdForUser: orderFindStatusByIdForUser,
             transitionStatus: orderTransitionStatus,
+            confirmPendingCodOrder: orderConfirmPendingCodOrder,
             transitionStatusForUser: orderTransitionStatusForUser,
             hasPaidPayment: orderHasPaidPayment,
             findByOrderNumber: vi.fn(),
@@ -256,10 +268,14 @@ describe('OrderService', () => {
     orderFindByUserId.mockResolvedValue([]);
     orderFindAdminPage.mockResolvedValue({ items: [], total: 0 });
     orderFindAdminById.mockResolvedValue(null);
+    orderFindOrderConfirmationState.mockResolvedValue(null);
+    orderLockShippingStateById.mockResolvedValue(null);
+    orderHasActiveDeliveryAssignment.mockResolvedValue(true);
     orderFindById.mockResolvedValue(null);
     orderFindStatusById.mockResolvedValue(null);
     orderFindStatusByIdForUser.mockResolvedValue(null);
     orderTransitionStatus.mockResolvedValue(true);
+    orderConfirmPendingCodOrder.mockResolvedValue(true);
     orderTransitionStatusForUser.mockResolvedValue(true);
     orderHasPaidPayment.mockResolvedValue(false);
     inventoryReleaseReserved.mockResolvedValue(undefined);
@@ -433,7 +449,9 @@ describe('OrderService', () => {
 
       const result = await serviceWithPayments.getOrder(USER_ID, ORDER_ID);
 
-      expect(mockPaymentsService.verifyOrderPayment).toHaveBeenCalledWith(ORDER_ID);
+      expect(mockPaymentsService.verifyOrderPayment).toHaveBeenCalledWith(
+        ORDER_ID,
+      );
       expect(result.status).toBe('CONFIRMED');
     });
 
@@ -453,7 +471,9 @@ describe('OrderService', () => {
 
       const result = await serviceWithPayments.getOrder(USER_ID, ORDER_ID);
 
-      expect(mockPaymentsService.verifyOrderPayment).toHaveBeenCalledWith(ORDER_ID);
+      expect(mockPaymentsService.verifyOrderPayment).toHaveBeenCalledWith(
+        ORDER_ID,
+      );
       expect(result.status).toBe('PENDING');
     });
   });
@@ -693,7 +713,7 @@ describe('OrderService', () => {
       orderFindById.mockResolvedValue(buildOrder({ status: 'CANCELLED' }));
     });
 
-    it('cancels the caller\'s own pending unpaid order and returns the updated DTO', async () => {
+    it("cancels the caller's own pending unpaid order and returns the updated DTO", async () => {
       const result = await service.cancelOrder(USER_ID, ORDER_ID);
 
       expect(userFindById).toHaveBeenCalledWith(USER_ID);
@@ -733,14 +753,14 @@ describe('OrderService', () => {
     it('404s a claimed user that does not exist before starting a transaction', async () => {
       userFindById.mockResolvedValue(null);
 
-      await expect(service.cancelOrder(USER_ID, ORDER_ID)).rejects.toBeInstanceOf(
-        NotFoundException,
-      );
+      await expect(
+        service.cancelOrder(USER_ID, ORDER_ID),
+      ).rejects.toBeInstanceOf(NotFoundException);
       expect(orderRunInTransaction).not.toHaveBeenCalled();
       expect(inventoryReleaseReserved).not.toHaveBeenCalled();
     });
 
-    it('404s another customer\'s order without releasing its stock', async () => {
+    it("404s another customer's order without releasing its stock", async () => {
       orderFindStatusByIdForUser.mockResolvedValue(null);
 
       await expect(
@@ -805,9 +825,10 @@ describe('OrderService', () => {
 
   describe('shipOrderForAdmin', () => {
     beforeEach(() => {
-      orderFindStatusById.mockResolvedValue({
+      orderLockShippingStateById.mockResolvedValue({
         id: ORDER_ID,
         status: 'CONFIRMED',
+        paymentMethod: 'ABA_PAYWAY',
       });
       orderHasPaidPayment.mockResolvedValue(true);
       orderFindAdminById.mockResolvedValue(
@@ -819,7 +840,14 @@ describe('OrderService', () => {
       const result = await service.shipOrderForAdmin(ORDER_ID);
 
       expect(orderRunInTransaction).toHaveBeenCalledTimes(1);
-      expect(orderFindStatusById).toHaveBeenCalledWith(ORDER_ID, TRANSACTION);
+      expect(orderLockShippingStateById).toHaveBeenCalledWith(
+        ORDER_ID,
+        TRANSACTION,
+      );
+      expect(orderHasActiveDeliveryAssignment).toHaveBeenCalledWith(
+        ORDER_ID,
+        TRANSACTION,
+      );
       expect(orderHasPaidPayment).toHaveBeenCalledWith(ORDER_ID, TRANSACTION);
       expect(orderTransitionStatus).toHaveBeenCalledWith(
         ORDER_ID,
@@ -844,7 +872,7 @@ describe('OrderService', () => {
     });
 
     it('404s an unknown order without moving anything', async () => {
-      orderFindStatusById.mockResolvedValue(null);
+      orderLockShippingStateById.mockResolvedValue(null);
 
       await expect(service.shipOrderForAdmin(ORDER_ID)).rejects.toBeInstanceOf(
         NotFoundException,
@@ -853,10 +881,36 @@ describe('OrderService', () => {
       expect(inventoryCommitReserved).not.toHaveBeenCalled();
     });
 
-    it.each(['PENDING', 'PROCESSING', 'SHIPPED', 'DELIVERED', 'CANCELLED'])(
-      'refuses an order in %s without committing stock',
-      async (status) => {
-        orderFindStatusById.mockResolvedValue({ id: ORDER_ID, status });
+    it('refuses a confirmed order without an active delivery assignment', async () => {
+      orderLockShippingStateById.mockResolvedValue({
+        id: ORDER_ID,
+        status: 'CONFIRMED',
+        paymentMethod: 'COD',
+      });
+      orderHasActiveDeliveryAssignment.mockResolvedValue(false);
+
+      await expect(service.shipOrderForAdmin(ORDER_ID)).rejects.toBeInstanceOf(
+        ConflictException,
+      );
+      expect(orderTransitionStatus).not.toHaveBeenCalled();
+      expect(inventoryCommitReserved).not.toHaveBeenCalled();
+    });
+
+    it.each([
+      ['PENDING', 'ABA_PAYWAY'],
+      ['PENDING', 'COD'],
+      ['PROCESSING', 'ABA_PAYWAY'],
+      ['SHIPPED', 'ABA_PAYWAY'],
+      ['DELIVERED', 'ABA_PAYWAY'],
+      ['CANCELLED', 'ABA_PAYWAY'],
+    ])(
+      'refuses a %s %s order without committing stock',
+      async (status, paymentMethod) => {
+        orderLockShippingStateById.mockResolvedValue({
+          id: ORDER_ID,
+          status,
+          paymentMethod,
+        });
 
         await expect(
           service.shipOrderForAdmin(ORDER_ID),
@@ -874,6 +928,48 @@ describe('OrderService', () => {
       );
       expect(orderTransitionStatus).not.toHaveBeenCalled();
       expect(inventoryCommitReserved).not.toHaveBeenCalled();
+    });
+
+    it('ships a confirmed COD order without a payment record and commits inventory', async () => {
+      orderLockShippingStateById.mockResolvedValue({
+        id: ORDER_ID,
+        status: 'CONFIRMED',
+        paymentMethod: 'COD',
+      });
+      orderHasPaidPayment.mockResolvedValue(false);
+      orderFindAdminById.mockResolvedValue(
+        buildAdminDetailRow({
+          status: 'SHIPPED',
+          paymentMethod: 'COD',
+          payments: [],
+        }),
+      );
+
+      const result = await service.shipOrderForAdmin(ORDER_ID);
+
+      expect(result.status).toBe('SHIPPED');
+      expect(orderHasPaidPayment).not.toHaveBeenCalled();
+      expect(orderTransitionStatus).toHaveBeenCalledWith(
+        ORDER_ID,
+        'CONFIRMED',
+        'SHIPPED',
+        TRANSACTION,
+      );
+      expect(inventoryCommitReserved).toHaveBeenCalledTimes(1);
+    });
+
+    it('ships a confirmed COD order regardless of its unpaid collection state', async () => {
+      orderLockShippingStateById.mockResolvedValue({
+        id: ORDER_ID,
+        status: 'CONFIRMED',
+        paymentMethod: 'COD',
+      });
+      orderHasPaidPayment.mockResolvedValue(false);
+
+      await service.shipOrderForAdmin(ORDER_ID);
+
+      expect(orderHasPaidPayment).not.toHaveBeenCalled();
+      expect(inventoryCommitReserved).toHaveBeenCalledTimes(1);
     });
 
     it('refuses when a concurrent writer already claimed the transition', async () => {
@@ -895,6 +991,90 @@ describe('OrderService', () => {
         ConflictException,
       );
       expect(orderFindAdminById).not.toHaveBeenCalled();
+    });
+  });
+
+  describe('confirmCodOrderForAdmin', () => {
+    beforeEach(() => {
+      orderFindOrderConfirmationState.mockResolvedValue({
+        id: ORDER_ID,
+        status: 'PENDING',
+        paymentMethod: 'COD',
+      });
+      orderFindAdminById.mockResolvedValue(
+        buildAdminDetailRow({
+          status: 'CONFIRMED',
+          paymentMethod: 'COD',
+          payments: [],
+        }),
+      );
+    });
+
+    it('confirms a pending COD order without payments or inventory changes', async () => {
+      const result = await service.confirmCodOrderForAdmin(ORDER_ID);
+
+      expect(orderRunInTransaction).toHaveBeenCalledTimes(1);
+      expect(orderFindOrderConfirmationState).toHaveBeenCalledWith(
+        ORDER_ID,
+        TRANSACTION,
+      );
+      expect(orderConfirmPendingCodOrder).toHaveBeenCalledWith(
+        ORDER_ID,
+        TRANSACTION,
+      );
+      expect(result.status).toBe('CONFIRMED');
+      expect(result.payments).toEqual([]);
+      expect(orderHasPaidPayment).not.toHaveBeenCalled();
+      expect(inventoryReleaseReserved).not.toHaveBeenCalled();
+      expect(inventoryCommitReserved).not.toHaveBeenCalled();
+    });
+
+    it('404s an unknown order', async () => {
+      orderFindOrderConfirmationState.mockResolvedValue(null);
+
+      await expect(
+        service.confirmCodOrderForAdmin(ORDER_ID),
+      ).rejects.toBeInstanceOf(NotFoundException);
+      expect(orderConfirmPendingCodOrder).not.toHaveBeenCalled();
+    });
+
+    it('rejects online orders', async () => {
+      orderFindOrderConfirmationState.mockResolvedValue({
+        id: ORDER_ID,
+        status: 'PENDING',
+        paymentMethod: 'ABA_PAYWAY',
+      });
+
+      await expect(
+        service.confirmCodOrderForAdmin(ORDER_ID),
+      ).rejects.toBeInstanceOf(ConflictException);
+      expect(orderConfirmPendingCodOrder).not.toHaveBeenCalled();
+    });
+
+    it.each(['CONFIRMED', 'CANCELLED', 'SHIPPED'])(
+      'rejects a COD order in %s',
+      async (status) => {
+        orderFindOrderConfirmationState.mockResolvedValue({
+          id: ORDER_ID,
+          status,
+          paymentMethod: 'COD',
+        });
+
+        await expect(
+          service.confirmCodOrderForAdmin(ORDER_ID),
+        ).rejects.toBeInstanceOf(ConflictException);
+        expect(orderConfirmPendingCodOrder).not.toHaveBeenCalled();
+      },
+    );
+
+    it('rejects when a concurrent request already claimed confirmation', async () => {
+      orderConfirmPendingCodOrder.mockResolvedValue(false);
+
+      await expect(
+        service.confirmCodOrderForAdmin(ORDER_ID),
+      ).rejects.toBeInstanceOf(ConflictException);
+      expect(orderFindAdminById).not.toHaveBeenCalled();
+      expect(inventoryCommitReserved).not.toHaveBeenCalled();
     });
   });
 

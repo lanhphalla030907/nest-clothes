@@ -23,9 +23,11 @@ import { WishlistModule } from './wishlist/wishlist.module.js';
 import { OrderModule } from './orders/order.module.js';
 import { PaymentsModule } from './payments/payments.module.js';
 import { LocationsModule } from './locations/locations.module.js';
+import { ScheduleModule } from '@nestjs/schedule';
 
 @Module({
   imports: [
+    ScheduleModule.forRoot(),
     /**
      * CloudinaryModule is @Global and comes first so its validated credentials
      * and configured client exist before anything that could depend on them. It

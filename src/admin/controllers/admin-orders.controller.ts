@@ -19,7 +19,7 @@ import { AdminOrderDetailResponseDto } from '../../orders/dto/admin-order-detail
 import { OrderService } from '../../orders/order.service.js';
 
 /**
- * Administrative order management: reads plus two explicit lifecycle actions.
+ * Administrative order management: reads plus named lifecycle actions.
  *
  * The business rules and query shapes live in `OrderService` and
  * `OrderRepository`, next to the customer-facing order reads they extend. This
@@ -32,8 +32,8 @@ import { OrderService } from '../../orders/order.service.js';
  * token claim.
  *
  * There is deliberately no arbitrary status field and no generic `PATCH /:id`.
- * Cancellation and shipment are named actions with their own rules and inventory
- * movements; every other transition, including refunds, remains out of scope.
+ * Cancellation, COD confirmation, and shipment are named actions with their own
+ * rules; every other transition, including refunds, remains out of scope.
  */
 @Controller('admin/orders')
 @UseGuards(JwtAuthGuard, RolesGuard)
@@ -71,11 +71,25 @@ export class AdminOrdersController {
   }
 
   /**
-   * `POST /admin/orders/:id/ship` — ship a confirmed, paid order.
+   * `POST /admin/orders/:id/confirm-cod` — confirm a pending COD order.
    *
-   * The order must be `CONFIRMED` and have at least one verified `PAID` payment.
-   * The status update and the inventory commitment share one transaction, so a
-   * repeated request is a 409 and can never commit the same stock twice.
+   * The service restricts this action to `PENDING` COD orders. It does not create
+   * or update payment records, and it leaves the inventory reservation untouched.
+   */
+  @Post(':id/confirm-cod')
+  @HttpCode(HttpStatus.OK)
+  confirmCod(
+    @Param('id', ParseUUIDPipe) id: string,
+  ): Promise<AdminOrderDetailResponseDto> {
+    return this.orderService.confirmCodOrderForAdmin(id);
+  }
+
+  /**
+   * `POST /admin/orders/:id/ship` — ship a confirmed order with a valid delivery assignment.
+   *
+   * Online orders need a verified `PAID` payment; COD orders remain eligible
+   * without one. Both need an active delivery assignment. The status update and
+   * inventory commitment share one transaction.
    */
   @Post(':id/ship')
   @HttpCode(HttpStatus.OK)

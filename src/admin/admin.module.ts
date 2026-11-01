@@ -2,6 +2,7 @@ import { Module } from '@nestjs/common';
 import { JwtAuthModule } from '../auth/jwt/jwt-auth.module.js';
 import { CategoriesModule } from '../categories/categories.module.js';
 import { CodAreasModule } from '../cod-areas/cod-areas.module.js';
+import { DeliveryModule } from '../delivery/delivery.module.js';
 import { InventoryModule } from '../inventory/inventory.module.js';
 import { OrderModule } from '../orders/order.module.js';
 import { ProductImagesModule } from '../product-images/product-images.module.js';
@@ -14,6 +15,8 @@ import { VariantOptionsModule } from '../variant-options/variant-options.module.
 import { AdminController } from './admin.controller.js';
 import { AdminCategoriesController } from './controllers/admin-categories.controller.js';
 import { AdminCodAreasController } from './controllers/admin-cod-areas.controller.js';
+import { AdminCodCollectionsController } from './controllers/admin-cod-collections.controller.js';
+import { AdminCodReconciliationController } from './controllers/admin-cod-reconciliation.controller.js';
 import { AdminCodEligibilityController } from './controllers/admin-cod-eligibility.controller.js';
 import { AdminInventoryController } from './controllers/admin-inventory.controller.js';
 import { AdminOrdersController } from './controllers/admin-orders.controller.js';
@@ -80,6 +83,7 @@ import { AdminVariantOptionsController } from './controllers/admin-variant-optio
     UsersModule,
     CategoriesModule,
     CodAreasModule,
+    DeliveryModule,
     ProductsModule,
     ProductImagesModule,
     ProductVariantsModule,
@@ -93,6 +97,8 @@ import { AdminVariantOptionsController } from './controllers/admin-variant-optio
     AdminController,
     AdminCategoriesController,
     AdminCodAreasController,
+    AdminCodCollectionsController,
+    AdminCodReconciliationController,
     AdminCodEligibilityController,
     AdminProductsController,
     AdminProductImagesController,

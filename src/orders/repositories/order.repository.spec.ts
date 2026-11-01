@@ -64,10 +64,12 @@ describe('OrderRepository', () => {
       updateMany: Mock;
     };
     orderItem: { findMany: Mock };
+    deliveryAssignment: { findFirst: Mock };
     productVariant: { findUnique: Mock };
     product: { findUnique: Mock };
     variantOption: { findMany: Mock };
     payment: { count: Mock };
+    $queryRaw: Mock;
     $transaction: Mock;
   };
 
@@ -82,10 +84,12 @@ describe('OrderRepository', () => {
         updateMany: vi.fn().mockResolvedValue({ count: 0 }),
       },
       orderItem: { findMany: vi.fn().mockResolvedValue([]) },
+      deliveryAssignment: { findFirst: vi.fn().mockResolvedValue(null) },
       productVariant: { findUnique: vi.fn().mockResolvedValue(null) },
       product: { findUnique: vi.fn().mockResolvedValue(null) },
       variantOption: { findMany: vi.fn().mockResolvedValue([]) },
       payment: { count: vi.fn().mockResolvedValue(0) },
+      $queryRaw: vi.fn().mockResolvedValue([]),
       $transaction: vi.fn(),
     };
 
@@ -186,6 +190,92 @@ describe('OrderRepository', () => {
       const client = { order: { findUnique: vi.fn().mockResolvedValue(null) } };
 
       await repository.findStatusById(ORDER_ID, client as never);
+
+      expect(client.order.findUnique).toHaveBeenCalledTimes(1);
+      expect(prisma.order.findUnique).not.toHaveBeenCalled();
+    });
+  });
+
+  describe('findShippingStateById', () => {
+    it('loads status and payment method for shipping policy', async () => {
+      await repository.findShippingStateById(ORDER_ID);
+
+      expect(prisma.order.findUnique).toHaveBeenCalledWith({
+        where: { id: ORDER_ID },
+        select: { id: true, status: true, paymentMethod: true },
+      });
+    });
+
+    describe('lockShippingStateById', () => {
+      it('locks the order row and maps the shipping columns', async () => {
+        const client = {
+          $queryRaw: vi.fn().mockResolvedValueOnce([
+            {
+              id: ORDER_ID,
+              status: 'CONFIRMED',
+              payment_method: 'COD',
+            },
+          ]),
+        };
+
+        await expect(
+          repository.lockShippingStateById(ORDER_ID, client as never),
+        ).resolves.toEqual({
+          id: ORDER_ID,
+          status: 'CONFIRMED',
+          paymentMethod: 'COD',
+        });
+
+        expect(client.$queryRaw).toHaveBeenCalledOnce();
+      });
+
+      it('returns null when the order does not exist', async () => {
+        const client = { $queryRaw: vi.fn().mockResolvedValueOnce([]) };
+        await expect(
+          repository.lockShippingStateById(ORDER_ID, client as never),
+        ).resolves.toBeNull();
+      });
+    });
+
+    describe('hasActiveDeliveryAssignment', () => {
+      it('requires an open assignment with an active delivery staff member', async () => {
+        const client = {
+          deliveryAssignment: {
+            findFirst: vi.fn().mockResolvedValueOnce({ id: 'assignment' }),
+          },
+        };
+
+        await expect(
+          repository.hasActiveDeliveryAssignment(ORDER_ID, client as never),
+        ).resolves.toBe(true);
+
+        expect(client.deliveryAssignment.findFirst).toHaveBeenCalledWith({
+          where: {
+            orderId: ORDER_ID,
+            endedAt: null,
+            status: { notIn: ['DELIVERED', 'RETURNED'] },
+            deliveryStaff: { role: 'DELIVERY_STAFF', status: 'ACTIVE' },
+          },
+          select: { id: true },
+        });
+      });
+
+      it('returns false when no valid active assignment exists', async () => {
+        const client = {
+          deliveryAssignment: {
+            findFirst: vi.fn().mockResolvedValueOnce(null),
+          },
+        };
+        await expect(
+          repository.hasActiveDeliveryAssignment(ORDER_ID, client as never),
+        ).resolves.toBe(false);
+      });
+    });
+
+    it('uses the supplied transaction client', async () => {
+      const client = { order: { findUnique: vi.fn().mockResolvedValue(null) } };
+
+      await repository.findShippingStateById(ORDER_ID, client as never);
 
       expect(client.order.findUnique).toHaveBeenCalledTimes(1);
       expect(prisma.order.findUnique).not.toHaveBeenCalled();
@@ -360,6 +450,37 @@ describe('OrderRepository', () => {
 
       expect(client.order.updateMany).toHaveBeenCalledTimes(1);
       expect(prisma.order.updateMany).not.toHaveBeenCalled();
+    });
+  });
+
+  describe('COD confirmation', () => {
+    it('reads only order state and payment method', async () => {
+      await repository.findOrderConfirmationState(ORDER_ID);
+
+      expect(prisma.order.findUnique).toHaveBeenCalledWith({
+        where: { id: ORDER_ID },
+        select: { id: true, status: true, paymentMethod: true },
+      });
+    });
+
+    it('atomically guards confirmation on pending status and COD method', async () => {
+      prisma.order.updateMany.mockResolvedValue({ count: 1 });
+
+      await expect(repository.confirmPendingCodOrder(ORDER_ID)).resolves.toBe(
+        true,
+      );
+      expect(prisma.order.updateMany).toHaveBeenCalledWith({
+        where: { id: ORDER_ID, status: 'PENDING', paymentMethod: 'COD' },
+        data: { status: 'CONFIRMED' },
+      });
+    });
+
+    it('reports a lost concurrent confirmation claim', async () => {
+      prisma.order.updateMany.mockResolvedValue({ count: 0 });
+
+      await expect(repository.confirmPendingCodOrder(ORDER_ID)).resolves.toBe(
+        false,
+      );
     });
   });
 

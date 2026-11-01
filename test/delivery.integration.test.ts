@@ -7,10 +7,7 @@ import {
 import { Test, TestingModule } from '@nestjs/testing';
 import { randomUUID } from 'node:crypto';
 import { AppModule } from '../src/app.module.js';
-import {
-  DeliveryStatus,
-  Role,
-} from '../src/generated/prisma/enums.js';
+import { DeliveryStatus, Role } from '../src/generated/prisma/enums.js';
 import { PrismaService } from '../src/prisma/prisma.service.js';
 import {
   bearerHeaders,
@@ -52,6 +49,8 @@ describe('Delivery (PostgreSQL)', () => {
   let inactiveStaffId: string;
   let customerId: string;
   let adminId: string;
+  let shippingProviderId: string;
+  let codAreaId: string;
 
   const userIds: string[] = [];
   const orderIds: string[] = [];
@@ -108,7 +107,10 @@ describe('Delivery (PostgreSQL)', () => {
     return id;
   };
 
-  const createOrder = async (status = 'CONFIRMED'): Promise<string> => {
+  const createOrder = async (
+    status = 'CONFIRMED',
+    paymentMethod: string | null = null,
+  ): Promise<string> => {
     orderCounter += 1;
 
     const order = await prisma.order.create({
@@ -121,6 +123,17 @@ describe('Delivery (PostgreSQL)', () => {
         discountAmount: '0.00',
         totalAmount: '10.00',
         currency: 'USD',
+        paymentMethod,
+        ...(paymentMethod === 'COD'
+          ? {
+              shippingProviderId,
+              shippingProviderCode: `DEL-${run.toUpperCase()}`,
+              shippingProviderName: `Delivery test ${run}`,
+              codAreaId,
+              codAreaCode: `DEL-${run.toUpperCase()}`,
+              codAreaName: `Delivery area ${run}`,
+            }
+          : {}),
         shippingRecipientName: 'Delivery Test',
         shippingPhone: '+15555550100',
         shippingAddressLine1: '1 Test Street',
@@ -227,6 +240,24 @@ describe('Delivery (PostgreSQL)', () => {
     );
     customerId = await createUser('customer', Role.CUSTOMER);
     adminId = await createUser('admin', Role.ADMIN);
+    const shippingProvider = await prisma.shippingProvider.create({
+      data: {
+        code: `DEL-${run.toUpperCase()}`,
+        name: `Delivery test ${run}`,
+        baseFee: '0.00',
+        supportsCod: true,
+        isActive: true,
+      },
+    });
+    shippingProviderId = shippingProvider.id;
+    const codArea = await prisma.codArea.create({
+      data: {
+        code: `DEL-${run.toUpperCase()}`,
+        name: `Delivery area ${run}`,
+        codEnabled: true,
+      },
+    });
+    codAreaId = codArea.id;
   }, 120_000);
 
   afterAll(async () => {
@@ -243,6 +274,10 @@ describe('Delivery (PostgreSQL)', () => {
         },
       });
       await prisma.order.deleteMany({ where: { id: { in: orderIds } } });
+      await prisma.shippingProvider.deleteMany({
+        where: { id: shippingProviderId },
+      });
+      await prisma.codArea.deleteMany({ where: { id: codAreaId } });
       await prisma.user.deleteMany({ where: { id: { in: userIds } } });
     }
 
@@ -250,6 +285,44 @@ describe('Delivery (PostgreSQL)', () => {
   });
 
   describe('assignment', () => {
+    it('allows an Admin to assign an eligible confirmed COD order', async () => {
+      const orderId = await createOrder('CONFIRMED', 'COD');
+
+      const res = await api('POST', '/delivery/manager/assign', {
+        user: adminId,
+        body: { orderId, deliveryStaffId: staffAId },
+      });
+
+      expect(res.status).toBe(HttpStatus.CREATED);
+      expect(res.body).toMatchObject({
+        orderId,
+        deliveryStaffId: staffAId,
+        assignedById: adminId,
+        status: DeliveryStatus.ASSIGNED,
+        endedAt: null,
+      });
+    });
+
+    it('lists only active delivery staff to an Admin', async () => {
+      const res = await api('GET', '/delivery/manager/staff', {
+        user: adminId,
+      });
+
+      expect(res.status).toBe(HttpStatus.OK);
+      expect(res.body).toEqual(
+        expect.arrayContaining([
+          expect.objectContaining({ id: staffAId }),
+          expect.objectContaining({ id: staffBId }),
+        ]),
+      );
+      expect(res.body).not.toEqual(
+        expect.arrayContaining([
+          expect.objectContaining({ id: inactiveStaffId }),
+          expect.objectContaining({ id: customerId }),
+        ]),
+      );
+    });
+
     it('assigns an eligible order to an active delivery staff member', async () => {
       const orderId = await createOrder('CONFIRMED');
 
@@ -278,6 +351,30 @@ describe('Delivery (PostgreSQL)', () => {
       const res = await api('POST', '/delivery/manager/assign', {
         user: managerAId,
         body: { orderId, deliveryStaffId: inactiveStaffId },
+      });
+
+      expect(res.status).toBe(HttpStatus.BAD_REQUEST);
+      expect(await assignmentsFor(orderId)).toHaveLength(0);
+    });
+
+    it('rejects a user who is not delivery staff', async () => {
+      const orderId = await createOrder('CONFIRMED', 'COD');
+
+      const res = await api('POST', '/delivery/manager/assign', {
+        user: adminId,
+        body: { orderId, deliveryStaffId: customerId },
+      });
+
+      expect(res.status).toBe(HttpStatus.BAD_REQUEST);
+      expect(await assignmentsFor(orderId)).toHaveLength(0);
+    });
+
+    it('does not allow a new assignment after shipping', async () => {
+      const orderId = await createOrder('SHIPPED', 'COD');
+
+      const res = await api('POST', '/delivery/manager/assign', {
+        user: adminId,
+        body: { orderId, deliveryStaffId: staffAId },
       });
 
       expect(res.status).toBe(HttpStatus.BAD_REQUEST);
@@ -434,36 +531,35 @@ describe('Delivery (PostgreSQL)', () => {
       [DeliveryStatus.FAILED_DELIVERY, DeliveryStatus.RETURNED],
     ];
 
-    it.each(validTransitions)(
-      'allows %s -> %s',
-      async (from, to) => {
-        const orderId = await createOrder('CONFIRMED');
-        const assignment = await createAssignment(orderId, staffAId, from);
+    it.each(validTransitions)('allows %s -> %s', async (from, to) => {
+      const orderId = await createOrder(
+        to === DeliveryStatus.DELIVERED ? 'SHIPPED' : 'CONFIRMED',
+      );
+      const assignment = await createAssignment(orderId, staffAId, from);
 
-        const res = await api(
-          'PATCH',
-          `/delivery/staff/assignments/${assignment.id}/status`,
-          { user: staffAId, body: { status: to } },
-        );
+      const res = await api(
+        'PATCH',
+        `/delivery/staff/assignments/${assignment.id}/status`,
+        { user: staffAId, body: { status: to } },
+      );
 
-        expect(res.status).toBe(HttpStatus.OK);
-        expect(res.body.status).toBe(to);
+      expect(res.status).toBe(HttpStatus.OK);
+      expect(res.body.status).toBe(to);
 
-        const stored = await prisma.deliveryAssignment.findUniqueOrThrow({
-          where: { id: assignment.id },
-        });
-        expect(stored.status).toBe(to);
+      const stored = await prisma.deliveryAssignment.findUniqueOrThrow({
+        where: { id: assignment.id },
+      });
+      expect(stored.status).toBe(to);
 
-        if (to === DeliveryStatus.DELIVERED) {
-          expect(stored.deliveredAt).not.toBeNull();
-          expect(stored.endedAt).not.toBeNull();
-        } else if (to === DeliveryStatus.RETURNED) {
-          expect(stored.endedAt).not.toBeNull();
-        } else if (to === DeliveryStatus.FAILED_DELIVERY) {
-          expect(stored.endedAt).toBeNull();
-        }
-      },
-    );
+      if (to === DeliveryStatus.DELIVERED) {
+        expect(stored.deliveredAt).not.toBeNull();
+        expect(stored.endedAt).not.toBeNull();
+      } else if (to === DeliveryStatus.RETURNED) {
+        expect(stored.endedAt).not.toBeNull();
+      } else if (to === DeliveryStatus.FAILED_DELIVERY) {
+        expect(stored.endedAt).toBeNull();
+      }
+    });
 
     it.each([
       [DeliveryStatus.ASSIGNED, DeliveryStatus.ASSIGNED],
@@ -491,7 +587,7 @@ describe('Delivery (PostgreSQL)', () => {
     });
 
     it('sets endedAt for DELIVERED and RETURNED, but leaves FAILED_DELIVERY active', async () => {
-      const deliveredOrderId = await createOrder('CONFIRMED');
+      const deliveredOrderId = await createOrder('SHIPPED');
       const returnedOrderId = await createOrder('CONFIRMED');
       const failedOrderId = await createOrder('CONFIRMED');
 

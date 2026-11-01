@@ -22,6 +22,7 @@ const ORDER_ID = '11111111-1111-4111-8111-111111111111';
 type ManagerServiceMethod = keyof Pick<
   DeliveryService,
   | 'listDeliveryOrders'
+  | 'listActiveDeliveryStaff'
   | 'getOrderDeliveryDetails'
   | 'assignDelivery'
   | 'reassignDelivery'
@@ -36,6 +37,12 @@ interface ManagerEndpoint {
 }
 
 const endpoints: ManagerEndpoint[] = [
+  {
+    name: 'list active delivery staff',
+    method: 'GET',
+    path: '/delivery/manager/staff',
+    serviceMethod: 'listActiveDeliveryStaff',
+  },
   {
     name: 'list delivery orders',
     method: 'GET',
@@ -106,6 +113,7 @@ describe('DeliveryManagerController authorization (HTTP)', () => {
 
   const service = {
     listDeliveryOrders: vi.fn().mockResolvedValue({ items: [] }),
+    listActiveDeliveryStaff: vi.fn().mockResolvedValue([]),
     getOrderDeliveryDetails: vi.fn().mockResolvedValue({ id: ORDER_ID }),
     assignDelivery: vi.fn().mockResolvedValue({ id: 'assignment-1' }),
     reassignDelivery: vi.fn().mockResolvedValue({ id: 'assignment-1' }),
@@ -123,7 +131,8 @@ describe('DeliveryManagerController authorization (HTTP)', () => {
           ? {}
           : { 'Content-Type': 'application/json' }),
       },
-      body: endpoint.body === undefined ? undefined : JSON.stringify(endpoint.body),
+      body:
+        endpoint.body === undefined ? undefined : JSON.stringify(endpoint.body),
     });
 
   beforeAll(async () => {
@@ -198,11 +207,10 @@ describe('DeliveryManagerController authorization (HTTP)', () => {
   for (const endpoint of endpoints) {
     describe(endpoint.name, () => {
       it.each(
-        identityCases.map((identity) => [
-          identity.label,
-          identity.id,
-          identity.expectedStatus,
-        ] as const),
+        identityCases.map(
+          (identity) =>
+            [identity.label, identity.id, identity.expectedStatus] as const,
+        ),
       )('answers %s with %i', async (_label, userId, expectedStatus) => {
         const response = await request(endpoint, userId);
         const successStatus =

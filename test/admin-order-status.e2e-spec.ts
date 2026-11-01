@@ -51,10 +51,13 @@ describe('Admin order status transitions (PostgreSQL)', () => {
   let headers: (id: string) => Record<string, string>;
 
   let adminId: string;
+  let deliveryStaffId: string;
   let customerId: string;
   let categoryId: string;
   let variantA: string;
   let variantB: string;
+  let shippingProviderId: string;
+  let codAreaId: string;
 
   let orderCounter = 0;
   let transactionCounter = 0;
@@ -145,6 +148,7 @@ describe('Admin order status transitions (PostgreSQL)', () => {
     options: {
       status?: string;
       lines?: { variantId: string; quantity: number }[];
+      paymentMethod?: string | null;
     } = {},
   ) => {
     const lines = options.lines ?? [{ variantId: variantA, quantity: 2 }];
@@ -164,6 +168,22 @@ describe('Admin order status transitions (PostgreSQL)', () => {
         discountAmount: '0.00',
         totalAmount: subtotal,
         currency: 'USD',
+        paymentMethod: options.paymentMethod ?? null,
+        ...(options.paymentMethod !== undefined &&
+        options.paymentMethod !== null
+          ? {
+              shippingProviderId,
+              shippingProviderCode: `AST-${run.toUpperCase()}`,
+              shippingProviderName: `Admin Status ${run}`,
+              ...(options.paymentMethod === 'COD'
+                ? {
+                    codAreaId,
+                    codAreaCode: `AST-${run.toUpperCase()}`,
+                    codAreaName: `Admin Status Area ${run}`,
+                  }
+                : {}),
+            }
+          : {}),
         shippingRecipientName: 'Admin Status Tester',
         shippingPhone: '+15555550100',
         shippingAddressLine1: '18 Mill Lane',
@@ -214,8 +234,21 @@ describe('Admin order status transitions (PostgreSQL)', () => {
   const cancel = (orderId: string, user = adminId) =>
     api('POST', `/admin/orders/${orderId}/cancel`, { user });
 
+  const confirmCod = (orderId: string, user = adminId) =>
+    api('POST', `/admin/orders/${orderId}/confirm-cod`, { user });
+
   const ship = (orderId: string, user = adminId) =>
     api('POST', `/admin/orders/${orderId}/ship`, { user });
+
+  const assignDelivery = (orderId: string) =>
+    prisma.deliveryAssignment.create({
+      data: {
+        orderId,
+        deliveryStaffId,
+        assignedById: adminId,
+        status: 'ASSIGNED',
+      },
+    });
 
   const callback = (transactionId: string) =>
     api('POST', '/payments/aba-payway/callback', {
@@ -240,6 +273,12 @@ describe('Admin order status transitions (PostgreSQL)', () => {
     if (!process.env.DATABASE_URL) {
       throw new Error(
         'DATABASE_URL is not set — the admin order status integration tests need a real PostgreSQL instance',
+      );
+    }
+    const databaseName = new URL(process.env.DATABASE_URL).pathname;
+    if (!/(^|[_-])test($|[_-])/i.test(databaseName)) {
+      throw new Error(
+        `Refusing to run destructive admin order status fixtures against "${databaseName}"`,
       );
     }
 
@@ -287,8 +326,10 @@ describe('Admin order status transitions (PostgreSQL)', () => {
       });
 
     adminId = (await createUser('admin', Role.ADMIN)).id;
+    deliveryStaffId = (await createUser('delivery-staff', Role.DELIVERY_STAFF))
+      .id;
     customerId = (await createUser('customer', Role.CUSTOMER)).id;
-    suiteUsers.push(adminId, customerId);
+    suiteUsers.push(adminId, deliveryStaffId, customerId);
 
     const product = await prisma.product.create({
       data: {
@@ -320,6 +361,24 @@ describe('Admin order status transitions (PostgreSQL)', () => {
         { variantId: variantB, quantity: 100, reservedQuantity: 0 },
       ],
     });
+    const providerFixture = await prisma.shippingProvider.create({
+      data: {
+        code: `AST-${run.toUpperCase()}`,
+        name: `Admin Status ${run}`,
+        baseFee: '0.00',
+        supportsCod: true,
+        isActive: true,
+      },
+    });
+    shippingProviderId = providerFixture.id;
+    const codAreaFixture = await prisma.codArea.create({
+      data: {
+        code: `AST-${run.toUpperCase()}`,
+        name: `Admin Status Area ${run}`,
+        codEnabled: true,
+      },
+    });
+    codAreaId = codAreaFixture.id;
   });
 
   afterAll(async () => {
@@ -340,6 +399,9 @@ describe('Admin order status transitions (PostgreSQL)', () => {
     await prisma.payment.deleteMany({
       where: { order: { userId: { in: suiteUsers } } },
     });
+    await prisma.deliveryAssignment.deleteMany({
+      where: { order: { userId: { in: suiteUsers } } },
+    });
     await prisma.orderItem.deleteMany({
       where: { order: { userId: { in: suiteUsers } } },
     });
@@ -347,6 +409,10 @@ describe('Admin order status transitions (PostgreSQL)', () => {
     await prisma.inventory.deleteMany({
       where: { variantId: { in: [variantA, variantB] } },
     });
+    await prisma.shippingProvider.deleteMany({
+      where: { id: shippingProviderId },
+    });
+    await prisma.codArea.deleteMany({ where: { id: codAreaId } });
     await prisma.productVariant.deleteMany({
       where: { sku: { startsWith: `admin-status-${run}-` } },
     });
@@ -370,14 +436,21 @@ describe('Admin order status transitions (PostgreSQL)', () => {
     await prisma.payment.deleteMany({
       where: { order: { userId: { in: suiteUsers } } },
     });
+    await prisma.deliveryAssignment.deleteMany({
+      where: { order: { userId: { in: suiteUsers } } },
+    });
     await prisma.orderItem.deleteMany({
       where: { order: { userId: { in: suiteUsers } } },
     });
     await prisma.order.deleteMany({ where: { userId: { in: suiteUsers } } });
+    await prisma.user.update({
+      where: { id: deliveryStaffId },
+      data: { status: 'ACTIVE' },
+    });
   });
 
   describe('authorisation and validation', () => {
-    it.each(['cancel', 'ship'])(
+    it.each(['cancel', 'confirm-cod', 'ship'])(
       'rejects an unauthenticated POST %s with 401',
       async (action) => {
         const response = await api(
@@ -389,7 +462,7 @@ describe('Admin order status transitions (PostgreSQL)', () => {
       },
     );
 
-    it.each(['cancel', 'ship'])(
+    it.each(['cancel', 'confirm-cod', 'ship'])(
       'rejects a customer POST %s with 403',
       async (action) => {
         const order = await createOrder();
@@ -416,7 +489,89 @@ describe('Admin order status transitions (PostgreSQL)', () => {
       const unknown = randomUUID();
 
       expect((await cancel(unknown)).status).toBe(HttpStatus.NOT_FOUND);
+      expect((await confirmCod(unknown)).status).toBe(HttpStatus.NOT_FOUND);
       expect((await ship(unknown)).status).toBe(HttpStatus.NOT_FOUND);
+    });
+  });
+
+  describe('COD confirmation', () => {
+    it('confirms a pending COD order without a payment and leaves reserved stock unchanged', async () => {
+      const order = await createOrder({ paymentMethod: 'COD' });
+      await prisma.inventory.update({
+        where: { variantId: variantA },
+        data: { reservedQuantity: 2 },
+      });
+      const before = await inventoryOf(variantA);
+
+      const response = await confirmCod(order.id);
+
+      expect(response.status).toBe(HttpStatus.OK);
+      expect(response.body).toMatchObject({
+        id: order.id,
+        status: 'CONFIRMED',
+        paymentMethod: 'COD',
+        payments: [],
+      });
+      expect(await prisma.payment.count({ where: { orderId: order.id } })).toBe(
+        0,
+      );
+      expect(await inventoryOf(variantA)).toMatchObject({
+        quantity: before.quantity,
+        reservedQuantity: before.reservedQuantity,
+      });
+    });
+
+    it('rejects online-payment orders', async () => {
+      const order = await createOrder({ paymentMethod: 'ABA_PAYWAY' });
+
+      const response = await confirmCod(order.id);
+
+      expect(response.status).toBe(HttpStatus.CONFLICT);
+      expect(await orderStatus(order.id)).toBe('PENDING');
+      expect(await prisma.payment.count({ where: { orderId: order.id } })).toBe(
+        0,
+      );
+    });
+
+    it('rejects COD orders that are not pending', async () => {
+      const order = await createOrder({
+        paymentMethod: 'COD',
+        status: 'CONFIRMED',
+      });
+
+      const response = await confirmCod(order.id);
+
+      expect(response.status).toBe(HttpStatus.CONFLICT);
+      expect(await orderStatus(order.id)).toBe('CONFIRMED');
+    });
+
+    it('allows only one of concurrent COD confirmations and never moves stock', async () => {
+      const order = await createOrder({
+        paymentMethod: 'COD',
+        lines: [{ variantId: variantA, quantity: 3 }],
+      });
+      await prisma.inventory.update({
+        where: { variantId: variantA },
+        data: { reservedQuantity: 3 },
+      });
+
+      const responses = await Promise.all([
+        confirmCod(order.id),
+        confirmCod(order.id),
+      ]);
+
+      expect(responses.map(({ status }) => status).sort()).toEqual([
+        HttpStatus.OK,
+        HttpStatus.CONFLICT,
+      ]);
+      expect(await orderStatus(order.id)).toBe('CONFIRMED');
+      expect(await prisma.payment.count({ where: { orderId: order.id } })).toBe(
+        0,
+      );
+      expect(await inventoryOf(variantA)).toMatchObject({
+        quantity: 100,
+        reservedQuantity: 3,
+      });
     });
   });
 
@@ -550,7 +705,11 @@ describe('Admin order status transitions (PostgreSQL)', () => {
 
   describe('shipment', () => {
     it('commits a reservation once and rejects a repeat', async () => {
-      const order = await createOrder({ status: 'CONFIRMED' });
+      const order = await createOrder({
+        status: 'CONFIRMED',
+        paymentMethod: 'ABA_PAYWAY',
+      });
+      await assignDelivery(order.id);
       await createPayment(order.id, 'PAID', '20.00');
       await prisma.inventory.update({
         where: { variantId: variantA },
@@ -578,7 +737,11 @@ describe('Admin order status transitions (PostgreSQL)', () => {
     });
 
     it('refuses a CONFIRMED order with no verified payment', async () => {
-      const order = await createOrder({ status: 'CONFIRMED' });
+      const order = await createOrder({
+        status: 'CONFIRMED',
+        paymentMethod: 'ABA_PAYWAY',
+      });
+      await assignDelivery(order.id);
       await prisma.inventory.update({
         where: { variantId: variantA },
         data: { reservedQuantity: 2 },
@@ -594,8 +757,57 @@ describe('Admin order status transitions (PostgreSQL)', () => {
       });
     });
 
+    it('refuses a confirmed COD order without an active delivery assignment', async () => {
+      const order = await createOrder({
+        status: 'CONFIRMED',
+        paymentMethod: 'COD',
+      });
+      await prisma.inventory.update({
+        where: { variantId: variantA },
+        data: { reservedQuantity: 2 },
+      });
+
+      const response = await ship(order.id);
+
+      expect(response.status).toBe(HttpStatus.CONFLICT);
+      expect(await orderStatus(order.id)).toBe('CONFIRMED');
+      expect(await inventoryOf(variantA)).toMatchObject({
+        quantity: 100,
+        reservedQuantity: 2,
+      });
+    });
+
+    it('refuses a COD shipment when the assigned delivery staff is inactive', async () => {
+      const order = await createOrder({
+        status: 'CONFIRMED',
+        paymentMethod: 'COD',
+      });
+      await assignDelivery(order.id);
+      await prisma.user.update({
+        where: { id: deliveryStaffId },
+        data: { status: 'SUSPENDED' },
+      });
+      await prisma.inventory.update({
+        where: { variantId: variantA },
+        data: { reservedQuantity: 2 },
+      });
+
+      const response = await ship(order.id);
+
+      expect(response.status).toBe(HttpStatus.CONFLICT);
+      expect(await orderStatus(order.id)).toBe('CONFIRMED');
+      expect(await inventoryOf(variantA)).toMatchObject({
+        quantity: 100,
+        reservedQuantity: 2,
+      });
+      await prisma.user.update({
+        where: { id: deliveryStaffId },
+        data: { status: 'ACTIVE' },
+      });
+    });
+
     it('refuses an order that is still PENDING even with a paid attempt', async () => {
-      const order = await createOrder();
+      const order = await createOrder({ paymentMethod: 'ABA_PAYWAY' });
       await createPayment(order.id, 'PAID', '20.00');
       await prisma.inventory.update({
         where: { variantId: variantA },
@@ -613,7 +825,11 @@ describe('Admin order status transitions (PostgreSQL)', () => {
     });
 
     it('rolls the status back when the reservation is incoherent', async () => {
-      const order = await createOrder({ status: 'CONFIRMED' });
+      const order = await createOrder({
+        status: 'CONFIRMED',
+        paymentMethod: 'ABA_PAYWAY',
+      });
+      await assignDelivery(order.id);
       await createPayment(order.id, 'PAID', '20.00');
       await prisma.inventory.update({
         where: { variantId: variantA },
@@ -630,11 +846,50 @@ describe('Admin order status transitions (PostgreSQL)', () => {
       });
     });
 
+    it('ships a confirmed COD order without a payment and commits reserved stock once', async () => {
+      const order = await createOrder({
+        status: 'CONFIRMED',
+        paymentMethod: 'COD',
+        lines: [{ variantId: variantA, quantity: 3 }],
+      });
+      await assignDelivery(order.id);
+      await prisma.inventory.update({
+        where: { variantId: variantA },
+        data: { reservedQuantity: 3 },
+      });
+
+      const first = await ship(order.id);
+
+      expect(first.status).toBe(HttpStatus.OK);
+      expect(first.body).toMatchObject({
+        id: order.id,
+        status: 'SHIPPED',
+        paymentMethod: 'COD',
+        payments: [],
+      });
+      expect(await prisma.payment.count({ where: { orderId: order.id } })).toBe(
+        0,
+      );
+      expect(await inventoryOf(variantA)).toMatchObject({
+        quantity: 97,
+        reservedQuantity: 0,
+      });
+
+      const second = await ship(order.id);
+
+      expect(second.status).toBe(HttpStatus.CONFLICT);
+      expect(await inventoryOf(variantA)).toMatchObject({
+        quantity: 97,
+        reservedQuantity: 0,
+      });
+    });
+
     it('only lets one of two concurrent shipments commit the stock', async () => {
       const order = await createOrder({
         status: 'CONFIRMED',
         lines: [{ variantId: variantA, quantity: 3 }],
       });
+      await assignDelivery(order.id);
       await createPayment(order.id, 'PAID', '30.00');
       await prisma.inventory.update({
         where: { variantId: variantA },
@@ -655,7 +910,7 @@ describe('Admin order status transitions (PostgreSQL)', () => {
 
   describe('payment interaction', () => {
     it('lets the verified callback confirm an order, then shipment commits its stock', async () => {
-      const order = await createOrder();
+      const order = await createOrder({ paymentMethod: 'ABA_PAYWAY' });
       const payment = await createPayment(order.id, 'PENDING', '20.00');
       await prisma.inventory.update({
         where: { variantId: variantA },
@@ -676,6 +931,7 @@ describe('Admin order status transitions (PostgreSQL)', () => {
         reservedQuantity: 2,
       });
 
+      await assignDelivery(order.id);
       const shipped = await ship(order.id);
 
       expect(shipped.status).toBe(HttpStatus.OK);

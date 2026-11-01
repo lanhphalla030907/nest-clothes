@@ -72,7 +72,8 @@ export const ModelName = {
   CheckoutQuote: 'CheckoutQuote',
   OrderItem: 'OrderItem',
   Payment: 'Payment',
-  CodCollection: 'CodCollection'
+  CodCollection: 'CodCollection',
+  CodReconciliationRun: 'CodReconciliationRun'
 } as const
 
 export type ModelName = (typeof ModelName)[keyof typeof ModelName]
@@ -434,6 +435,25 @@ export const CodCollectionScalarFieldEnum = {
 } as const
 
 export type CodCollectionScalarFieldEnum = (typeof CodCollectionScalarFieldEnum)[keyof typeof CodCollectionScalarFieldEnum]
+
+
+export const CodReconciliationRunScalarFieldEnum = {
+  id: 'id',
+  triggerType: 'triggerType',
+  status: 'status',
+  windowStart: 'windowStart',
+  windowEnd: 'windowEnd',
+  processedCount: 'processedCount',
+  matchedCount: 'matchedCount',
+  discrepancyCount: 'discrepancyCount',
+  uncollectedCount: 'uncollectedCount',
+  errorMessage: 'errorMessage',
+  startedAt: 'startedAt',
+  completedAt: 'completedAt',
+  createdAt: 'createdAt'
+} as const
+
+export type CodReconciliationRunScalarFieldEnum = (typeof CodReconciliationRunScalarFieldEnum)[keyof typeof CodReconciliationRunScalarFieldEnum]
 
 
 export const SortOrder = {

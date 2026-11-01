@@ -1074,3 +1074,23 @@ model CodCollection {
   @@index([collectedById, collectedAt(sort: Desc)])
   @@map("cod_collections")
 }
+
+/// Durable history for automated and manually triggered COD reconciliation runs.
+model CodReconciliationRun {
+  id               String    @id @default(uuid()) @db.Uuid
+  triggerType      String    @map("trigger_type") @db.VarChar(10)
+  status           String    @default("running") @db.VarChar(10)
+  windowStart      DateTime  @map("window_start") @db.Timestamptz
+  windowEnd        DateTime  @map("window_end") @db.Timestamptz
+  processedCount   Int       @default(0) @map("processed_count")
+  matchedCount     Int       @default(0) @map("matched_count")
+  discrepancyCount Int       @default(0) @map("discrepancy_count")
+  uncollectedCount Int       @default(0) @map("uncollected_count")
+  errorMessage     String?   @map("error_message") @db.Text
+  startedAt        DateTime  @default(now()) @map("started_at") @db.Timestamptz
+  completedAt      DateTime? @map("completed_at") @db.Timestamptz
+  createdAt        DateTime  @default(now()) @map("created_at") @db.Timestamptz
+
+  @@index([createdAt(sort: Desc), id(sort: Desc)])
+  @@map("cod_reconciliation_runs")
+}
