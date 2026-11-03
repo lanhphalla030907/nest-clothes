@@ -13,6 +13,8 @@ import { RolesGuard } from '../../auth/guards/roles.guard.js';
 import { AccessTokenService } from '../../auth/jwt/access-token.service.js';
 import { DeliveryService } from '../../delivery/delivery.service.js';
 import { AdminCodReconciliationQueryDto } from '../../delivery/dto/admin-cod-reconciliation-query.dto.js';
+import { ManualReconciliationTriggerDto } from '../../delivery/dto/manual-reconciliation-trigger.dto.js';
+import { ReconciliationRunDetailQueryDto } from '../../delivery/dto/reconciliation-run-detail-query.dto.js';
 import { ReconciliationRunHistoryQueryDto } from '../../delivery/dto/reconciliation-run-history-query.dto.js';
 import { ReconciliationService } from '../../delivery/reconciliation.service.js';
 import { Role } from '../../generated/prisma/enums.js';
@@ -36,6 +38,7 @@ const reconciliationRun = {
   matchedCount: 1,
   discrepancyCount: 0,
   uncollectedCount: 0,
+  snapshotsWritten: true,
   errorMessage: null,
   startedAt: new Date('2026-10-16T01:00:00.000Z'),
   completedAt: new Date('2026-10-16T01:01:00.000Z'),
@@ -49,6 +52,23 @@ const reconciliationHistory = {
   total: 1,
   totalPages: 1,
 };
+
+const reconciliationRunSnapshotResult = {
+  run: reconciliationRun,
+  items: [],
+  total: 0,
+  summaryByCurrency: [],
+};
+
+const reconciliationRunDetail = {
+  ...reconciliationRun,
+  hasSnapshot: true,
+  items: [],
+  summaryByCurrency: [],
+  pagination: { page: 1, limit: 20, total: 0, totalPages: 0 },
+};
+delete (reconciliationRunDetail as { snapshotsWritten?: boolean })
+  .snapshotsWritten;
 
 const recordsResponse = {
   items: [
@@ -198,7 +218,7 @@ function makeService() {
 function makeReconciliationService() {
   return {
     getRunHistory: vi.fn(),
-    getRun: vi.fn(),
+    getRunDetail: vi.fn(),
     triggerManualReconciliation: vi.fn(),
   };
 }
@@ -224,7 +244,7 @@ function seedReconciliationResponses(
   service: ReturnType<typeof makeReconciliationService>,
 ) {
   service.getRunHistory.mockResolvedValue(reconciliationHistory);
-  service.getRun.mockResolvedValue(reconciliationRun);
+  service.getRunDetail.mockResolvedValue(reconciliationRunSnapshotResult);
   service.triggerManualReconciliation.mockResolvedValue({
     run: reconciliationRun,
     counters: {
@@ -332,9 +352,18 @@ describe('AdminCodReconciliationController', () => {
       endDate: '2026-10-31',
     });
 
+    const detailQuery = Object.assign(new ReconciliationRunDetailQueryDto(), {
+      page: 2,
+      limit: 5,
+    });
+
     await controller.findRuns(query);
-    await controller.findRun(RUN_ID);
-    await controller.triggerRun({ date: '2026-10-15' });
+    await controller.findRun(RUN_ID, detailQuery);
+    await controller.triggerRun(
+      Object.assign(new ManualReconciliationTriggerDto(), {
+        date: '2026-10-15',
+      }),
+    );
 
     expect(reconciliationService.getRunHistory).toHaveBeenCalledWith({
       page: 2,
@@ -344,7 +373,11 @@ describe('AdminCodReconciliationController', () => {
       startDate: new Date('2026-10-01T00:00:00.000Z'),
       endDate: new Date('2026-10-31T23:59:59.999Z'),
     });
-    expect(reconciliationService.getRun).toHaveBeenCalledWith(RUN_ID);
+    expect(reconciliationService.getRunDetail).toHaveBeenCalledWith(
+      RUN_ID,
+      2,
+      5,
+    );
     expect(
       reconciliationService.triggerManualReconciliation,
     ).toHaveBeenCalledWith(
@@ -354,13 +387,21 @@ describe('AdminCodReconciliationController', () => {
   });
 
   it('does not expose persisted internal failure details in run responses', async () => {
-    reconciliationService.getRun.mockResolvedValue({
-      ...reconciliationRun,
-      status: 'failed',
-      errorMessage: 'database connection string and stack trace',
+    reconciliationService.getRunDetail.mockResolvedValue({
+      ...reconciliationRunSnapshotResult,
+      run: {
+        ...reconciliationRun,
+        status: 'failed',
+        errorMessage: 'database connection string and stack trace',
+      },
     });
 
-    await expect(controller.findRun(RUN_ID)).resolves.toMatchObject({
+    await expect(
+      controller.findRun(
+        RUN_ID,
+        Object.assign(new ReconciliationRunDetailQueryDto(), {}),
+      ),
+    ).resolves.toMatchObject({
       errorMessage: 'Reconciliation failed',
     });
   });
@@ -633,7 +674,7 @@ describe('AdminCodReconciliationController (HTTP)', () => {
     expect(unauthenticatedHistory.status).toBe(HttpStatus.UNAUTHORIZED);
     expect(customerDetail.status).toBe(HttpStatus.FORBIDDEN);
     expect(reconciliationService.getRunHistory).not.toHaveBeenCalled();
-    expect(reconciliationService.getRun).not.toHaveBeenCalled();
+    expect(reconciliationService.getRunDetail).not.toHaveBeenCalled();
   });
 
   it('returns a run by UUID and returns 404 when it does not exist', async () => {
@@ -643,10 +684,10 @@ describe('AdminCodReconciliationController (HTTP)', () => {
     );
     expect(success.status).toBe(HttpStatus.OK);
     await expect(success.json()).resolves.toEqual(
-      JSON.parse(JSON.stringify(reconciliationRun)),
+      JSON.parse(JSON.stringify(reconciliationRunDetail)),
     );
 
-    reconciliationService.getRun.mockRejectedValueOnce(
+    reconciliationService.getRunDetail.mockRejectedValueOnce(
       new NotFoundException('Reconciliation run not found'),
     );
     const missing = await get(
@@ -660,7 +701,7 @@ describe('AdminCodReconciliationController (HTTP)', () => {
     const res = await get('/admin/cod-reconciliation/runs/not-a-uuid', ADMIN_ID);
 
     expect(res.status).toBe(HttpStatus.BAD_REQUEST);
-    expect(reconciliationService.getRun).not.toHaveBeenCalled();
+    expect(reconciliationService.getRunDetail).not.toHaveBeenCalled();
   });
 
   it('defaults manual trigger to the previous UTC calendar day', async () => {

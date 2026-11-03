@@ -10,9 +10,9 @@ import { AppModule } from '../src/app.module.js';
 import { DeliveryStatus, Role } from '../src/generated/prisma/enums.js';
 import { SchedulerRegistry } from '@nestjs/schedule';
 import { PrismaService } from '../src/prisma/prisma.service.js';
-import { ReconciliationService } from '../src/delivery/reconciliation.service.js';
 import {
   COD_RECONCILIATION_CRON,
+  COD_RECONCILIATION_RECOVERY_INTERVAL,
   ReconciliationScheduler,
 } from '../src/delivery/reconciliation.scheduler.js';
 import {
@@ -122,6 +122,69 @@ interface DiscrepancyItem {
   collectionId: string | null;
 }
 
+interface RunSnapshotItem {
+  id: string;
+  orderId: string;
+  orderNumber: string | null;
+  orderStatus: string | null;
+  paymentMethod: string | null;
+  currency: string;
+  expectedAmount: string;
+  collectedAmount: string | null;
+  collectionCurrency: string | null;
+  collectionId: string | null;
+  collectedAt: string | null;
+  collectedById: string | null;
+  collectedBy: {
+    id: string;
+    firstName: string;
+    lastName: string;
+    email: string;
+  } | null;
+  deliveryStaffId: string | null;
+  deliveryStaff: {
+    id: string;
+    firstName: string;
+    lastName: string;
+    email: string;
+  } | null;
+  deliveredAt: string | null;
+  assignmentId: string | null;
+  discrepancy: boolean;
+  discrepancyType: string | null;
+  discrepancyExplanation: string | null;
+}
+
+interface RunCurrencySummary {
+  currency: string;
+  expectedCount: number;
+  expectedAmount: string;
+  matchedCount: number;
+  discrepancyCount: number;
+  collectedCount: number;
+  collectedAmount: string;
+}
+
+interface RunDetailBody {
+  id: string;
+  triggerType: string;
+  status: string;
+  windowStart: string;
+  windowEnd: string;
+  processedCount: number;
+  matchedCount: number;
+  discrepancyCount: number;
+  uncollectedCount: number;
+  errorMessage: string | null;
+  startedAt: string;
+  completedAt: string | null;
+  createdAt: string;
+  hasSnapshot: boolean;
+  items: RunSnapshotItem[];
+  summaryByCurrency: RunCurrencySummary[];
+  pagination: Pagination;
+}
+
 const run = randomUUID().slice(0, 8);
 const codeRun = run.toUpperCase();
 const corePrefix = `REC-${run}-CORE`;
@@ -129,6 +192,7 @@ const staffPrefix = `REC-${run}-STAFF`;
 const periodPrefix = `REC-${run}-PER`;
 const undatedPrefix = `REC-${run}-UND`;
 const reconciliationRunIds: string[] = [];
+const suiteStartedAt = new Date();
 
 const at = (iso: string) => new Date(iso);
 
@@ -372,6 +436,19 @@ describe('Admin COD financial reconciliation (PostgreSQL)', () => {
     base = await app.getUrl();
     prisma = app.get(PrismaService);
     issueToken = tokenIssuerFor(app);
+
+    // Startup recovery is intentionally fire-and-forget. Wait for it before
+    // creating fixtures so the run API tests observe a deterministic state.
+    const scheduler = app.get(ReconciliationScheduler);
+    await scheduler.waitForRecovery();
+    const startupRuns = await prisma.codReconciliationRun.findMany({
+      where: {
+        triggerType: 'cron',
+        createdAt: { gte: suiteStartedAt },
+      },
+      select: { id: true },
+    });
+    reconciliationRunIds.push(...startupRuns.map((row) => row.id));
 
     adminId = await createUser('admin', Role.ADMIN);
     customerId = await createUser('customer', Role.CUSTOMER);
@@ -661,6 +738,9 @@ describe('Admin COD financial reconciliation (PostgreSQL)', () => {
       return;
     }
 
+    await prisma.codReconciliationRunItem.deleteMany({
+      where: { runId: { in: reconciliationRunIds } },
+    });
     await prisma.codReconciliationRun.deleteMany({
       where: { id: { in: reconciliationRunIds } },
     });
@@ -1316,12 +1396,11 @@ describe('Admin COD financial reconciliation (PostgreSQL)', () => {
       expect(app.get(ReconciliationScheduler)).toBeInstanceOf(
         ReconciliationScheduler,
       );
-      expect(
-        app
-          .get(SchedulerRegistry)
-          .getCronJobs()
-          .has(COD_RECONCILIATION_CRON),
-      ).toBe(true);
+      const registry = app.get(SchedulerRegistry);
+      expect(registry.getCronJobs().has(COD_RECONCILIATION_CRON)).toBe(true);
+      expect(registry.getIntervals()).toContain(
+        COD_RECONCILIATION_RECOVERY_INTERVAL,
+      );
     });
 
     it('manually reconciles an explicit UTC window and leaves financial rows unchanged', async () => {
@@ -1444,18 +1523,416 @@ describe('Admin COD financial reconciliation (PostgreSQL)', () => {
       expect(await financialSnapshot()).toEqual(before);
     });
 
-    it('reconciles the previous UTC day for a cron trigger', async () => {
-      const { windowStart, windowEnd } = utcPreviousDayWindow();
-      const service = app.get(ReconciliationService);
-      const result = await service.reconcileWindow(
-        windowStart,
-        windowEnd,
-        'cron',
-      );
+    describe('GET /admin/cod-reconciliation/runs/:id snapshot detail', () => {
+      const detailWindowStart = new Date('2021-05-05T00:00:00.000Z');
+      const detailWindowEnd = new Date('2021-05-06T00:00:00.000Z');
+      const zeroWindowStart = new Date('2021-05-10T00:00:00.000Z');
+      const zeroWindowEnd = new Date('2021-05-11T00:00:00.000Z');
+      const legacyWindowStart = new Date('2021-05-12T00:00:00.000Z');
+      const legacyWindowEnd = new Date('2021-05-13T00:00:00.000Z');
 
-      expect(result).not.toBeNull();
-      reconciliationRunIds.push(result!.run.id);
-      expect(result!.run).toMatchObject({
+      let detailRunId: string;
+      let legacyRunId: string;
+      let matched: FixtureOrder;
+      let amountMismatch: FixtureOrder;
+      let currencyMismatch: FixtureOrder;
+      let missing: FixtureOrder;
+
+      const getDetail = async (
+        id: string,
+        query: Record<string, string | number> = {},
+      ) => {
+        const response = await adminGet(
+          `/admin/cod-reconciliation/runs/${id}`,
+          query,
+        );
+        expect(response.status).toBe(HttpStatus.OK);
+        return response.body as RunDetailBody;
+      };
+
+      beforeAll(async () => {
+        matched = await makeDeliveredOrder('DT-MATCH', {
+          totalAmount: '10.10',
+          currency: 'USD',
+          staffId: staffAId,
+          deliveredAt: at('2021-05-05T08:00:00Z'),
+        });
+        await createCollection(
+          matched.id,
+          staffCollectorOnlyId,
+          '10.10',
+          'USD',
+          at('2021-05-05T08:05:00Z'),
+        );
+
+        amountMismatch = await makeDeliveredOrder('DT-AMT', {
+          totalAmount: '20.20',
+          staffId: staffAId,
+          deliveredAt: at('2021-05-05T09:00:00Z'),
+        });
+        await createCollection(
+          amountMismatch.id,
+          staffCollectorOnlyId,
+          '19.19',
+          'USD',
+          at('2021-05-05T09:05:00Z'),
+        );
+
+        currencyMismatch = await makeDeliveredOrder('DT-CUR', {
+          totalAmount: '30.30',
+          currency: 'USD',
+          staffId: staffBId,
+          deliveredAt: at('2021-05-05T10:00:00Z'),
+        });
+        await createCollection(
+          currencyMismatch.id,
+          staffCollectorOnlyId,
+          '120000.00',
+          'KHR',
+          at('2021-05-05T10:05:00Z'),
+        );
+
+        missing = await makeDeliveredOrder('DT-MISS', {
+          totalAmount: '40.40',
+          currency: 'USD',
+          staffId: staffBId,
+          deliveredAt: at('2021-05-05T11:00:00Z'),
+        });
+
+        const response = await adminPost(
+          '/admin/cod-reconciliation/runs/trigger',
+          {
+            windowStart: detailWindowStart.toISOString(),
+            windowEnd: detailWindowEnd.toISOString(),
+          },
+        );
+        expect(response.status).toBe(HttpStatus.CREATED);
+        detailRunId = (response.body as { run: { id: string } }).run.id;
+        reconciliationRunIds.push(detailRunId);
+      });
+
+      it('returns run metadata, immutable items, and currency-separated totals', async () => {
+        const body = await getDetail(detailRunId, { page: 1, limit: 20 });
+
+        expect(body).toMatchObject({
+          id: detailRunId,
+          triggerType: 'manual',
+          status: 'completed',
+          windowStart: detailWindowStart.toISOString(),
+          windowEnd: detailWindowEnd.toISOString(),
+          processedCount: 4,
+          matchedCount: 1,
+          discrepancyCount: 3,
+          uncollectedCount: 1,
+          errorMessage: null,
+          hasSnapshot: true,
+          pagination: { page: 1, limit: 20, total: 4, totalPages: 1 },
+        });
+
+        expect(body.items.map((item) => item.orderId)).toEqual([
+          matched.id,
+          amountMismatch.id,
+          currencyMismatch.id,
+          missing.id,
+        ]);
+
+        for (const item of body.items) {
+          expect(item).toMatchObject({
+            orderStatus: 'DELIVERED',
+            paymentMethod: 'COD',
+          });
+        }
+
+        const byOrderId = new Map(body.items.map((item) => [item.orderId, item]));
+
+        expect(byOrderId.get(matched.id)).toMatchObject({
+          expectedAmount: '10.10',
+          currency: 'USD',
+          collectedAmount: '10.10',
+          collectionCurrency: 'USD',
+          collectedById: staffCollectorOnlyId,
+          deliveryStaffId: staffAId,
+          discrepancy: false,
+          discrepancyType: null,
+          discrepancyExplanation: null,
+        });
+        expect(byOrderId.get(matched.id)?.assignmentId).toBeTruthy();
+        expect(byOrderId.get(matched.id)?.collectedBy).toMatchObject({
+          id: staffCollectorOnlyId,
+          firstName: expect.any(String),
+          lastName: expect.any(String),
+          email: expect.any(String),
+        });
+        expect(byOrderId.get(matched.id)?.deliveryStaff).toMatchObject({
+          id: staffAId,
+        });
+
+        const amountItem = byOrderId.get(amountMismatch.id)!;
+        expect(amountItem).toMatchObject({
+          expectedAmount: '20.20',
+          collectedAmount: '19.19',
+          collectionCurrency: 'USD',
+          discrepancy: true,
+          discrepancyType: 'amount-mismatch',
+        });
+        expect(amountItem.discrepancyExplanation).toContain(
+          'Collected 19.19 USD',
+        );
+        expect(amountItem.discrepancyExplanation).toContain(
+          'expected 20.20 USD',
+        );
+
+        const currencyItem = byOrderId.get(currencyMismatch.id)!;
+        expect(currencyItem).toMatchObject({
+          expectedAmount: '30.30',
+          currency: 'USD',
+          collectedAmount: '120000.00',
+          collectionCurrency: 'KHR',
+          discrepancy: true,
+          discrepancyType: 'currency-mismatch',
+        });
+        expect(currencyItem.discrepancyExplanation).toContain(
+          '120000.00 KHR',
+        );
+        expect(currencyItem.discrepancyExplanation).toContain('30.30 USD');
+        expect(currencyItem.discrepancyExplanation).toContain(
+          'not comparable',
+        );
+
+        const missingItem = byOrderId.get(missing.id)!;
+        expect(missingItem).toMatchObject({
+          expectedAmount: '40.40',
+          collectedAmount: null,
+          collectionCurrency: null,
+          collectedById: null,
+          collectedBy: null,
+          discrepancy: true,
+          discrepancyType: 'missing-collection',
+        });
+        expect(missingItem.discrepancyExplanation).toContain(
+          'No COD collection',
+        );
+        expect(missingItem.discrepancyExplanation).toContain('40.40 USD');
+
+        const summary = new Map(
+          body.summaryByCurrency.map((entry) => [entry.currency, entry]),
+        );
+        expect(summary.get('USD')).toEqual({
+          currency: 'USD',
+          expectedCount: 4,
+          expectedAmount: '101.00',
+          matchedCount: 1,
+          discrepancyCount: 3,
+          collectedCount: 2,
+          collectedAmount: '29.29',
+        });
+        expect(summary.get('KHR')).toEqual({
+          currency: 'KHR',
+          expectedCount: 0,
+          expectedAmount: '0.00',
+          matchedCount: 0,
+          discrepancyCount: 0,
+          collectedCount: 1,
+          collectedAmount: '120000.00',
+        });
+      });
+
+      it('paginates deterministically with summaries that cover every snapshot row', async () => {
+        const firstPage = await getDetail(detailRunId, { page: 1, limit: 2 });
+        const secondPage = await getDetail(detailRunId, { page: 2, limit: 2 });
+
+        expect(firstPage.pagination).toEqual({
+          page: 1,
+          limit: 2,
+          total: 4,
+          totalPages: 2,
+        });
+        expect(secondPage.pagination).toEqual({
+          page: 2,
+          limit: 2,
+          total: 4,
+          totalPages: 2,
+        });
+        expect(firstPage.items.map((item) => item.orderId)).toEqual([
+          matched.id,
+          amountMismatch.id,
+        ]);
+        expect(secondPage.items.map((item) => item.orderId)).toEqual([
+          currencyMismatch.id,
+          missing.id,
+        ]);
+        expect(firstPage.summaryByCurrency).toEqual(
+          secondPage.summaryByCurrency,
+        );
+        expect(
+          firstPage.summaryByCurrency.find((row) => row.currency === 'USD'),
+        ).toMatchObject({
+          expectedCount: 4,
+          expectedAmount: '101.00',
+          matchedCount: 1,
+          discrepancyCount: 3,
+          collectedCount: 2,
+          collectedAmount: '29.29',
+        });
+        expect(
+          firstPage.summaryByCurrency.find((row) => row.currency === 'KHR'),
+        ).toMatchObject({
+          expectedCount: 0,
+          expectedAmount: '0.00',
+          matchedCount: 0,
+          discrepancyCount: 0,
+          collectedCount: 1,
+          collectedAmount: '120000.00',
+        });
+      });
+
+      it('never changes a persisted snapshot when live financial rows change', async () => {
+        const before = await getDetail(detailRunId, { page: 1, limit: 20 });
+
+        await prisma.order.update({
+          where: { id: matched.id },
+          data: {
+            subtotal: '999.99',
+            totalAmount: '999.99',
+            status: 'CANCELLED',
+            paymentMethod: 'ABA_PAYWAY',
+            codAreaId: null,
+            codAreaCode: null,
+            codAreaName: null,
+          },
+        });
+        await prisma.codCollection.update({
+          where: { orderId: matched.id },
+          data: {
+            amount: '1.00',
+            currency: 'KHR',
+            collectedById: staffBId,
+          },
+        });
+
+        const after = await getDetail(detailRunId, { page: 1, limit: 20 });
+
+        expect(after.items).toEqual(before.items);
+        expect(after.summaryByCurrency).toEqual(before.summaryByCurrency);
+
+        const matchedAfter = after.items.find(
+          (item) => item.orderId === matched.id,
+        );
+        expect(matchedAfter).toMatchObject({
+          orderStatus: 'DELIVERED',
+          paymentMethod: 'COD',
+          expectedAmount: '10.10',
+          collectedAmount: '10.10',
+          collectionCurrency: 'USD',
+          collectedById: staffCollectorOnlyId,
+        });
+      });
+
+      it('reports a zero-order completed run as an empty snapshot, not a legacy run', async () => {
+        const response = await adminPost(
+          '/admin/cod-reconciliation/runs/trigger',
+          {
+            windowStart: zeroWindowStart.toISOString(),
+            windowEnd: zeroWindowEnd.toISOString(),
+          },
+        );
+        expect(response.status).toBe(HttpStatus.CREATED);
+        const runId = (response.body as { run: { id: string } }).run.id;
+        reconciliationRunIds.push(runId);
+
+        const body = await getDetail(runId);
+
+        expect(body).toMatchObject({
+          id: runId,
+          status: 'completed',
+          processedCount: 0,
+          matchedCount: 0,
+          discrepancyCount: 0,
+          uncollectedCount: 0,
+          hasSnapshot: true,
+          items: [],
+          summaryByCurrency: [],
+          pagination: { page: 1, limit: 20, total: 0, totalPages: 0 },
+        });
+      });
+
+      it('returns empty detail for a legacy run whose snapshots were never written', async () => {
+        legacyRunId = randomUUID();
+        await prisma.codReconciliationRun.create({
+          data: {
+            id: legacyRunId,
+            triggerType: 'manual',
+            status: 'completed',
+            windowStart: legacyWindowStart,
+            windowEnd: legacyWindowEnd,
+            processedCount: 1,
+            matchedCount: 1,
+            completedAt: new Date(),
+            snapshotsWritten: false,
+          },
+        });
+        reconciliationRunIds.push(legacyRunId);
+        // A stray item must never make a legacy run look snapshotted.
+        await prisma.codReconciliationRunItem.create({
+          data: {
+            runId: legacyRunId,
+            orderId: missing.id,
+            orderNumber: missing.orderNumber,
+            orderStatus: 'DELIVERED',
+            paymentMethod: 'COD',
+            currency: 'USD',
+            expectedAmount: '40.40',
+            discrepancy: true,
+            discrepancyType: 'missing-collection',
+          },
+        });
+
+        const body = await getDetail(legacyRunId);
+
+        expect(body).toMatchObject({
+          id: legacyRunId,
+          status: 'completed',
+          processedCount: 1,
+          hasSnapshot: false,
+          items: [],
+          summaryByCurrency: [],
+          pagination: { page: 1, limit: 20, total: 0, totalPages: 0 },
+        });
+      });
+
+      it('rejects invalid detail pagination before reading the snapshot', async () => {
+        const invalidQueries: Array<Record<string, string | number>> = [
+          { page: 0 },
+          { page: -1 },
+          { page: 'not-a-number' },
+          { limit: 0 },
+          { limit: 101 },
+          { limit: 'not-a-number' },
+        ];
+
+        for (const query of invalidQueries) {
+          const response = await adminGet(
+            `/admin/cod-reconciliation/runs/${detailRunId}`,
+            query,
+          );
+          expect(response.status).toBe(HttpStatus.BAD_REQUEST);
+        }
+      });
+    });
+
+    it('recovers the previous UTC day for a cron trigger during startup', async () => {
+      const { windowStart, windowEnd } = utcPreviousDayWindow();
+      const run = await prisma.codReconciliationRun.findFirst({
+        where: {
+          triggerType: 'cron',
+          status: 'completed',
+          windowStart,
+          windowEnd,
+        },
+      });
+
+      expect(run).not.toBeNull();
+      expect(run).toMatchObject({
         triggerType: 'cron',
         status: 'completed',
         windowStart,

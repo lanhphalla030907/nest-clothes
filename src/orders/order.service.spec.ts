@@ -110,6 +110,7 @@ const buildAdminOrderRow = (overrides: Record<string, unknown> = {}) => ({
     },
   ],
   _count: { payments: 1 },
+  codCollections: [],
   ...overrides,
 });
 
@@ -136,6 +137,7 @@ const buildAdminDetailRow = (overrides: Record<string, unknown> = {}) => ({
       createdAt: new Date('2026-01-04T11:31:00.000Z'),
     },
   ],
+  codCollections: [],
   ...overrides,
 });
 
@@ -524,6 +526,124 @@ describe('OrderService', () => {
       });
     });
 
+    it('returns a recorded COD collection without changing payment state', async () => {
+      orderFindAdminPage.mockResolvedValue({
+        items: [
+          buildAdminOrderRow({
+            paymentMethod: 'COD',
+            payments: [],
+            _count: { payments: 0 },
+            codCollections: [
+              {
+                id: 'c3cec629-a304-42b9-bcce-6d1ae5292abb',
+                amount: new Prisma.Decimal('6.50'),
+                currency: 'USD',
+                collectedAt: new Date('2026-11-01T17:39:58.212Z'),
+                collectedBy: {
+                  id: USER_ID,
+                  firstName: 'Alex',
+                  lastName: 'Courier',
+                  email: 'alex@example.test',
+                },
+              },
+            ],
+          }),
+        ],
+        total: 1,
+      });
+
+      const result = await service.listOrdersForAdmin({ page: 1, limit: 20 });
+
+      expect(result.items[0]).toMatchObject({
+        paymentMethod: 'COD',
+        payment: null,
+        hasPaidPayment: false,
+        codCollection: {
+          status: 'COLLECTED',
+          amount: '6.50',
+          currency: 'USD',
+          collectedAt: new Date('2026-11-01T17:39:58.212Z'),
+          collector: {
+            id: USER_ID,
+            firstName: 'Alex',
+            lastName: 'Courier',
+            email: 'alex@example.test',
+          },
+        },
+      });
+    });
+
+    it('keeps a linked paid payment and a COD collection independent', async () => {
+      orderFindAdminPage.mockResolvedValue({
+        items: [
+          buildAdminOrderRow({
+            paymentMethod: 'COD',
+            codCollections: [
+              {
+                id: 'c3cec629-a304-42b9-bcce-6d1ae5292abb',
+                amount: new Prisma.Decimal('128.50'),
+                currency: 'USD',
+                collectedAt: new Date('2026-01-04T11:40:00.000Z'),
+                collectedBy: {
+                  id: USER_ID,
+                  firstName: 'Alex',
+                  lastName: 'Courier',
+                  email: 'alex@example.test',
+                },
+              },
+            ],
+          }),
+        ],
+        total: 1,
+      });
+
+      const result = await service.listOrdersForAdmin({ page: 1, limit: 20 });
+
+      expect(result.items[0]).toMatchObject({
+        paymentMethod: 'COD',
+        hasPaidPayment: true,
+        payment: { status: 'PAID', amount: '128.50' },
+        codCollection: {
+          status: 'COLLECTED',
+          amount: '128.50',
+          currency: 'USD',
+          collectedAt: new Date('2026-01-04T11:40:00.000Z'),
+          collector: { email: 'alex@example.test' },
+        },
+      });
+    });
+
+    it('distinguishes a COD order with no collection from a non-COD order', async () => {
+      orderFindAdminPage
+        .mockResolvedValueOnce({
+          items: [
+            buildAdminOrderRow({
+              paymentMethod: 'COD',
+              payments: [],
+              _count: { payments: 0 },
+              codCollections: [],
+            }),
+          ],
+          total: 1,
+        })
+        .mockResolvedValueOnce({
+          items: [buildAdminOrderRow()],
+          total: 1,
+        });
+
+      const cod = await service.listOrdersForAdmin({ page: 1, limit: 20 });
+      const online = await service.listOrdersForAdmin({ page: 1, limit: 20 });
+
+      expect(cod.items[0].codCollection).toEqual({
+        status: 'NOT_COLLECTED',
+        amount: null,
+        currency: null,
+        collectedAt: null,
+        collector: null,
+      });
+      expect(online.items[0].codCollection).toBeNull();
+    });
+
     it('treats a whitespace-only search as no search', async () => {
       await service.listOrdersForAdmin({ page: 1, limit: 20, search: '   ' });
 
@@ -580,6 +700,47 @@ describe('OrderService', () => {
       expect(JSON.stringify(result)).not.toContain('qrPayload');
       expect(JSON.stringify(result)).not.toContain('passwordHash');
       expect(result.paymentMethod).toBe('ABA_PAYWAY');
+      expect(result.codCollection).toBeNull();
+    });
+
+    it('returns the actual COD collection alongside no payment attempt', async () => {
+      orderFindAdminById.mockResolvedValue(
+        buildAdminDetailRow({
+          paymentMethod: 'COD',
+          payments: [],
+          codCollections: [
+            {
+              id: 'c3cec629-a304-42b9-bcce-6d1ae5292abb',
+              amount: new Prisma.Decimal('6.50'),
+              currency: 'USD',
+              collectedAt: new Date('2026-11-01T17:39:58.212Z'),
+              collectedBy: {
+                id: USER_ID,
+                firstName: 'Alex',
+                lastName: 'Courier',
+                email: 'alex@example.test',
+              },
+            },
+          ],
+        }),
+      );
+
+      const result = await service.getOrderForAdmin(ORDER_ID);
+
+      expect(result.payments).toEqual([]);
+      expect(result.codCollection).toMatchObject({
+        status: 'COLLECTED',
+        amount: '6.50',
+        currency: 'USD',
+        collectedAt: new Date('2026-11-01T17:39:58.212Z'),
+        collector: {
+          firstName: 'Alex',
+          lastName: 'Courier',
+          email: 'alex@example.test',
+        },
+      });
+      expect(JSON.stringify(result)).not.toContain('passwordHash');
+      expect(JSON.stringify(result)).not.toContain('receiptProof');
     });
 
     it('404s an unknown order', async () => {

@@ -1086,11 +1086,52 @@ model CodReconciliationRun {
   matchedCount     Int       @default(0) @map("matched_count")
   discrepancyCount Int       @default(0) @map("discrepancy_count")
   uncollectedCount Int       @default(0) @map("uncollected_count")
+  snapshotsWritten Boolean   @default(false) @map("snapshots_written")
   errorMessage     String?   @map("error_message") @db.Text
   startedAt        DateTime  @default(now()) @map("started_at") @db.Timestamptz
   completedAt      DateTime? @map("completed_at") @db.Timestamptz
   createdAt        DateTime  @default(now()) @map("created_at") @db.Timestamptz
 
+  items CodReconciliationRunItem[]
+
   @@index([createdAt(sort: Desc), id(sort: Desc)])
   @@map("cod_reconciliation_runs")
+}
+
+/// Immutable snapshot of one order processed by a COD reconciliation run.
+/// Each row is written at run execution time and must never be modified.
+model CodReconciliationRunItem {
+  id                        String   @id @default(uuid()) @db.Uuid
+  runId                     String   @map("run_id") @db.Uuid
+  orderId                   String   @map("order_id") @db.Uuid
+  orderNumber               String?  @map("order_number") @db.VarChar(30)
+  orderStatus               String?  @map("order_status") @db.VarChar(30)
+  paymentMethod             String?  @map("payment_method") @db.VarChar(30)
+  currency                  String   @db.Char(3)
+  expectedAmount            Decimal  @map("expected_amount") @db.Decimal(12, 2)
+  collectedAmount           Decimal? @map("collected_amount") @db.Decimal(12, 2)
+  collectionCurrency        String?  @map("collection_currency") @db.Char(3)
+  collectionId              String?  @map("collection_id") @db.Uuid
+  collectedAt               DateTime? @map("collected_at") @db.Timestamptz
+  collectedById             String?  @map("collected_by_id") @db.Uuid
+  collectedByFirstName      String?  @map("collected_by_first_name") @db.VarChar(100)
+  collectedByLastName       String?  @map("collected_by_last_name") @db.VarChar(100)
+  collectedByEmail          String?  @map("collected_by_email") @db.VarChar(255)
+  deliveryStaffId           String?  @map("delivery_staff_id") @db.Uuid
+  deliveryStaffFirstName    String?  @map("delivery_staff_first_name") @db.VarChar(100)
+  deliveryStaffLastName     String?  @map("delivery_staff_last_name") @db.VarChar(100)
+  deliveryStaffEmail        String?  @map("delivery_staff_email") @db.VarChar(255)
+  deliveredAt               DateTime? @map("delivered_at") @db.Timestamptz
+  assignmentId              String?   @map("assignment_id") @db.Uuid
+  discrepancy               Boolean   @default(false)
+  discrepancyType           String?   @map("discrepancy_type") @db.VarChar(20)
+  createdAt                 DateTime  @default(now()) @map("created_at") @db.Timestamptz
+
+  run CodReconciliationRun @relation(fields: [runId], references: [id], onDelete: Restrict, onUpdate: Cascade)
+
+  @@unique([runId, orderId])
+  @@index([runId])
+  @@index([runId, discrepancy])
+  @@index([orderId])
+  @@map("cod_reconciliation_run_items")
 }

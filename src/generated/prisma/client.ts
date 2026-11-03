@@ -629,3 +629,9 @@ export type CodCollection = Prisma.CodCollectionModel
  * Durable history for automated and manually triggered COD reconciliation runs.
  */
 export type CodReconciliationRun = Prisma.CodReconciliationRunModel
+/**
+ * Model CodReconciliationRunItem
+ * Immutable snapshot of one order processed by a COD reconciliation run.
+ * Each row is written at run execution time and must never be modified.
+ */
+export type CodReconciliationRunItem = Prisma.CodReconciliationRunItemModel

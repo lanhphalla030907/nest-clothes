@@ -73,7 +73,8 @@ export const ModelName = {
   OrderItem: 'OrderItem',
   Payment: 'Payment',
   CodCollection: 'CodCollection',
-  CodReconciliationRun: 'CodReconciliationRun'
+  CodReconciliationRun: 'CodReconciliationRun',
+  CodReconciliationRunItem: 'CodReconciliationRunItem'
 } as const
 
 export type ModelName = (typeof ModelName)[keyof typeof ModelName]
@@ -447,6 +448,7 @@ export const CodReconciliationRunScalarFieldEnum = {
   matchedCount: 'matchedCount',
   discrepancyCount: 'discrepancyCount',
   uncollectedCount: 'uncollectedCount',
+  snapshotsWritten: 'snapshotsWritten',
   errorMessage: 'errorMessage',
   startedAt: 'startedAt',
   completedAt: 'completedAt',
@@ -454,6 +456,37 @@ export const CodReconciliationRunScalarFieldEnum = {
 } as const
 
 export type CodReconciliationRunScalarFieldEnum = (typeof CodReconciliationRunScalarFieldEnum)[keyof typeof CodReconciliationRunScalarFieldEnum]
+
+
+export const CodReconciliationRunItemScalarFieldEnum = {
+  id: 'id',
+  runId: 'runId',
+  orderId: 'orderId',
+  orderNumber: 'orderNumber',
+  orderStatus: 'orderStatus',
+  paymentMethod: 'paymentMethod',
+  currency: 'currency',
+  expectedAmount: 'expectedAmount',
+  collectedAmount: 'collectedAmount',
+  collectionCurrency: 'collectionCurrency',
+  collectionId: 'collectionId',
+  collectedAt: 'collectedAt',
+  collectedById: 'collectedById',
+  collectedByFirstName: 'collectedByFirstName',
+  collectedByLastName: 'collectedByLastName',
+  collectedByEmail: 'collectedByEmail',
+  deliveryStaffId: 'deliveryStaffId',
+  deliveryStaffFirstName: 'deliveryStaffFirstName',
+  deliveryStaffLastName: 'deliveryStaffLastName',
+  deliveryStaffEmail: 'deliveryStaffEmail',
+  deliveredAt: 'deliveredAt',
+  assignmentId: 'assignmentId',
+  discrepancy: 'discrepancy',
+  discrepancyType: 'discrepancyType',
+  createdAt: 'createdAt'
+} as const
+
+export type CodReconciliationRunItemScalarFieldEnum = (typeof CodReconciliationRunItemScalarFieldEnum)[keyof typeof CodReconciliationRunItemScalarFieldEnum]
 
 
 export const SortOrder = {

@@ -49,6 +49,7 @@ export interface CodReconciliationRecordItem {
   expectedAmount: Prisma.Decimal;
   currency: string;
   collectedAmount: Prisma.Decimal | null;
+  collectionCurrency: string | null;
   collectionId: string | null;
   collectedAt: Date | null;
   collectedById: string | null;
@@ -66,6 +67,7 @@ export interface CodReconciliationRecordItem {
     email: string;
   } | null;
   deliveredAt: Date | null;
+  assignmentId: string | null;
   discrepancy: boolean;
   discrepancyType: CodReconciliationDiscrepancyType | null;
 }
@@ -99,6 +101,7 @@ export interface CodReconciliationDiscrepancyItem {
   collectedAmount: Prisma.Decimal | null;
   actualAmount: Prisma.Decimal | null;
   currency: string;
+  collectionCurrency: string | null;
   collectionId: string | null;
 }
 
@@ -1408,6 +1411,7 @@ export class DeliveryRepository {
         currency: string;
         delivery_staff_id: string | null;
         delivered_at: Date | null;
+        assignment_id: string | null;
         collection_id: string | null;
         collected_amount: Prisma.Decimal | string | null;
         collection_currency: string | null;
@@ -1442,6 +1446,7 @@ export class DeliveryRepository {
           o."payment_method",
           o."total_amount",
           o."currency",
+          lda."assignment_id",
           lda."delivery_staff_id",
           lda."delivered_at",
           cc."id" AS collection_id,
@@ -1509,6 +1514,7 @@ export class DeliveryRepository {
             }
           : null,
         deliveredAt: r.delivered_at,
+        assignmentId: r.assignment_id,
         discrepancy: r.discrepancy_type !== null,
         discrepancyType: r.discrepancy_type,
       })),

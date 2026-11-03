@@ -44,6 +44,7 @@ const listResponse = {
       shippingCountryCode: 'GB',
       payment: null,
       hasPaidPayment: false,
+      codCollection: null,
       createdAt: new Date('2026-01-04T11:30:00.000Z'),
       updatedAt: new Date('2026-01-04T11:30:00.000Z'),
     },

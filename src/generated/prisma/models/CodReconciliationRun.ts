@@ -50,6 +50,7 @@ export type CodReconciliationRunMinAggregateOutputType = {
   matchedCount: number | null
   discrepancyCount: number | null
   uncollectedCount: number | null
+  snapshotsWritten: boolean | null
   errorMessage: string | null
   startedAt: Date | null
   completedAt: Date | null
@@ -66,6 +67,7 @@ export type CodReconciliationRunMaxAggregateOutputType = {
   matchedCount: number | null
   discrepancyCount: number | null
   uncollectedCount: number | null
+  snapshotsWritten: boolean | null
   errorMessage: string | null
   startedAt: Date | null
   completedAt: Date | null
@@ -82,6 +84,7 @@ export type CodReconciliationRunCountAggregateOutputType = {
   matchedCount: number
   discrepancyCount: number
   uncollectedCount: number
+  snapshotsWritten: number
   errorMessage: number
   startedAt: number
   completedAt: number
@@ -114,6 +117,7 @@ export type CodReconciliationRunMinAggregateInputType = {
   matchedCount?: true
   discrepancyCount?: true
   uncollectedCount?: true
+  snapshotsWritten?: true
   errorMessage?: true
   startedAt?: true
   completedAt?: true
@@ -130,6 +134,7 @@ export type CodReconciliationRunMaxAggregateInputType = {
   matchedCount?: true
   discrepancyCount?: true
   uncollectedCount?: true
+  snapshotsWritten?: true
   errorMessage?: true
   startedAt?: true
   completedAt?: true
@@ -146,6 +151,7 @@ export type CodReconciliationRunCountAggregateInputType = {
   matchedCount?: true
   discrepancyCount?: true
   uncollectedCount?: true
+  snapshotsWritten?: true
   errorMessage?: true
   startedAt?: true
   completedAt?: true
@@ -249,6 +255,7 @@ export type CodReconciliationRunGroupByOutputType = {
   matchedCount: number
   discrepancyCount: number
   uncollectedCount: number
+  snapshotsWritten: boolean
   errorMessage: string | null
   startedAt: Date
   completedAt: Date | null
@@ -288,10 +295,12 @@ export type CodReconciliationRunWhereInput = {
   matchedCount?: Prisma.IntFilter<"CodReconciliationRun"> | number
   discrepancyCount?: Prisma.IntFilter<"CodReconciliationRun"> | number
   uncollectedCount?: Prisma.IntFilter<"CodReconciliationRun"> | number
+  snapshotsWritten?: Prisma.BoolFilter<"CodReconciliationRun"> | boolean
   errorMessage?: Prisma.StringNullableFilter<"CodReconciliationRun"> | string | null
   startedAt?: Prisma.DateTimeFilter<"CodReconciliationRun"> | Date | string
   completedAt?: Prisma.DateTimeNullableFilter<"CodReconciliationRun"> | Date | string | null
   createdAt?: Prisma.DateTimeFilter<"CodReconciliationRun"> | Date | string
+  items?: Prisma.CodReconciliationRunItemListRelationFilter
 }
 
 export type CodReconciliationRunOrderByWithRelationInput = {
@@ -304,10 +313,12 @@ export type CodReconciliationRunOrderByWithRelationInput = {
   matchedCount?: Prisma.SortOrder
   discrepancyCount?: Prisma.SortOrder
   uncollectedCount?: Prisma.SortOrder
+  snapshotsWritten?: Prisma.SortOrder
   errorMessage?: Prisma.SortOrderInput | Prisma.SortOrder
   startedAt?: Prisma.SortOrder
   completedAt?: Prisma.SortOrderInput | Prisma.SortOrder
   createdAt?: Prisma.SortOrder
+  items?: Prisma.CodReconciliationRunItemOrderByRelationAggregateInput
 }
 
 export type CodReconciliationRunWhereUniqueInput = Prisma.AtLeast<{
@@ -323,10 +334,12 @@ export type CodReconciliationRunWhereUniqueInput = Prisma.AtLeast<{
   matchedCount?: Prisma.IntFilter<"CodReconciliationRun"> | number
   discrepancyCount?: Prisma.IntFilter<"CodReconciliationRun"> | number
   uncollectedCount?: Prisma.IntFilter<"CodReconciliationRun"> | number
+  snapshotsWritten?: Prisma.BoolFilter<"CodReconciliationRun"> | boolean
   errorMessage?: Prisma.StringNullableFilter<"CodReconciliationRun"> | string | null
   startedAt?: Prisma.DateTimeFilter<"CodReconciliationRun"> | Date | string
   completedAt?: Prisma.DateTimeNullableFilter<"CodReconciliationRun"> | Date | string | null
   createdAt?: Prisma.DateTimeFilter<"CodReconciliationRun"> | Date | string
+  items?: Prisma.CodReconciliationRunItemListRelationFilter
 }, "id">
 
 export type CodReconciliationRunOrderByWithAggregationInput = {
@@ -339,6 +352,7 @@ export type CodReconciliationRunOrderByWithAggregationInput = {
   matchedCount?: Prisma.SortOrder
   discrepancyCount?: Prisma.SortOrder
   uncollectedCount?: Prisma.SortOrder
+  snapshotsWritten?: Prisma.SortOrder
   errorMessage?: Prisma.SortOrderInput | Prisma.SortOrder
   startedAt?: Prisma.SortOrder
   completedAt?: Prisma.SortOrderInput | Prisma.SortOrder
@@ -363,6 +377,7 @@ export type CodReconciliationRunScalarWhereWithAggregatesInput = {
   matchedCount?: Prisma.IntWithAggregatesFilter<"CodReconciliationRun"> | number
   discrepancyCount?: Prisma.IntWithAggregatesFilter<"CodReconciliationRun"> | number
   uncollectedCount?: Prisma.IntWithAggregatesFilter<"CodReconciliationRun"> | number
+  snapshotsWritten?: Prisma.BoolWithAggregatesFilter<"CodReconciliationRun"> | boolean
   errorMessage?: Prisma.StringNullableWithAggregatesFilter<"CodReconciliationRun"> | string | null
   startedAt?: Prisma.DateTimeWithAggregatesFilter<"CodReconciliationRun"> | Date | string
   completedAt?: Prisma.DateTimeNullableWithAggregatesFilter<"CodReconciliationRun"> | Date | string | null
@@ -379,10 +394,12 @@ export type CodReconciliationRunCreateInput = {
   matchedCount?: number
   discrepancyCount?: number
   uncollectedCount?: number
+  snapshotsWritten?: boolean
   errorMessage?: string | null
   startedAt?: Date | string
   completedAt?: Date | string | null
   createdAt?: Date | string
+  items?: Prisma.CodReconciliationRunItemCreateNestedManyWithoutRunInput
 }
 
 export type CodReconciliationRunUncheckedCreateInput = {
@@ -395,10 +412,12 @@ export type CodReconciliationRunUncheckedCreateInput = {
   matchedCount?: number
   discrepancyCount?: number
   uncollectedCount?: number
+  snapshotsWritten?: boolean
   errorMessage?: string | null
   startedAt?: Date | string
   completedAt?: Date | string | null
   createdAt?: Date | string
+  items?: Prisma.CodReconciliationRunItemUncheckedCreateNestedManyWithoutRunInput
 }
 
 export type CodReconciliationRunUpdateInput = {
@@ -411,10 +430,12 @@ export type CodReconciliationRunUpdateInput = {
   matchedCount?: Prisma.IntFieldUpdateOperationsInput | number
   discrepancyCount?: Prisma.IntFieldUpdateOperationsInput | number
   uncollectedCount?: Prisma.IntFieldUpdateOperationsInput | number
+  snapshotsWritten?: Prisma.BoolFieldUpdateOperationsInput | boolean
   errorMessage?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   startedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   completedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  items?: Prisma.CodReconciliationRunItemUpdateManyWithoutRunNestedInput
 }
 
 export type CodReconciliationRunUncheckedUpdateInput = {
@@ -427,10 +448,12 @@ export type CodReconciliationRunUncheckedUpdateInput = {
   matchedCount?: Prisma.IntFieldUpdateOperationsInput | number
   discrepancyCount?: Prisma.IntFieldUpdateOperationsInput | number
   uncollectedCount?: Prisma.IntFieldUpdateOperationsInput | number
+  snapshotsWritten?: Prisma.BoolFieldUpdateOperationsInput | boolean
   errorMessage?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   startedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   completedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  items?: Prisma.CodReconciliationRunItemUncheckedUpdateManyWithoutRunNestedInput
 }
 
 export type CodReconciliationRunCreateManyInput = {
@@ -443,6 +466,7 @@ export type CodReconciliationRunCreateManyInput = {
   matchedCount?: number
   discrepancyCount?: number
   uncollectedCount?: number
+  snapshotsWritten?: boolean
   errorMessage?: string | null
   startedAt?: Date | string
   completedAt?: Date | string | null
@@ -459,6 +483,7 @@ export type CodReconciliationRunUpdateManyMutationInput = {
   matchedCount?: Prisma.IntFieldUpdateOperationsInput | number
   discrepancyCount?: Prisma.IntFieldUpdateOperationsInput | number
   uncollectedCount?: Prisma.IntFieldUpdateOperationsInput | number
+  snapshotsWritten?: Prisma.BoolFieldUpdateOperationsInput | boolean
   errorMessage?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   startedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   completedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
@@ -475,6 +500,7 @@ export type CodReconciliationRunUncheckedUpdateManyInput = {
   matchedCount?: Prisma.IntFieldUpdateOperationsInput | number
   discrepancyCount?: Prisma.IntFieldUpdateOperationsInput | number
   uncollectedCount?: Prisma.IntFieldUpdateOperationsInput | number
+  snapshotsWritten?: Prisma.BoolFieldUpdateOperationsInput | boolean
   errorMessage?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   startedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   completedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
@@ -491,6 +517,7 @@ export type CodReconciliationRunCountOrderByAggregateInput = {
   matchedCount?: Prisma.SortOrder
   discrepancyCount?: Prisma.SortOrder
   uncollectedCount?: Prisma.SortOrder
+  snapshotsWritten?: Prisma.SortOrder
   errorMessage?: Prisma.SortOrder
   startedAt?: Prisma.SortOrder
   completedAt?: Prisma.SortOrder
@@ -514,6 +541,7 @@ export type CodReconciliationRunMaxOrderByAggregateInput = {
   matchedCount?: Prisma.SortOrder
   discrepancyCount?: Prisma.SortOrder
   uncollectedCount?: Prisma.SortOrder
+  snapshotsWritten?: Prisma.SortOrder
   errorMessage?: Prisma.SortOrder
   startedAt?: Prisma.SortOrder
   completedAt?: Prisma.SortOrder
@@ -530,6 +558,7 @@ export type CodReconciliationRunMinOrderByAggregateInput = {
   matchedCount?: Prisma.SortOrder
   discrepancyCount?: Prisma.SortOrder
   uncollectedCount?: Prisma.SortOrder
+  snapshotsWritten?: Prisma.SortOrder
   errorMessage?: Prisma.SortOrder
   startedAt?: Prisma.SortOrder
   completedAt?: Prisma.SortOrder
@@ -543,6 +572,138 @@ export type CodReconciliationRunSumOrderByAggregateInput = {
   uncollectedCount?: Prisma.SortOrder
 }
 
+export type CodReconciliationRunScalarRelationFilter = {
+  is?: Prisma.CodReconciliationRunWhereInput
+  isNot?: Prisma.CodReconciliationRunWhereInput
+}
+
+export type CodReconciliationRunCreateNestedOneWithoutItemsInput = {
+  create?: Prisma.XOR<Prisma.CodReconciliationRunCreateWithoutItemsInput, Prisma.CodReconciliationRunUncheckedCreateWithoutItemsInput>
+  connectOrCreate?: Prisma.CodReconciliationRunCreateOrConnectWithoutItemsInput
+  connect?: Prisma.CodReconciliationRunWhereUniqueInput
+}
+
+export type CodReconciliationRunUpdateOneRequiredWithoutItemsNestedInput = {
+  create?: Prisma.XOR<Prisma.CodReconciliationRunCreateWithoutItemsInput, Prisma.CodReconciliationRunUncheckedCreateWithoutItemsInput>
+  connectOrCreate?: Prisma.CodReconciliationRunCreateOrConnectWithoutItemsInput
+  upsert?: Prisma.CodReconciliationRunUpsertWithoutItemsInput
+  connect?: Prisma.CodReconciliationRunWhereUniqueInput
+  update?: Prisma.XOR<Prisma.XOR<Prisma.CodReconciliationRunUpdateToOneWithWhereWithoutItemsInput, Prisma.CodReconciliationRunUpdateWithoutItemsInput>, Prisma.CodReconciliationRunUncheckedUpdateWithoutItemsInput>
+}
+
+export type CodReconciliationRunCreateWithoutItemsInput = {
+  id?: string
+  triggerType: string
+  status?: string
+  windowStart: Date | string
+  windowEnd: Date | string
+  processedCount?: number
+  matchedCount?: number
+  discrepancyCount?: number
+  uncollectedCount?: number
+  snapshotsWritten?: boolean
+  errorMessage?: string | null
+  startedAt?: Date | string
+  completedAt?: Date | string | null
+  createdAt?: Date | string
+}
+
+export type CodReconciliationRunUncheckedCreateWithoutItemsInput = {
+  id?: string
+  triggerType: string
+  status?: string
+  windowStart: Date | string
+  windowEnd: Date | string
+  processedCount?: number
+  matchedCount?: number
+  discrepancyCount?: number
+  uncollectedCount?: number
+  snapshotsWritten?: boolean
+  errorMessage?: string | null
+  startedAt?: Date | string
+  completedAt?: Date | string | null
+  createdAt?: Date | string
+}
+
+export type CodReconciliationRunCreateOrConnectWithoutItemsInput = {
+  where: Prisma.CodReconciliationRunWhereUniqueInput
+  create: Prisma.XOR<Prisma.CodReconciliationRunCreateWithoutItemsInput, Prisma.CodReconciliationRunUncheckedCreateWithoutItemsInput>
+}
+
+export type CodReconciliationRunUpsertWithoutItemsInput = {
+  update: Prisma.XOR<Prisma.CodReconciliationRunUpdateWithoutItemsInput, Prisma.CodReconciliationRunUncheckedUpdateWithoutItemsInput>
+  create: Prisma.XOR<Prisma.CodReconciliationRunCreateWithoutItemsInput, Prisma.CodReconciliationRunUncheckedCreateWithoutItemsInput>
+  where?: Prisma.CodReconciliationRunWhereInput
+}
+
+export type CodReconciliationRunUpdateToOneWithWhereWithoutItemsInput = {
+  where?: Prisma.CodReconciliationRunWhereInput
+  data: Prisma.XOR<Prisma.CodReconciliationRunUpdateWithoutItemsInput, Prisma.CodReconciliationRunUncheckedUpdateWithoutItemsInput>
+}
+
+export type CodReconciliationRunUpdateWithoutItemsInput = {
+  id?: Prisma.StringFieldUpdateOperationsInput | string
+  triggerType?: Prisma.StringFieldUpdateOperationsInput | string
+  status?: Prisma.StringFieldUpdateOperationsInput | string
+  windowStart?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  windowEnd?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  processedCount?: Prisma.IntFieldUpdateOperationsInput | number
+  matchedCount?: Prisma.IntFieldUpdateOperationsInput | number
+  discrepancyCount?: Prisma.IntFieldUpdateOperationsInput | number
+  uncollectedCount?: Prisma.IntFieldUpdateOperationsInput | number
+  snapshotsWritten?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  errorMessage?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  startedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  completedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+}
+
+export type CodReconciliationRunUncheckedUpdateWithoutItemsInput = {
+  id?: Prisma.StringFieldUpdateOperationsInput | string
+  triggerType?: Prisma.StringFieldUpdateOperationsInput | string
+  status?: Prisma.StringFieldUpdateOperationsInput | string
+  windowStart?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  windowEnd?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  processedCount?: Prisma.IntFieldUpdateOperationsInput | number
+  matchedCount?: Prisma.IntFieldUpdateOperationsInput | number
+  discrepancyCount?: Prisma.IntFieldUpdateOperationsInput | number
+  uncollectedCount?: Prisma.IntFieldUpdateOperationsInput | number
+  snapshotsWritten?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  errorMessage?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  startedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  completedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+}
+
+
+/**
+ * Count Type CodReconciliationRunCountOutputType
+ */
+
+export type CodReconciliationRunCountOutputType = {
+  items: number
+}
+
+export type CodReconciliationRunCountOutputTypeSelect<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
+  items?: boolean | CodReconciliationRunCountOutputTypeCountItemsArgs
+}
+
+/**
+ * CodReconciliationRunCountOutputType without action
+ */
+export type CodReconciliationRunCountOutputTypeDefaultArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
+  /**
+   * Select specific fields to fetch from the CodReconciliationRunCountOutputType
+   */
+  select?: Prisma.CodReconciliationRunCountOutputTypeSelect<ExtArgs> | null
+}
+
+/**
+ * CodReconciliationRunCountOutputType without action
+ */
+export type CodReconciliationRunCountOutputTypeCountItemsArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
+  where?: Prisma.CodReconciliationRunItemWhereInput
+}
 
 
 export type CodReconciliationRunSelect<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetSelect<{
@@ -555,10 +716,13 @@ export type CodReconciliationRunSelect<ExtArgs extends runtime.Types.Extensions.
   matchedCount?: boolean
   discrepancyCount?: boolean
   uncollectedCount?: boolean
+  snapshotsWritten?: boolean
   errorMessage?: boolean
   startedAt?: boolean
   completedAt?: boolean
   createdAt?: boolean
+  items?: boolean | Prisma.CodReconciliationRun$itemsArgs<ExtArgs>
+  _count?: boolean | Prisma.CodReconciliationRunCountOutputTypeDefaultArgs<ExtArgs>
 }, ExtArgs["result"]["codReconciliationRun"]>
 
 export type CodReconciliationRunSelectCreateManyAndReturn<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetSelect<{
@@ -571,6 +735,7 @@ export type CodReconciliationRunSelectCreateManyAndReturn<ExtArgs extends runtim
   matchedCount?: boolean
   discrepancyCount?: boolean
   uncollectedCount?: boolean
+  snapshotsWritten?: boolean
   errorMessage?: boolean
   startedAt?: boolean
   completedAt?: boolean
@@ -587,6 +752,7 @@ export type CodReconciliationRunSelectUpdateManyAndReturn<ExtArgs extends runtim
   matchedCount?: boolean
   discrepancyCount?: boolean
   uncollectedCount?: boolean
+  snapshotsWritten?: boolean
   errorMessage?: boolean
   startedAt?: boolean
   completedAt?: boolean
@@ -603,17 +769,26 @@ export type CodReconciliationRunSelectScalar = {
   matchedCount?: boolean
   discrepancyCount?: boolean
   uncollectedCount?: boolean
+  snapshotsWritten?: boolean
   errorMessage?: boolean
   startedAt?: boolean
   completedAt?: boolean
   createdAt?: boolean
 }
 
-export type CodReconciliationRunOmit<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetOmit<"id" | "triggerType" | "status" | "windowStart" | "windowEnd" | "processedCount" | "matchedCount" | "discrepancyCount" | "uncollectedCount" | "errorMessage" | "startedAt" | "completedAt" | "createdAt", ExtArgs["result"]["codReconciliationRun"]>
+export type CodReconciliationRunOmit<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetOmit<"id" | "triggerType" | "status" | "windowStart" | "windowEnd" | "processedCount" | "matchedCount" | "discrepancyCount" | "uncollectedCount" | "snapshotsWritten" | "errorMessage" | "startedAt" | "completedAt" | "createdAt", ExtArgs["result"]["codReconciliationRun"]>
+export type CodReconciliationRunInclude<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
+  items?: boolean | Prisma.CodReconciliationRun$itemsArgs<ExtArgs>
+  _count?: boolean | Prisma.CodReconciliationRunCountOutputTypeDefaultArgs<ExtArgs>
+}
+export type CodReconciliationRunIncludeCreateManyAndReturn<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {}
+export type CodReconciliationRunIncludeUpdateManyAndReturn<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {}
 
 export type $CodReconciliationRunPayload<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
   name: "CodReconciliationRun"
-  objects: {}
+  objects: {
+    items: Prisma.$CodReconciliationRunItemPayload<ExtArgs>[]
+  }
   scalars: runtime.Types.Extensions.GetPayloadResult<{
     id: string
     triggerType: string
@@ -624,6 +799,7 @@ export type $CodReconciliationRunPayload<ExtArgs extends runtime.Types.Extension
     matchedCount: number
     discrepancyCount: number
     uncollectedCount: number
+    snapshotsWritten: boolean
     errorMessage: string | null
     startedAt: Date
     completedAt: Date | null
@@ -1022,6 +1198,7 @@ readonly fields: CodReconciliationRunFieldRefs;
  */
 export interface Prisma__CodReconciliationRunClient<T, Null = never, ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs, GlobalOmitOptions = {}> extends Prisma.PrismaPromise<T> {
   readonly [Symbol.toStringTag]: "PrismaPromise"
+  items<T extends Prisma.CodReconciliationRun$itemsArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.CodReconciliationRun$itemsArgs<ExtArgs>>): Prisma.PrismaPromise<runtime.Types.Result.GetResult<Prisma.$CodReconciliationRunItemPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
   /**
    * Attaches callbacks for the resolution and/or rejection of the Promise.
    * @param onfulfilled The callback to execute when the Promise is resolved.
@@ -1060,6 +1237,7 @@ export interface CodReconciliationRunFieldRefs {
   readonly matchedCount: Prisma.FieldRef<"CodReconciliationRun", 'Int'>
   readonly discrepancyCount: Prisma.FieldRef<"CodReconciliationRun", 'Int'>
   readonly uncollectedCount: Prisma.FieldRef<"CodReconciliationRun", 'Int'>
+  readonly snapshotsWritten: Prisma.FieldRef<"CodReconciliationRun", 'Boolean'>
   readonly errorMessage: Prisma.FieldRef<"CodReconciliationRun", 'String'>
   readonly startedAt: Prisma.FieldRef<"CodReconciliationRun", 'DateTime'>
   readonly completedAt: Prisma.FieldRef<"CodReconciliationRun", 'DateTime'>
@@ -1081,6 +1259,10 @@ export type CodReconciliationRunFindUniqueArgs<ExtArgs extends runtime.Types.Ext
    */
   omit?: Prisma.CodReconciliationRunOmit<ExtArgs> | null
   /**
+   * Choose, which related nodes to fetch as well
+   */
+  include?: Prisma.CodReconciliationRunInclude<ExtArgs> | null
+  /**
    * Filter, which CodReconciliationRun to fetch.
    */
   where: Prisma.CodReconciliationRunWhereUniqueInput
@@ -1099,6 +1281,10 @@ export type CodReconciliationRunFindUniqueOrThrowArgs<ExtArgs extends runtime.Ty
    */
   omit?: Prisma.CodReconciliationRunOmit<ExtArgs> | null
   /**
+   * Choose, which related nodes to fetch as well
+   */
+  include?: Prisma.CodReconciliationRunInclude<ExtArgs> | null
+  /**
    * Filter, which CodReconciliationRun to fetch.
    */
   where: Prisma.CodReconciliationRunWhereUniqueInput
@@ -1116,6 +1302,10 @@ export type CodReconciliationRunFindFirstArgs<ExtArgs extends runtime.Types.Exte
    * Omit specific fields from the CodReconciliationRun
    */
   omit?: Prisma.CodReconciliationRunOmit<ExtArgs> | null
+  /**
+   * Choose, which related nodes to fetch as well
+   */
+  include?: Prisma.CodReconciliationRunInclude<ExtArgs> | null
   /**
    * Filter, which CodReconciliationRun to fetch.
    */
@@ -1165,6 +1355,10 @@ export type CodReconciliationRunFindFirstOrThrowArgs<ExtArgs extends runtime.Typ
    */
   omit?: Prisma.CodReconciliationRunOmit<ExtArgs> | null
   /**
+   * Choose, which related nodes to fetch as well
+   */
+  include?: Prisma.CodReconciliationRunInclude<ExtArgs> | null
+  /**
    * Filter, which CodReconciliationRun to fetch.
    */
   where?: Prisma.CodReconciliationRunWhereInput
@@ -1212,6 +1406,10 @@ export type CodReconciliationRunFindManyArgs<ExtArgs extends runtime.Types.Exten
    * Omit specific fields from the CodReconciliationRun
    */
   omit?: Prisma.CodReconciliationRunOmit<ExtArgs> | null
+  /**
+   * Choose, which related nodes to fetch as well
+   */
+  include?: Prisma.CodReconciliationRunInclude<ExtArgs> | null
   /**
    * Filter, which CodReconciliationRuns to fetch.
    */
@@ -1261,6 +1459,10 @@ export type CodReconciliationRunCreateArgs<ExtArgs extends runtime.Types.Extensi
    */
   omit?: Prisma.CodReconciliationRunOmit<ExtArgs> | null
   /**
+   * Choose, which related nodes to fetch as well
+   */
+  include?: Prisma.CodReconciliationRunInclude<ExtArgs> | null
+  /**
    * The data needed to create a CodReconciliationRun.
    */
   data: Prisma.XOR<Prisma.CodReconciliationRunCreateInput, Prisma.CodReconciliationRunUncheckedCreateInput>
@@ -1308,6 +1510,10 @@ export type CodReconciliationRunUpdateArgs<ExtArgs extends runtime.Types.Extensi
    * Omit specific fields from the CodReconciliationRun
    */
   omit?: Prisma.CodReconciliationRunOmit<ExtArgs> | null
+  /**
+   * Choose, which related nodes to fetch as well
+   */
+  include?: Prisma.CodReconciliationRunInclude<ExtArgs> | null
   /**
    * The data needed to update a CodReconciliationRun.
    */
@@ -1375,6 +1581,10 @@ export type CodReconciliationRunUpsertArgs<ExtArgs extends runtime.Types.Extensi
    */
   omit?: Prisma.CodReconciliationRunOmit<ExtArgs> | null
   /**
+   * Choose, which related nodes to fetch as well
+   */
+  include?: Prisma.CodReconciliationRunInclude<ExtArgs> | null
+  /**
    * The filter to search for the CodReconciliationRun to update in case it exists.
    */
   where: Prisma.CodReconciliationRunWhereUniqueInput
@@ -1401,6 +1611,10 @@ export type CodReconciliationRunDeleteArgs<ExtArgs extends runtime.Types.Extensi
    */
   omit?: Prisma.CodReconciliationRunOmit<ExtArgs> | null
   /**
+   * Choose, which related nodes to fetch as well
+   */
+  include?: Prisma.CodReconciliationRunInclude<ExtArgs> | null
+  /**
    * Filter which CodReconciliationRun to delete.
    */
   where: Prisma.CodReconciliationRunWhereUniqueInput
@@ -1421,6 +1635,30 @@ export type CodReconciliationRunDeleteManyArgs<ExtArgs extends runtime.Types.Ext
 }
 
 /**
+ * CodReconciliationRun.items
+ */
+export type CodReconciliationRun$itemsArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
+  /**
+   * Select specific fields to fetch from the CodReconciliationRunItem
+   */
+  select?: Prisma.CodReconciliationRunItemSelect<ExtArgs> | null
+  /**
+   * Omit specific fields from the CodReconciliationRunItem
+   */
+  omit?: Prisma.CodReconciliationRunItemOmit<ExtArgs> | null
+  /**
+   * Choose, which related nodes to fetch as well
+   */
+  include?: Prisma.CodReconciliationRunItemInclude<ExtArgs> | null
+  where?: Prisma.CodReconciliationRunItemWhereInput
+  orderBy?: Prisma.CodReconciliationRunItemOrderByWithRelationInput | Prisma.CodReconciliationRunItemOrderByWithRelationInput[]
+  cursor?: Prisma.CodReconciliationRunItemWhereUniqueInput
+  take?: number
+  skip?: number
+  distinct?: Prisma.CodReconciliationRunItemScalarFieldEnum | Prisma.CodReconciliationRunItemScalarFieldEnum[]
+}
+
+/**
  * CodReconciliationRun without action
  */
 export type CodReconciliationRunDefaultArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
@@ -1432,4 +1670,8 @@ export type CodReconciliationRunDefaultArgs<ExtArgs extends runtime.Types.Extens
    * Omit specific fields from the CodReconciliationRun
    */
   omit?: Prisma.CodReconciliationRunOmit<ExtArgs> | null
+  /**
+   * Choose, which related nodes to fetch as well
+   */
+  include?: Prisma.CodReconciliationRunInclude<ExtArgs> | null
 }

@@ -157,6 +157,29 @@ const ADMIN_ORDER_PAYMENT_SELECT = {
 } satisfies Prisma.PaymentSelect;
 
 /**
+ * The safe COD collection projection for the administrative views.
+ *
+ * `cod_collections` is the only evidence that cash was received. The collector
+ * is selected through the same three-field identity projection as the customer,
+ * so a collection can never expose `passwordHash`. `receiptProof` is deliberately
+ * omitted: it is a Cloudinary artifact, not a field a list or receipt needs.
+ */
+const ADMIN_ORDER_COD_COLLECTION_SELECT = {
+  id: true,
+  amount: true,
+  currency: true,
+  collectedAt: true,
+  collectedBy: {
+    select: {
+      id: true,
+      firstName: true,
+      lastName: true,
+      email: true,
+    },
+  },
+} satisfies Prisma.CodCollectionSelect;
+
+/**
  * The listing projection.
  *
  * The customer relation is an explicit three-field selection: this is the only
@@ -203,6 +226,14 @@ const ADMIN_ORDER_LIST_SELECT = {
     take: 1,
     orderBy: [{ createdAt: 'desc' }, { id: 'desc' }],
     select: ADMIN_ORDER_PAYMENT_SUMMARY_SELECT,
+  },
+  /**
+   * At most one row, enforced by the unique `order_id` on `cod_collections`.
+   * Selecting it as a relation keeps the page free of per-order lookups.
+   */
+  codCollections: {
+    take: 1,
+    select: ADMIN_ORDER_COD_COLLECTION_SELECT,
   },
   _count: {
     select: {
@@ -266,6 +297,14 @@ const ADMIN_ORDER_DETAIL_SELECT = {
   payments: {
     orderBy: [{ createdAt: 'desc' }, { id: 'desc' }],
     select: ADMIN_ORDER_PAYMENT_SELECT,
+  },
+  /**
+   * At most one row, enforced by the unique `order_id` on `cod_collections`.
+   * Detail needs the full collection snapshot for the COD collection section.
+   */
+  codCollections: {
+    take: 1,
+    select: ADMIN_ORDER_COD_COLLECTION_SELECT,
   },
 } satisfies Prisma.OrderSelect;
 

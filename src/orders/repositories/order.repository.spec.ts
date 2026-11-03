@@ -810,6 +810,34 @@ describe('OrderRepository', () => {
         select: { quantity: true },
       });
     });
+
+    it('reads the COD collection through a safe nested select, not a per-order query', async () => {
+      await repository.findAdminPage({ page: 1, limit: 20 });
+
+      const select = prisma.order.findMany.mock.calls[0][0].select as {
+        codCollections: {
+          take: number;
+          select: Record<string, unknown>;
+        };
+      };
+
+      expect(select.codCollections.take).toBe(1);
+      expect(select.codCollections.select).toEqual({
+        id: true,
+        amount: true,
+        currency: true,
+        collectedAt: true,
+        collectedBy: {
+          select: {
+            id: true,
+            firstName: true,
+            lastName: true,
+            email: true,
+          },
+        },
+      });
+      expect(select.codCollections.select).not.toHaveProperty('receiptProof');
+    });
   });
 
   describe('findAdminById', () => {
@@ -855,6 +883,43 @@ describe('OrderRepository', () => {
       expect(call.select.variant).toBeUndefined();
       expect(call.select.items.select.productName).toBe(true);
       expect(call.select.items.select.unitPrice).toBe(true);
+    });
+
+    it('reads the COD collection with only safe collector fields', async () => {
+      prisma.order.findUnique.mockResolvedValue({ id: ORDER_ID });
+
+      await repository.findAdminById(ORDER_ID);
+
+      const call = prisma.order.findUnique.mock.calls[0][0] as {
+        select: {
+          codCollections: {
+            take: number;
+            select: Record<string, unknown>;
+          };
+        };
+      };
+
+      expect(call.select.codCollections.take).toBe(1);
+      expect(call.select.codCollections.select).toEqual({
+        id: true,
+        amount: true,
+        currency: true,
+        collectedAt: true,
+        collectedBy: {
+          select: {
+            id: true,
+            firstName: true,
+            lastName: true,
+            email: true,
+          },
+        },
+      });
+      expect(call.select.codCollections.select).not.toHaveProperty(
+        'receiptProof',
+      );
+      expect(call.select.codCollections.select).not.toHaveProperty(
+        'collectedById',
+      );
     });
 
     it('returns null for an unknown order', async () => {

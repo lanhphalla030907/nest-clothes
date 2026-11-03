@@ -1,9 +1,16 @@
-import { Injectable, Logger } from '@nestjs/common';
-import { Cron } from '@nestjs/schedule';
+import {
+  Injectable,
+  Logger,
+  type OnApplicationBootstrap,
+} from '@nestjs/common';
+import { Cron, Interval } from '@nestjs/schedule';
 import { ReconciliationService } from './reconciliation.service.js';
 
 export const COD_RECONCILIATION_CRON = 'cod-reconciliation-daily';
 export const COD_RECONCILIATION_CRON_EXPRESSION = '0 0 1 * * *';
+export const COD_RECONCILIATION_RECOVERY_INTERVAL =
+  'cod-reconciliation-recovery';
+export const COD_RECONCILIATION_RECOVERY_INTERVAL_MS = 10 * 60 * 1000;
 
 export function getPreviousUtcCalendarDayWindow(now = new Date()): {
   windowStart: Date;
@@ -18,41 +25,76 @@ export function getPreviousUtcCalendarDayWindow(now = new Date()): {
 }
 
 @Injectable()
-export class ReconciliationScheduler {
+export class ReconciliationScheduler implements OnApplicationBootstrap {
   private readonly logger = new Logger(ReconciliationScheduler.name);
+  private currentRecovery: Promise<void> | null = null;
 
   constructor(private readonly reconciliationService: ReconciliationService) {}
+
+  /**
+   * Starts recovery without awaiting it, so application startup and HTTP
+   * readiness are never blocked by a backlog sweep.
+   */
+  onApplicationBootstrap(): void {
+    void this.runRecovery('startup');
+  }
+
+  /**
+   * Waits for the currently active recovery sweep, if any. Primarily useful for
+   * tests and operational shutdown coordination.
+   */
+  async waitForRecovery(): Promise<void> {
+    await this.currentRecovery;
+  }
 
   @Cron(COD_RECONCILIATION_CRON_EXPRESSION, {
     name: COD_RECONCILIATION_CRON,
     timeZone: 'UTC',
   })
   async reconcilePreviousUtcDay(): Promise<void> {
-    const { windowStart, windowEnd } = getPreviousUtcCalendarDayWindow();
-    this.logger.log(
-      `Starting scheduled COD reconciliation for [${windowStart.toISOString()}, ${windowEnd.toISOString()})`,
-    );
+    // The daily trigger uses the same idempotent catch-up operation as startup
+    // and the periodic sweep. This avoids a separate single-window code path.
+    await this.runRecovery('daily-cron');
+  }
 
-    try {
-      const result = await this.reconciliationService.reconcileWindow(
-        windowStart,
-        windowEnd,
-        'cron',
-      );
+  @Interval(
+    COD_RECONCILIATION_RECOVERY_INTERVAL,
+    COD_RECONCILIATION_RECOVERY_INTERVAL_MS,
+  )
+  async recoverMissedWindows(): Promise<void> {
+    await this.runRecovery('periodic');
+  }
 
-      if (!result) {
-        this.logger.warn(
-          `Skipped duplicate scheduled COD reconciliation for [${windowStart.toISOString()}, ${windowEnd.toISOString()})`,
-        );
-        return;
-      }
-
+  private runRecovery(source: 'startup' | 'daily-cron' | 'periodic'): Promise<void> {
+    if (this.currentRecovery) {
       this.logger.log(
-        `Completed scheduled COD reconciliation run ${result.run.id}`,
+        `Skipping ${source} COD reconciliation recovery because a sweep is already running`,
+      );
+      return this.currentRecovery;
+    }
+
+    const promise = this.executeRecovery(source).finally(() => {
+      if (this.currentRecovery === promise) {
+        this.currentRecovery = null;
+      }
+    });
+    this.currentRecovery = promise;
+    return promise;
+  }
+
+  private async executeRecovery(
+    source: 'startup' | 'daily-cron' | 'periodic',
+  ): Promise<void> {
+    try {
+      const summary =
+        await this.reconciliationService.recoverMissedUtcDays();
+      this.logger.log(
+        `${source} COD reconciliation recovery scanned ${summary.windowsScanned} windows: ` +
+          `${summary.recovered} recovered, ${summary.skipped} skipped, ${summary.failed} failed`,
       );
     } catch (error) {
       this.logger.error(
-        `Scheduled COD reconciliation failed for [${windowStart.toISOString()}, ${windowEnd.toISOString()})`,
+        `${source} COD reconciliation recovery failed`,
         error instanceof Error ? error.stack : String(error),
       );
     }

@@ -22,6 +22,7 @@ import { VariantOptionsModule } from './variant-options/variant-options.module.j
 import { WishlistModule } from './wishlist/wishlist.module.js';
 import { OrderModule } from './orders/order.module.js';
 import { PaymentsModule } from './payments/payments.module.js';
+import { ReceiptModule } from './receipts/receipt.module.js';
 import { LocationsModule } from './locations/locations.module.js';
 import { ScheduleModule } from '@nestjs/schedule';
 
@@ -89,6 +90,7 @@ import { ScheduleModule } from '@nestjs/schedule';
      * stay one way.
      */
     PaymentsModule,
+    ReceiptModule,
   ],
   controllers: [AppController],
   providers: [AppService],

@@ -6,9 +6,18 @@ import { ReconciliationService } from './reconciliation.service.js';
 import {
   COD_RECONCILIATION_CRON,
   COD_RECONCILIATION_CRON_EXPRESSION,
+  COD_RECONCILIATION_RECOVERY_INTERVAL,
+  COD_RECONCILIATION_RECOVERY_INTERVAL_MS,
   getPreviousUtcCalendarDayWindow,
   ReconciliationScheduler,
 } from './reconciliation.scheduler.js';
+
+const summary = {
+  windowsScanned: 30,
+  recovered: 0,
+  skipped: 30,
+  failed: 0,
+};
 
 describe('ReconciliationScheduler', () => {
   it('declares a daily 01:00 UTC cron job', () => {
@@ -22,6 +31,21 @@ describe('ReconciliationScheduler', () => {
       timeZone: 'UTC',
       name: COD_RECONCILIATION_CRON,
     });
+  });
+
+  it('declares a ten-minute named recovery interval', () => {
+    const metadata = Reflect.getMetadata(
+      'SCHEDULE_INTERVAL_OPTIONS',
+      ReconciliationScheduler.prototype.recoverMissedWindows,
+    ) as Record<string, unknown>;
+    const name = Reflect.getMetadata(
+      'SCHEDULER_NAME',
+      ReconciliationScheduler.prototype.recoverMissedWindows,
+    ) as string;
+
+    expect(metadata).toEqual({ timeout: 600_000 });
+    expect(COD_RECONCILIATION_RECOVERY_INTERVAL_MS).toBe(600_000);
+    expect(name).toBe(COD_RECONCILIATION_RECOVERY_INTERVAL);
   });
 
   it('calculates the previous UTC calendar day independent of local timezone', () => {
@@ -51,9 +75,33 @@ describe('ReconciliationScheduler', () => {
     expect(deliveryProviders).toContain(ReconciliationScheduler);
   });
 
-  it('is discovered by Nest and invokes reconciliation when the registered job fires', async () => {
+  it('runs recovery during application bootstrap without blocking initialization', async () => {
+    let resolveRecovery!: (value: typeof summary) => void;
+    const pending = new Promise<typeof summary>((resolve) => {
+      resolveRecovery = resolve;
+    });
     const reconciliationService = {
-      reconcileWindow: vi.fn().mockResolvedValue(null),
+      recoverMissedUtcDays: vi.fn().mockReturnValue(pending),
+    };
+    const module = await Test.createTestingModule({
+      providers: [
+        ReconciliationScheduler,
+        { provide: ReconciliationService, useValue: reconciliationService },
+      ],
+    }).compile();
+    const scheduler = module.get(ReconciliationScheduler);
+
+    await expect(module.init()).resolves.toBeDefined();
+    expect(reconciliationService.recoverMissedUtcDays).toHaveBeenCalledOnce();
+
+    resolveRecovery(summary);
+    await scheduler.waitForRecovery();
+    await module.close();
+  });
+
+  it('uses the same recovery operation from the daily cron job', async () => {
+    const reconciliationService = {
+      recoverMissedUtcDays: vi.fn().mockResolvedValue(summary),
     };
     const module = await Test.createTestingModule({
       imports: [ScheduleModule.forRoot()],
@@ -64,36 +112,71 @@ describe('ReconciliationScheduler', () => {
     }).compile();
 
     await module.init();
+    const scheduler = module.get(ReconciliationScheduler);
+    await scheduler.waitForRecovery();
+    reconciliationService.recoverMissedUtcDays.mockClear();
 
     try {
-      expect(module.get(ReconciliationScheduler)).toBeInstanceOf(
-        ReconciliationScheduler,
-      );
       const registry = module.get(SchedulerRegistry);
       const job = registry.getCronJob(COD_RECONCILIATION_CRON);
       expect(job).toBeDefined();
 
-      vi.useFakeTimers({ toFake: ['Date'] });
-      vi.setSystemTime(new Date('2026-03-01T22:15:00.000Z'));
       await job.fireOnTick();
 
-      expect(reconciliationService.reconcileWindow).toHaveBeenCalledWith(
-        new Date('2026-02-28T00:00:00.000Z'),
-        new Date('2026-03-01T00:00:00.000Z'),
-        'cron',
-      );
+      expect(reconciliationService.recoverMissedUtcDays).toHaveBeenCalledOnce();
     } finally {
-      vi.useRealTimers();
       await module.close();
     }
   });
 
-  it('logs duplicate skips and absorbs reconciliation failures', async () => {
+  it('runs the periodic recovery operation', async () => {
     const reconciliationService = {
-      reconcileWindow: vi
+      recoverMissedUtcDays: vi.fn().mockResolvedValue(summary),
+    };
+    const module = await Test.createTestingModule({
+      providers: [
+        ReconciliationScheduler,
+        { provide: ReconciliationService, useValue: reconciliationService },
+      ],
+    }).compile();
+    const scheduler = module.get(ReconciliationScheduler);
+
+    await expect(scheduler.recoverMissedWindows()).resolves.toBeUndefined();
+    expect(reconciliationService.recoverMissedUtcDays).toHaveBeenCalledOnce();
+    await module.close();
+  });
+
+  it('does not start overlapping recovery sweeps within one process', async () => {
+    let resolveRecovery!: (value: typeof summary) => void;
+    const pending = new Promise<typeof summary>((resolve) => {
+      resolveRecovery = resolve;
+    });
+    const reconciliationService = {
+      recoverMissedUtcDays: vi.fn().mockReturnValue(pending),
+    };
+    const module = await Test.createTestingModule({
+      providers: [
+        ReconciliationScheduler,
+        { provide: ReconciliationService, useValue: reconciliationService },
+      ],
+    }).compile();
+    const scheduler = module.get(ReconciliationScheduler);
+
+    const first = scheduler.recoverMissedWindows();
+    const second = scheduler.recoverMissedWindows();
+    expect(reconciliationService.recoverMissedUtcDays).toHaveBeenCalledOnce();
+
+    resolveRecovery(summary);
+    await Promise.all([first, second]);
+    await module.close();
+  });
+
+  it('absorbs recovery failures', async () => {
+    const reconciliationService = {
+      recoverMissedUtcDays: vi
         .fn()
-        .mockResolvedValueOnce(null)
-        .mockRejectedValueOnce(new Error('database unavailable')),
+        .mockRejectedValueOnce(new Error('database unavailable'))
+        .mockResolvedValueOnce(summary),
     };
     const module = await Test.createTestingModule({
       providers: [
@@ -105,6 +188,9 @@ describe('ReconciliationScheduler', () => {
 
     await expect(scheduler.reconcilePreviousUtcDay()).resolves.toBeUndefined();
     await expect(scheduler.reconcilePreviousUtcDay()).resolves.toBeUndefined();
-    expect(reconciliationService.reconcileWindow).toHaveBeenCalledTimes(2);
+    expect(reconciliationService.recoverMissedUtcDays).toHaveBeenCalledTimes(
+      2,
+    );
+    await module.close();
   });
 });

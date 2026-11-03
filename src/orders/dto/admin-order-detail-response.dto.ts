@@ -2,6 +2,7 @@ import { toMoneyString } from '../../common/utils/money.js';
 import type { OrderStatus } from '../constants/order-status.constants.js';
 import type { AdminOrderDetailRow } from '../repositories/order.repository.js';
 import { AdminOrderCustomerDto } from './admin-order-customer.dto.js';
+import { AdminOrderCodCollectionDto } from './admin-order-cod-collection.dto.js';
 import { OrderItemResponseDto } from './order-item-response.dto.js';
 import { AdminOrderPaymentDto } from './admin-order-payment.dto.js';
 import {
@@ -51,6 +52,11 @@ export class AdminOrderDetailResponseDto {
   updatedAt: Date;
   /** The payment channel selected at checkout, independent of any attempt. */
   paymentMethod: string | null;
+  /**
+   * The actual COD collection record, or `NOT_COLLECTED` for a COD order with
+   * none. `null` for a non-COD order with no collection.
+   */
+  codCollection: AdminOrderCodCollectionDto | null;
 
   static fromEntity(order: AdminOrderDetailRow): AdminOrderDetailResponseDto {
     const dto = new AdminOrderDetailResponseDto();
@@ -88,6 +94,10 @@ export class AdminOrderDetailResponseDto {
     dto.createdAt = order.createdAt;
     dto.updatedAt = order.updatedAt;
     dto.paymentMethod = order.paymentMethod ?? null;
+    dto.codCollection = AdminOrderCodCollectionDto.fromOrder(
+      dto.paymentMethod,
+      order.codCollections,
+    );
     return dto;
   }
 }

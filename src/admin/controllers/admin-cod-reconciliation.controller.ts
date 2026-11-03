@@ -14,7 +14,9 @@ import { JwtAuthGuard } from '../../auth/guards/jwt-auth.guard.js';
 import { RolesGuard } from '../../auth/guards/roles.guard.js';
 import { DeliveryService } from '../../delivery/delivery.service.js';
 import { AdminCodReconciliationQueryDto } from '../../delivery/dto/admin-cod-reconciliation-query.dto.js';
+import { AdminCodReconciliationRunDetailDto } from '../../delivery/dto/admin-cod-reconciliation-run-detail.dto.js';
 import { ManualReconciliationTriggerDto } from '../../delivery/dto/manual-reconciliation-trigger.dto.js';
+import { ReconciliationRunDetailQueryDto } from '../../delivery/dto/reconciliation-run-detail-query.dto.js';
 import { ReconciliationRunHistoryQueryDto } from '../../delivery/dto/reconciliation-run-history-query.dto.js';
 import { ReconciliationService } from '../../delivery/reconciliation.service.js';
 import type { CodReconciliationRun } from '../../generated/prisma/client.js';
@@ -130,9 +132,22 @@ export class AdminCodReconciliationController {
   }
 
   @Get('runs/:id')
-  async findRun(@Param('id', ParseUUIDPipe) id: string) {
-    const run = await this.reconciliationService.getRun(id);
-    return this.sanitizeRunError(run);
+  async findRun(
+    @Param('id', ParseUUIDPipe) id: string,
+    @Query() query: ReconciliationRunDetailQueryDto,
+  ) {
+    const result = await this.reconciliationService.getRunDetail(
+      id,
+      query.page,
+      query.limit,
+    );
+
+    return AdminCodReconciliationRunDetailDto.fromResult({
+      ...result,
+      run: this.sanitizeRunError(result.run),
+      page: query.page,
+      limit: query.limit,
+    });
   }
 
   @Post('runs/trigger')

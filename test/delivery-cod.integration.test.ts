@@ -429,6 +429,9 @@ describe('COD collection (PostgreSQL)', () => {
           data: { codEnabledOverride: previousLocationCodOverride },
         });
       }
+      await prisma.codReconciliationRunItem.deleteMany({
+        where: { runId: { in: reconciliationRunIds } },
+      });
       await prisma.codReconciliationRun.deleteMany({
         where: { id: { in: reconciliationRunIds } },
       });

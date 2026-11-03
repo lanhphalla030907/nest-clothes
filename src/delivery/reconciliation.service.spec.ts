@@ -1,30 +1,37 @@
+import { ConflictException, NotFoundException } from '@nestjs/common';
 import { Test, TestingModule } from '@nestjs/testing';
 import type { CodReconciliationRecordItem } from './repositories/delivery.repository.js';
 import {
   ReconciliationRepository,
   type ReconciliationRunCounters,
 } from './repositories/reconciliation.repository.js';
-import { ReconciliationService } from './reconciliation.service.js';
+import {
+  ReconciliationService,
+  type ReconciliationExecutionResult,
+} from './reconciliation.service.js';
 
 describe('ReconciliationService', () => {
   let service: ReconciliationService;
   let repository: {
-    createRun: ReturnType<typeof vi.fn>;
+    claimRecoveryWindow: ReturnType<typeof vi.fn>;
+    claimManualWindow: ReturnType<typeof vi.fn>;
     findReconciliationData: ReturnType<typeof vi.fn>;
+    findRunSnapshot: ReturnType<typeof vi.fn>;
     completeRun: ReturnType<typeof vi.fn>;
     markRunFailed: ReturnType<typeof vi.fn>;
   };
 
   const run = {
     id: 'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa',
-    triggerType: 'manual',
-    status: 'running',
+    triggerType: 'manual' as const,
+    status: 'running' as const,
     windowStart: new Date('2026-10-01T00:00:00.000Z'),
     windowEnd: new Date('2026-10-02T00:00:00.000Z'),
     processedCount: 0,
     matchedCount: 0,
     discrepancyCount: 0,
     uncollectedCount: 0,
+    snapshotsWritten: false,
     errorMessage: null,
     startedAt: new Date('2026-10-01T00:00:00.000Z'),
     completedAt: null,
@@ -64,10 +71,43 @@ describe('ReconciliationService', () => {
     uncollectedCount: 1,
   };
 
+  const execution = (
+    start = windowStart,
+    end = windowEnd,
+  ): ReconciliationExecutionResult => ({
+    run: {
+      ...run,
+      status: 'completed',
+      windowStart: start,
+      windowEnd: end,
+      completedAt: new Date(end.getTime() + 60_000),
+    },
+    counters: {
+      processedCount: 0,
+      matchedCount: 0,
+      discrepancyCount: 0,
+      uncollectedCount: 0,
+    },
+    discrepancyBreakdown: {
+      missingCollections: 0,
+      amountMismatches: 0,
+      currencyMismatches: 0,
+    },
+  });
+
   beforeEach(async () => {
     repository = {
-      createRun: vi.fn().mockResolvedValue(run),
+      claimRecoveryWindow: vi
+        .fn()
+        .mockResolvedValue({ outcome: 'claimed', run }),
+      claimManualWindow: vi.fn().mockResolvedValue({ outcome: 'claimed', run }),
       findReconciliationData: vi.fn().mockResolvedValue([]),
+      findRunSnapshot: vi.fn().mockResolvedValue({
+        run,
+        items: [],
+        total: 0,
+        summaryByCurrency: [],
+      }),
       completeRun: vi.fn().mockResolvedValue({ ...run, status: 'completed' }),
       markRunFailed: vi.fn().mockResolvedValue({ ...run, status: 'failed' }),
     };
@@ -82,7 +122,7 @@ describe('ReconciliationService', () => {
     service = module.get(ReconciliationService);
   });
 
-  it('creates, reconciles, and completes a run with accurate counters', async () => {
+  it('claims, reconciles, and completes a cron run with accurate counters', async () => {
     repository.findReconciliationData.mockResolvedValueOnce([
       record(false, null),
       record(false, null),
@@ -108,21 +148,60 @@ describe('ReconciliationService', () => {
       },
     });
 
-    expect(repository.createRun).toHaveBeenCalledWith(
-      'cron',
+    expect(repository.claimRecoveryWindow).toHaveBeenCalledWith(
       windowStart,
       windowEnd,
     );
+    expect(repository.claimManualWindow).not.toHaveBeenCalled();
     expect(repository.findReconciliationData).toHaveBeenCalledWith(
       windowStart,
       windowEnd,
     );
-    expect(repository.completeRun).toHaveBeenCalledWith(run.id, counters);
+    expect(repository.completeRun).toHaveBeenCalledWith(
+      run.id,
+      counters,
+      expect.arrayContaining([
+        expect.objectContaining({ orderId: record(false, null).orderId }),
+      ]),
+    );
     expect(repository.markRunFailed).not.toHaveBeenCalled();
   });
 
-  it('does not execute a duplicate run', async () => {
-    repository.createRun.mockResolvedValueOnce(null);
+  it('uses the manual claim path for manual runs', async () => {
+    await expect(
+      service.reconcileWindow(windowStart, windowEnd, 'manual'),
+    ).resolves.toMatchObject({ run: { ...run, status: 'completed' } });
+
+    expect(repository.claimManualWindow).toHaveBeenCalledWith(
+      windowStart,
+      windowEnd,
+    );
+    expect(repository.claimRecoveryWindow).not.toHaveBeenCalled();
+  });
+
+  it('returns a run snapshot page and maps a missing run to 404', async () => {
+    await expect(service.getRunDetail(run.id, 2, 5)).resolves.toMatchObject({
+      run,
+      items: [],
+      total: 0,
+      summaryByCurrency: [],
+    });
+    expect(repository.findRunSnapshot).toHaveBeenCalledWith(run.id, {
+      page: 2,
+      limit: 5,
+    });
+
+    repository.findRunSnapshot.mockResolvedValueOnce(null);
+    await expect(
+      service.getRunDetail(run.id, 1, 20),
+    ).rejects.toBeInstanceOf(NotFoundException);
+  });
+
+  it('does not execute a run that was not claimed', async () => {
+    repository.claimManualWindow.mockResolvedValueOnce({
+      outcome: 'busy',
+      run,
+    });
 
     await expect(
       service.reconcileWindow(windowStart, windowEnd, 'manual'),
@@ -131,6 +210,17 @@ describe('ReconciliationService', () => {
     expect(repository.findReconciliationData).not.toHaveBeenCalled();
     expect(repository.completeRun).not.toHaveBeenCalled();
     expect(repository.markRunFailed).not.toHaveBeenCalled();
+  });
+
+  it('maps a non-claim to the existing manual conflict behavior', async () => {
+    repository.claimManualWindow.mockResolvedValueOnce({
+      outcome: 'duplicate',
+      run: null,
+    });
+
+    await expect(
+      service.triggerManualReconciliation(windowStart, windowEnd),
+    ).rejects.toBeInstanceOf(ConflictException);
   });
 
   it('completes an empty window with zero counters', async () => {
@@ -151,7 +241,11 @@ describe('ReconciliationService', () => {
         currencyMismatches: 0,
       },
     });
-    expect(repository.completeRun).toHaveBeenCalledWith(run.id, zeroCounters);
+    expect(repository.completeRun).toHaveBeenCalledWith(
+      run.id,
+      zeroCounters,
+      [],
+    );
   });
 
   it('records reconciliation failures and propagates the original error', async () => {
@@ -188,5 +282,103 @@ describe('ReconciliationService', () => {
     await expect(
       service.reconcileWindow(windowStart, windowEnd, 'manual'),
     ).rejects.toBeInstanceOf(AggregateError);
+  });
+
+  describe('recoverMissedUtcDays', () => {
+    const now = new Date('2026-11-05T09:30:00.000Z');
+    const startOf = (iso: string) => new Date(`${iso}T00:00:00.000Z`);
+
+    it('uses a bounded 30-day lookback, oldest first, excluding the current day', async () => {
+      const reconcileSpy = vi
+        .spyOn(service, 'reconcileWindow')
+        .mockImplementation(async (start, end) => execution(start, end));
+
+      await expect(service.recoverMissedUtcDays(now)).resolves.toEqual({
+        windowsScanned: 30,
+        recovered: 30,
+        skipped: 0,
+        failed: 0,
+      });
+
+      const calls = reconcileSpy.mock.calls;
+      expect(calls).toHaveLength(30);
+      expect(calls[0]?.[0]).toEqual(startOf('2026-10-06'));
+      expect(calls[0]?.[1]).toEqual(startOf('2026-10-07'));
+      expect(calls.at(-1)?.[0]).toEqual(startOf('2026-11-04'));
+      expect(calls.at(-1)?.[1]).toEqual(startOf('2026-11-05'));
+      expect(
+        calls.every(
+          ([, end], index) =>
+            end.getTime() <= now.getTime() &&
+            end.getTime() ===
+              (calls[index + 1]?.[0]?.getTime() ??
+                new Date('2026-11-05T00:00:00.000Z').getTime()),
+        ),
+      ).toBe(true);
+      expect(
+        calls.some(
+          ([start]) => start.toISOString() === '2026-11-05T00:00:00.000Z',
+        ),
+      ).toBe(false);
+      for (const call of calls) {
+        expect(call[2]).toBe('cron');
+      }
+    });
+
+    it('recovers exactly three missed UTC days', async () => {
+      const missed = new Set([
+        '2026-11-02T00:00:00.000Z',
+        '2026-11-03T00:00:00.000Z',
+        '2026-11-04T00:00:00.000Z',
+      ]);
+      const reconcileSpy = vi
+        .spyOn(service, 'reconcileWindow')
+        .mockImplementation(async (start, end) =>
+          missed.has(start.toISOString()) ? execution(start, end) : null,
+        );
+
+      await expect(service.recoverMissedUtcDays(now)).resolves.toEqual({
+        windowsScanned: 30,
+        recovered: 3,
+        skipped: 27,
+        failed: 0,
+      });
+
+      expect(
+        reconcileSpy.mock.calls
+          .filter(([start]) => missed.has(start.toISOString()))
+          .map(([start]) => start.toISOString()),
+      ).toEqual([
+        '2026-11-02T00:00:00.000Z',
+        '2026-11-03T00:00:00.000Z',
+        '2026-11-04T00:00:00.000Z',
+      ]);
+    });
+
+    it('isolates a failure and continues with later windows', async () => {
+      const failedStart = '2026-11-03T00:00:00.000Z';
+      const reconcileSpy = vi
+        .spyOn(service, 'reconcileWindow')
+        .mockImplementation(async (start) => {
+          if (start.toISOString() === failedStart) {
+            throw new Error('window failed');
+          }
+          return null;
+        });
+
+      await expect(service.recoverMissedUtcDays(now)).resolves.toEqual({
+        windowsScanned: 30,
+        recovered: 0,
+        skipped: 29,
+        failed: 1,
+      });
+
+      expect(reconcileSpy.mock.calls).toHaveLength(30);
+      expect(
+        reconcileSpy.mock.calls.some(
+          ([start]) => start.toISOString() === '2026-11-04T00:00:00.000Z',
+        ),
+      ).toBe(true);
+    });
   });
 });
