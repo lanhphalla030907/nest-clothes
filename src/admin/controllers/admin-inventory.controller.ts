@@ -12,6 +12,7 @@ import { Roles } from '../../auth/decorators/roles.decorator.js';
 import { JwtAuthGuard } from '../../auth/guards/jwt-auth.guard.js';
 import { RolesGuard } from '../../auth/guards/roles.guard.js';
 import { Role } from '../../generated/prisma/enums.js';
+import { BulkInventoryDto } from '../../inventory/dto/bulk-inventory.dto.js';
 import { CreateInventoryDto } from '../../inventory/dto/create-inventory.dto.js';
 import { InventoryResponseDto } from '../../inventory/dto/inventory-response.dto.js';
 import { UpdateInventoryDto } from '../../inventory/dto/update-inventory.dto.js';
@@ -97,5 +98,20 @@ export class AdminInventoryController {
     @Body() dto: UpdateInventoryDto,
   ): Promise<InventoryResponseDto> {
     return this.inventoryService.update(productId, variantId, dto);
+  }
+}
+
+@Controller('admin/products/:productId/inventory')
+@UseGuards(JwtAuthGuard, RolesGuard)
+@Roles(Role.ADMIN)
+export class AdminBulkInventoryController {
+  constructor(private readonly inventoryService: InventoryService) {}
+
+  @Patch('bulk')
+  bulkUpdate(
+    @Param('productId', ParseUUIDPipe) productId: string,
+    @Body() dto: BulkInventoryDto,
+  ): Promise<InventoryResponseDto[]> {
+    return this.inventoryService.bulkUpdate(productId, dto);
   }
 }

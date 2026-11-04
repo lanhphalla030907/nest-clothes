@@ -1,14 +1,18 @@
 import {
   BadRequestException,
   ConflictException,
+  InternalServerErrorException,
   NotFoundException,
 } from '@nestjs/common';
 import { Test, TestingModule } from '@nestjs/testing';
 import { Prisma } from '../generated/prisma/client.js';
+import { CloudinaryService } from '../cloudinary/cloudinary.service.js';
 import { CategoriesService } from './categories.service.js';
 import { CategoryResponseDto } from './dto/category-response.dto.js';
 import { CreateCategoryDto } from './dto/create-category.dto.js';
 import { UpdateCategoryDto } from './dto/update-category.dto.js';
+import { UploadCategoryImageDto } from './dto/upload-category-image.dto.js';
+import type { UploadedCategoryImageFile } from './interfaces/uploaded-category-image-file.js';
 import { CategoriesRepository } from './repositories/categories.repository.js';
 
 const buildCreateDto = (
@@ -31,6 +35,9 @@ const buildEntity = (overrides: Record<string, unknown> = {}) => ({
   description: null,
   parentId: null,
   isActive: true,
+  imageUrl: null,
+  publicId: null,
+  altText: null,
   createdAt: new Date('2026-01-01T00:00:00.000Z'),
   updatedAt: new Date('2026-01-01T00:00:00.000Z'),
   ...overrides,
@@ -65,8 +72,12 @@ describe('CategoriesService', () => {
   let repositoryDelete: ReturnType<typeof vi.fn>;
   let repositoryCountChildren: ReturnType<typeof vi.fn>;
   let repositoryFindAncestorIds: ReturnType<typeof vi.fn>;
+  let cloudinaryUpload: ReturnType<typeof vi.fn>;
+  let cloudinaryDelete: ReturnType<typeof vi.fn>;
 
   beforeEach(async () => {
+    vi.clearAllMocks();
+
     repositoryCreate = vi.fn();
     repositoryFindAll = vi.fn();
     repositoryFindById = vi.fn();
@@ -75,6 +86,8 @@ describe('CategoriesService', () => {
     repositoryDelete = vi.fn();
     repositoryCountChildren = vi.fn();
     repositoryFindAncestorIds = vi.fn();
+    cloudinaryUpload = vi.fn();
+    cloudinaryDelete = vi.fn().mockResolvedValue(true);
 
     const module: TestingModule = await Test.createTestingModule({
       providers: [
@@ -90,6 +103,13 @@ describe('CategoriesService', () => {
             delete: repositoryDelete,
             countChildren: repositoryCountChildren,
             findAncestorIds: repositoryFindAncestorIds,
+          },
+        },
+        {
+          provide: CloudinaryService,
+          useValue: {
+            upload: cloudinaryUpload,
+            deleteAsset: cloudinaryDelete,
           },
         },
       ],
@@ -122,6 +142,9 @@ describe('CategoriesService', () => {
         description: null,
         parentId: null,
         isActive: true,
+        imageUrl: null,
+        publicId: null,
+        altText: null,
       });
       expect(result).toBeInstanceOf(CategoryResponseDto);
       expect(result.parentId).toBeNull();
@@ -525,12 +548,15 @@ describe('CategoriesService', () => {
       const [category] = await service.findAll();
 
       expect(Object.keys(category).sort()).toEqual([
+        'altText',
         'createdAt',
         'description',
         'id',
+        'imageUrl',
         'isActive',
         'name',
         'parentId',
+        'publicId',
         'slug',
         'updatedAt',
       ]);
@@ -557,6 +583,316 @@ describe('CategoriesService', () => {
       expect(data).not.toHaveProperty('id');
       expect(data).not.toHaveProperty('createdAt');
       expect(data).not.toHaveProperty('updatedAt');
+    });
+  });
+
+  describe('uploadImage', () => {
+    const buildUploadedFile = (
+      overrides: Partial<UploadedCategoryImageFile> = {},
+    ): UploadedCategoryImageFile => ({
+      originalname: 'photo.jpg',
+      size: 1234,
+      mimetype: 'image/jpeg',
+      buffer: Buffer.from('fake-bytes'),
+      ...overrides,
+    });
+
+    const buildUploadDto = (
+      overrides: Partial<UploadCategoryImageDto> = {},
+    ): UploadCategoryImageDto =>
+      Object.assign(new UploadCategoryImageDto(), overrides);
+
+    beforeEach(() => {
+      repositoryFindById.mockResolvedValue(buildEntity({ id: 'category-1' }));
+      repositoryUpdate.mockImplementation(
+        (id: string, data: Record<string, unknown>) =>
+          Promise.resolve(buildEntity({ id, ...data })),
+      );
+    });
+
+    it('uploads an image for a category without one', async () => {
+      cloudinaryUpload.mockResolvedValue({
+        secureUrl: 'https://res.cloudinary.com/demo/image/upload/products/abc.jpg',
+        publicId: 'products/abc',
+        width: 800,
+        height: 600,
+        format: 'jpg',
+        bytes: 1234,
+      });
+
+      const result = await service.uploadImage(
+        'category-1',
+        buildUploadedFile(),
+        buildUploadDto(),
+      );
+
+      expect(cloudinaryUpload).toHaveBeenCalledWith({
+        buffer: expect.any(Buffer),
+        mimeType: 'image/jpeg',
+      });
+      expect(repositoryUpdate).toHaveBeenCalledWith('category-1', {
+        imageUrl: 'https://res.cloudinary.com/demo/image/upload/products/abc.jpg',
+        publicId: 'products/abc',
+        altText: null,
+      });
+      expect(result).toBeInstanceOf(CategoryResponseDto);
+      expect(result.imageUrl).toBe(
+        'https://res.cloudinary.com/demo/image/upload/products/abc.jpg',
+      );
+      expect(result.publicId).toBe('products/abc');
+      expect(cloudinaryDelete).not.toHaveBeenCalled();
+    });
+
+    it('uploads an image with alt text', async () => {
+      cloudinaryUpload.mockResolvedValue({
+        secureUrl: 'https://res.cloudinary.com/demo/image/upload/products/abc.jpg',
+        publicId: 'products/abc',
+        width: 800,
+        height: 600,
+        format: 'jpg',
+        bytes: 1234,
+      });
+
+      await service.uploadImage(
+        'category-1',
+        buildUploadedFile(),
+        buildUploadDto({ altText: '  Summer clothes  ' }),
+      );
+
+      expect(repositoryUpdate).toHaveBeenCalledWith('category-1', {
+        imageUrl: 'https://res.cloudinary.com/demo/image/upload/products/abc.jpg',
+        publicId: 'products/abc',
+        altText: 'Summer clothes',
+      });
+    });
+
+    it('rejects a missing category with 404', async () => {
+      repositoryFindById.mockResolvedValue(null);
+
+      await expect(
+        service.uploadImage('missing', buildUploadedFile(), buildUploadDto()),
+      ).rejects.toBeInstanceOf(NotFoundException);
+      expect(cloudinaryUpload).not.toHaveBeenCalled();
+      expect(repositoryUpdate).not.toHaveBeenCalled();
+    });
+
+    it('rejects a missing file with 400', async () => {
+      await expect(
+        service.uploadImage('category-1', undefined, buildUploadDto()),
+      ).rejects.toBeInstanceOf(BadRequestException);
+      expect(cloudinaryUpload).not.toHaveBeenCalled();
+      expect(repositoryUpdate).not.toHaveBeenCalled();
+    });
+
+    it('replaces an existing image and deletes the previous Cloudinary asset', async () => {
+      repositoryFindById.mockResolvedValue(
+        buildEntity({
+          id: 'category-1',
+          imageUrl: 'https://res.cloudinary.com/demo/image/upload/products/old.jpg',
+          publicId: 'products/old',
+        }),
+      );
+      cloudinaryUpload.mockResolvedValue({
+        secureUrl: 'https://res.cloudinary.com/demo/image/upload/products/new.jpg',
+        publicId: 'products/new',
+        width: 800,
+        height: 600,
+        format: 'jpg',
+        bytes: 1234,
+      });
+
+      await service.uploadImage(
+        'category-1',
+        buildUploadedFile(),
+        buildUploadDto(),
+      );
+
+      expect(repositoryUpdate).toHaveBeenCalledWith('category-1', {
+        imageUrl: 'https://res.cloudinary.com/demo/image/upload/products/new.jpg',
+        publicId: 'products/new',
+        altText: null,
+      });
+      expect(cloudinaryDelete).toHaveBeenCalledWith('products/old');
+    });
+
+    it('does not delete the previous asset when it is the same publicId', async () => {
+      repositoryFindById.mockResolvedValue(
+        buildEntity({
+          id: 'category-1',
+          imageUrl: 'https://res.cloudinary.com/demo/image/upload/products/same.jpg',
+          publicId: 'products/same',
+        }),
+      );
+      cloudinaryUpload.mockResolvedValue({
+        secureUrl: 'https://res.cloudinary.com/demo/image/upload/products/same.jpg',
+        publicId: 'products/same',
+        width: 800,
+        height: 600,
+        format: 'jpg',
+        bytes: 1234,
+      });
+
+      await service.uploadImage(
+        'category-1',
+        buildUploadedFile(),
+        buildUploadDto(),
+      );
+
+      expect(cloudinaryDelete).not.toHaveBeenCalled();
+    });
+
+    it('keeps the new image reference when old-image Cloudinary deletion fails', async () => {
+      repositoryFindById.mockResolvedValue(
+        buildEntity({
+          id: 'category-1',
+          imageUrl: 'https://res.cloudinary.com/demo/image/upload/products/old.jpg',
+          publicId: 'products/old',
+        }),
+      );
+      cloudinaryUpload.mockResolvedValue({
+        secureUrl: 'https://res.cloudinary.com/demo/image/upload/products/new.jpg',
+        publicId: 'products/new',
+        width: 800,
+        height: 600,
+        format: 'jpg',
+        bytes: 1234,
+      });
+      // Old-image deletion fails, but the new image is already in the database.
+      cloudinaryDelete.mockRejectedValueOnce(
+        new InternalServerErrorException('Old image deletion failed'),
+      );
+
+      const result = await service.uploadImage(
+        'category-1',
+        buildUploadedFile(),
+        buildUploadDto(),
+      );
+
+      expect(result.imageUrl).toBe(
+        'https://res.cloudinary.com/demo/image/upload/products/new.jpg',
+      );
+      expect(result.publicId).toBe('products/new');
+      // Old asset deletion was attempted but failed; the new reference stands.
+      expect(cloudinaryDelete).toHaveBeenCalledWith('products/old');
+    });
+
+    it('deletes the uploaded asset when the database update fails', async () => {
+      cloudinaryUpload.mockResolvedValue({
+        secureUrl: 'https://res.cloudinary.com/demo/image/upload/products/abc.jpg',
+        publicId: 'products/abc',
+        width: 800,
+        height: 600,
+        format: 'jpg',
+        bytes: 1234,
+      });
+      const failure = new Error('database write failed');
+      repositoryUpdate.mockRejectedValue(failure);
+
+      await expect(
+        service.uploadImage('category-1', buildUploadedFile(), buildUploadDto()),
+      ).rejects.toBe(failure);
+      expect(cloudinaryDelete).toHaveBeenCalledWith('products/abc');
+    });
+
+    it('propagates a Cloudinary upload failure as a 500', async () => {
+      cloudinaryUpload.mockRejectedValue(
+        new InternalServerErrorException('Image upload failed'),
+      );
+
+      await expect(
+        service.uploadImage('category-1', buildUploadedFile(), buildUploadDto()),
+      ).rejects.toBeInstanceOf(InternalServerErrorException);
+      expect(repositoryUpdate).not.toHaveBeenCalled();
+      expect(cloudinaryDelete).not.toHaveBeenCalled();
+    });
+  });
+
+  describe('removeImage', () => {
+    beforeEach(() => {
+      repositoryFindById.mockResolvedValue(buildEntity({ id: 'category-1' }));
+      repositoryUpdate.mockImplementation(
+        (id: string, data: Record<string, unknown>) =>
+          Promise.resolve(buildEntity({ id, ...data })),
+      );
+    });
+
+    it('clears the database fields first, then deletes the Cloudinary asset', async () => {
+      repositoryFindById.mockResolvedValue(
+        buildEntity({
+          id: 'category-1',
+          imageUrl: 'https://res.cloudinary.com/demo/image/upload/products/abc.jpg',
+          publicId: 'products/abc',
+          altText: 'A category image',
+        }),
+      );
+
+      await service.removeImage('category-1');
+
+      // Database is cleared before Cloudinary is called
+      expect(repositoryUpdate).toHaveBeenCalledWith('category-1', {
+        imageUrl: null,
+        publicId: null,
+        altText: null,
+      });
+      expect(cloudinaryDelete).toHaveBeenCalledWith('products/abc');
+    });
+
+    it('is a no-op when the category has no image', async () => {
+      await service.removeImage('category-1');
+
+      expect(cloudinaryDelete).not.toHaveBeenCalled();
+      expect(repositoryUpdate).not.toHaveBeenCalled();
+    });
+
+    it('rejects a missing category with 404', async () => {
+      repositoryFindById.mockResolvedValue(null);
+
+      await expect(service.removeImage('missing')).rejects.toBeInstanceOf(
+        NotFoundException,
+      );
+      expect(cloudinaryDelete).not.toHaveBeenCalled();
+      expect(repositoryUpdate).not.toHaveBeenCalled();
+    });
+
+    it('does not delete the Cloudinary asset when the database update fails', async () => {
+      repositoryFindById.mockResolvedValue(
+        buildEntity({
+          id: 'category-1',
+          publicId: 'products/abc',
+        }),
+      );
+      const failure = new Error('database write failed');
+      repositoryUpdate.mockRejectedValue(failure);
+
+      await expect(service.removeImage('category-1')).rejects.toBe(failure);
+      expect(repositoryUpdate).toHaveBeenCalledWith('category-1', {
+        imageUrl: null,
+        publicId: null,
+        altText: null,
+      });
+      expect(cloudinaryDelete).not.toHaveBeenCalled();
+    });
+
+    it('resolves when Cloudinary deletion fails after the database is cleared', async () => {
+      repositoryFindById.mockResolvedValue(
+        buildEntity({
+          id: 'category-1',
+          publicId: 'products/abc',
+        }),
+      );
+      cloudinaryDelete.mockRejectedValue(
+        new InternalServerErrorException('Image deletion failed'),
+      );
+
+      // The category fields are already cleared, so the function resolves.
+      // The Cloudinary failure is logged but not propagated.
+      await expect(service.removeImage('category-1')).resolves.toBeUndefined();
+      expect(repositoryUpdate).toHaveBeenCalledWith('category-1', {
+        imageUrl: null,
+        publicId: null,
+        altText: null,
+      });
+      expect(cloudinaryDelete).toHaveBeenCalledWith('products/abc');
     });
   });
 });

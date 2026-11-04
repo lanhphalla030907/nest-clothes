@@ -23,6 +23,8 @@ const PRISMA_UNIQUE_CONSTRAINT_VIOLATION = 'P2002';
 const PRODUCT_VARIANT_MODEL = 'ProductVariant';
 const SKU_FIELD = 'sku';
 const DUPLICATE_SKU_MESSAGE = 'A variant with this SKU already exists';
+const DEFAULT_VARIANT_EXISTS_MESSAGE =
+  'A product without options can have only one default variant. Use the product option matrix to manage combinations.';
 const DEFAULT_VARIANT_IS_ACTIVE = true;
 
 /**
@@ -80,12 +82,17 @@ export class ProductVariantsService {
       sku: normalizeSku(dto.sku),
       price: normalizeMoney(dto.price),
       isActive: dto.isActive ?? DEFAULT_VARIANT_IS_ACTIVE,
+      combinationKey: 'DEFAULT',
     };
 
     await this.assertSkuAvailable(data.sku);
 
     try {
-      const variant = await this.productVariantsRepository.create(data);
+      const variant =
+        await this.productVariantsRepository.createDefaultIfUnconfigured(data);
+      if (variant === null) {
+        throw new ConflictException(DEFAULT_VARIANT_EXISTS_MESSAGE);
+      }
 
       return ProductVariantResponseDto.fromEntity(variant);
     } catch (error) {
@@ -120,8 +127,6 @@ export class ProductVariantsService {
     variantId: string,
     dto: UpdateProductVariantDto,
   ): Promise<ProductVariantResponseDto> {
-    await this.requireOwnedVariant(productId, variantId);
-
     const data = this.buildUpdateData(dto);
 
     if (dto.sku !== undefined) {
@@ -129,10 +134,16 @@ export class ProductVariantsService {
     }
 
     try {
-      const variant = await this.productVariantsRepository.update(
+      const variant = await this.productVariantsRepository.updateForProduct(
+        productId,
         variantId,
         data,
       );
+      if (variant === null) {
+        throw new NotFoundException(
+          `Product variant ${variantId} does not exist`,
+        );
+      }
 
       return ProductVariantResponseDto.fromEntity(variant);
     } catch (error) {
@@ -141,9 +152,16 @@ export class ProductVariantsService {
   }
 
   async remove(productId: string, variantId: string): Promise<void> {
-    await this.requireOwnedVariant(productId, variantId);
-
-    await this.productVariantsRepository.delete(variantId);
+    const variant = await this.productVariantsRepository.updateForProduct(
+      productId,
+      variantId,
+      { isActive: false },
+    );
+    if (variant === null) {
+      throw new NotFoundException(
+        `Product variant ${variantId} does not exist`,
+      );
+    }
   }
 
   /**

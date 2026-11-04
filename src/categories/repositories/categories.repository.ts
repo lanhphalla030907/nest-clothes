@@ -14,6 +14,9 @@ export interface CreateCategoryData {
   description: string | null;
   parentId: string | null;
   isActive: boolean;
+  imageUrl: string | null;
+  publicId: string | null;
+  altText: string | null;
 }
 
 /** The subset of columns a `PATCH` may write. Absent keys are left untouched. */
@@ -23,6 +26,9 @@ export interface UpdateCategoryData {
   description?: string | null;
   parentId?: string | null;
   isActive?: boolean;
+  imageUrl?: string | null;
+  publicId?: string | null;
+  altText?: string | null;
 }
 
 /**

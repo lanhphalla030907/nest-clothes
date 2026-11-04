@@ -129,6 +129,22 @@ export class InventoryRepository {
     });
   }
 
+  async lockByVariantIds(
+    variantIds: string[],
+    client: InventoryTransactionClient,
+  ): Promise<void> {
+    if (variantIds.length === 0) return;
+
+    const orderedIds = [...variantIds].sort();
+    await client.$queryRaw<{ variant_id: string }[]>`
+      SELECT "variant_id"
+      FROM "inventory"
+      WHERE "variant_id" = ANY(${orderedIds}::uuid[])
+      ORDER BY "variant_id"
+      FOR UPDATE
+    `;
+  }
+
   /**
    * Writes only the counters present in `data`, so an update can never
    * accidentally overwrite the other counter with an undefined value.

@@ -15,8 +15,8 @@ import { Roles } from '../../auth/decorators/roles.decorator.js';
 import { JwtAuthGuard } from '../../auth/guards/jwt-auth.guard.js';
 import { RolesGuard } from '../../auth/guards/roles.guard.js';
 import { Role } from '../../generated/prisma/enums.js';
-import { CreateProductVariantDto } from '../../product-variants/dto/create-product-variant.dto.js';
 import { ProductVariantResponseDto } from '../../product-variants/dto/product-variant-response.dto.js';
+import { CreateProductVariantDto } from '../../product-variants/dto/create-product-variant.dto.js';
 import { UpdateProductVariantDto } from '../../product-variants/dto/update-product-variant.dto.js';
 import { ProductVariantsService } from '../../product-variants/product-variants.service.js';
 
@@ -79,11 +79,9 @@ export class AdminProductVariantsController {
   }
 
   /**
-   * Deletes a variant.
+   * Retires a variant without deleting its inventory or transaction references.
    *
-   * Its options and inventory cascade with it. A variant still held by a cart or an order
-   * is refused by PostgreSQL (`ON DELETE RESTRICT`) rather than removed out from under
-   * those rows; deactivating it is the alternative.
+   * Obsolete variants are retained so existing cart and order references remain valid.
    */
   @Delete(':variantId')
   @HttpCode(HttpStatus.NO_CONTENT)

@@ -8,6 +8,10 @@ import { Prisma } from '../generated/prisma/client.js';
 import { ProductVariantsRepository } from '../product-variants/repositories/product-variants.repository.js';
 import { ProductsRepository } from '../products/repositories/products.repository.js';
 import { CreateInventoryDto } from './dto/create-inventory.dto.js';
+import {
+  BulkInventoryOperation,
+  type BulkInventoryDto,
+} from './dto/bulk-inventory.dto.js';
 import { InventoryResponseDto } from './dto/inventory-response.dto.js';
 import { UpdateInventoryDto } from './dto/update-inventory.dto.js';
 import {
@@ -26,6 +30,10 @@ const DUPLICATE_INVENTORY_MESSAGE =
 const INVALID_COUNTERS_MESSAGE =
   'reservedQuantity must be greater than or equal to 0 and less than or equal to quantity';
 const DEFAULT_COUNTER = 0;
+const MAX_INVENTORY_QUANTITY = 2_147_483_647;
+const MAX_BULK_VARIANTS = 500;
+const STALE_BULK_INVENTORY_MESSAGE =
+  'Stock changed after the preview. Refresh the matrix and review the changes again.';
 
 /**
  * All inventory business rules live here; the repository only knows about SQL and
@@ -147,8 +155,7 @@ export class InventoryService {
       }
 
       const quantity = dto.quantity ?? current.quantity;
-      const reservedQuantity =
-        dto.reservedQuantity ?? current.reservedQuantity;
+      const reservedQuantity = dto.reservedQuantity ?? current.reservedQuantity;
 
       this.assertCountersWithinInvariants(quantity, reservedQuantity);
 
@@ -164,6 +171,152 @@ export class InventoryService {
         this.rethrowAsHttpError(error);
       }
     });
+  }
+
+  async bulkUpdate(
+    productId: string,
+    dto: BulkInventoryDto,
+  ): Promise<InventoryResponseDto[]> {
+    if (
+      !Object.values(BulkInventoryOperation).includes(dto.operation) ||
+      !Number.isInteger(dto.quantity) ||
+      dto.quantity < 0 ||
+      dto.quantity > MAX_INVENTORY_QUANTITY
+    ) {
+      throw new BadRequestException(
+        'The bulk stock action or amount is invalid',
+      );
+    }
+    if (
+      dto.variantIds.length === 0 ||
+      dto.variantIds.length > MAX_BULK_VARIANTS ||
+      new Set(dto.variantIds).size !== dto.variantIds.length
+    ) {
+      throw new BadRequestException(
+        `Select between 1 and ${MAX_BULK_VARIANTS} unique variants`,
+      );
+    }
+    if (dto.operation !== BulkInventoryOperation.SET && dto.quantity <= 0) {
+      throw new BadRequestException(
+        'Increase and decrease amounts must be greater than zero',
+      );
+    }
+
+    await this.requireProduct(productId);
+    const variants = await this.productVariantsRepository.findByIdsAndProductId(
+      dto.variantIds,
+      productId,
+    );
+    if (variants.length !== dto.variantIds.length) {
+      throw new NotFoundException(
+        'One or more selected variants do not belong to this product',
+      );
+    }
+
+    try {
+      return await this.inventoryRepository.runInTransaction(async (tx) => {
+        await this.inventoryRepository.lockByVariantIds(dto.variantIds, tx);
+        const currentRows = await this.inventoryRepository.findByVariantIds(
+          dto.variantIds,
+          tx,
+        );
+
+        const currentByVariant = new Map(
+          currentRows.map((row) => [row.variantId, row]),
+        );
+        const expectedByVariant = new Map(
+          dto.expectedInventory.map((row) => [row.variantId, row]),
+        );
+        if (
+          expectedByVariant.size !== dto.variantIds.length ||
+          dto.variantIds.some((variantId) => !expectedByVariant.has(variantId))
+        ) {
+          throw new BadRequestException(
+            'Provide the current inventory state for every selected variant',
+          );
+        }
+
+        const quantities = dto.variantIds.map((variantId) => {
+          const current = currentByVariant.get(variantId);
+          const expected = expectedByVariant.get(variantId);
+          if (expected === undefined) {
+            throw new BadRequestException(
+              'Provide the current inventory state for every selected variant',
+            );
+          }
+          const inventoryExists = expected.inventoryExists ?? true;
+          const currentQuantity = current?.quantity ?? DEFAULT_COUNTER;
+          const currentReservedQuantity =
+            current?.reservedQuantity ?? DEFAULT_COUNTER;
+          if (
+            inventoryExists !== (current !== undefined) ||
+            expected.quantity !== currentQuantity ||
+            expected.reservedQuantity !== currentReservedQuantity
+          ) {
+            throw new ConflictException(STALE_BULK_INVENTORY_MESSAGE);
+          }
+
+          const quantity = this.resolveBulkQuantity(
+            currentQuantity,
+            currentReservedQuantity,
+            dto,
+          );
+          this.assertCountersWithinInvariants(
+            quantity,
+            currentReservedQuantity,
+          );
+
+          return {
+            variantId,
+            quantity,
+            inventoryExists: current !== undefined,
+          };
+        });
+
+        const updated: InventoryResponseDto[] = [];
+        for (const { variantId, quantity, inventoryExists } of quantities) {
+          const inventory = inventoryExists
+            ? await this.inventoryRepository.update(variantId, { quantity }, tx)
+            : await this.inventoryRepository.create(
+                {
+                  variantId,
+                  quantity,
+                  reservedQuantity: DEFAULT_COUNTER,
+                },
+                tx,
+              );
+          updated.push(InventoryResponseDto.fromEntity(inventory));
+        }
+        return updated;
+      });
+    } catch (error) {
+      this.rethrowAsHttpError(error);
+    }
+  }
+
+  private resolveBulkQuantity(
+    currentQuantity: number,
+    reservedQuantity: number,
+    dto: BulkInventoryDto,
+  ): number {
+    const quantity =
+      dto.operation === BulkInventoryOperation.SET
+        ? dto.quantity
+        : dto.operation === BulkInventoryOperation.INCREASE
+          ? currentQuantity + dto.quantity
+          : currentQuantity - dto.quantity;
+
+    if (
+      quantity > MAX_INVENTORY_QUANTITY ||
+      quantity < 0 ||
+      quantity < reservedQuantity
+    ) {
+      throw new BadRequestException(
+        'Bulk stock changes cannot set quantity below reserved stock or outside the supported range',
+      );
+    }
+
+    return quantity;
   }
 
   /**
@@ -232,11 +385,10 @@ export class InventoryService {
     productId: string,
     variantId: string,
   ): Promise<void> {
-    const variant =
-      await this.productVariantsRepository.findByIdAndProductId(
-        variantId,
-        productId,
-      );
+    const variant = await this.productVariantsRepository.findByIdAndProductId(
+      variantId,
+      productId,
+    );
 
     if (variant === null) {
       throw new NotFoundException(
@@ -309,15 +461,12 @@ export class InventoryService {
 
     if (Array.isArray(target)) {
       return (
-        target.includes(VARIANT_ID_FIELD) ||
-        target.includes(VARIANT_ID_COLUMN)
+        target.includes(VARIANT_ID_FIELD) || target.includes(VARIANT_ID_COLUMN)
       );
     }
 
     if (typeof target === 'string') {
-      return (
-        target === VARIANT_ID_FIELD || target === VARIANT_ID_COLUMN
-      );
+      return target === VARIANT_ID_FIELD || target === VARIANT_ID_COLUMN;
     }
 
     return meta?.['modelName'] === INVENTORY_MODEL;

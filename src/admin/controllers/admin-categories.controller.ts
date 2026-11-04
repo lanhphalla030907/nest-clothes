@@ -9,7 +9,9 @@ import {
   ParseUUIDPipe,
   Patch,
   Post,
+  UploadedFile,
   UseGuards,
+  UseInterceptors,
 } from '@nestjs/common';
 import { Roles } from '../../auth/decorators/roles.decorator.js';
 import { JwtAuthGuard } from '../../auth/guards/jwt-auth.guard.js';
@@ -17,6 +19,9 @@ import { RolesGuard } from '../../auth/guards/roles.guard.js';
 import { CategoryResponseDto } from '../../categories/dto/category-response.dto.js';
 import { CreateCategoryDto } from '../../categories/dto/create-category.dto.js';
 import { UpdateCategoryDto } from '../../categories/dto/update-category.dto.js';
+import { UploadCategoryImageDto } from '../../categories/dto/upload-category-image.dto.js';
+import { CategoryImageUploadInterceptor } from '../../categories/interceptors/category-image-upload.interceptor.js';
+import type { UploadedCategoryImageFile } from '../../categories/interfaces/uploaded-category-image-file.js';
 import { CategoriesService } from '../../categories/categories.service.js';
 import { Role } from '../../generated/prisma/enums.js';
 
@@ -92,5 +97,32 @@ export class AdminCategoriesController {
   @HttpCode(HttpStatus.NO_CONTENT)
   remove(@Param('id', ParseUUIDPipe) id: string): Promise<void> {
     return this.categoriesService.remove(id);
+  }
+
+  /**
+   * Uploads an image file for the category and records its Cloudinary metadata.
+   *
+   * The image replaces any existing one. The previous Cloudinary asset is
+   * deleted only after the category record points at the new asset, so the
+   * category never references a deleted image.
+   */
+  @Post(':id/images/upload')
+  @UseInterceptors(CategoryImageUploadInterceptor)
+  uploadImage(
+    @Param('id', ParseUUIDPipe) id: string,
+    @UploadedFile() file: UploadedCategoryImageFile | undefined,
+    @Body() dto: UploadCategoryImageDto,
+  ): Promise<CategoryResponseDto> {
+    return this.categoriesService.uploadImage(id, file, dto);
+  }
+
+  /**
+   * Removes the category's image: the Cloudinary asset first, then the metadata
+   * fields on the category record.
+   */
+  @Delete(':id/images')
+  @HttpCode(HttpStatus.NO_CONTENT)
+  removeImage(@Param('id', ParseUUIDPipe) id: string): Promise<void> {
+    return this.categoriesService.removeImage(id);
   }
 }

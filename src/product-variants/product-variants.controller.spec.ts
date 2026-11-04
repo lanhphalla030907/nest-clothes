@@ -1,8 +1,6 @@
 import { HttpStatus, ValidationPipe, type INestApplication } from '@nestjs/common';
 import { Test, TestingModule } from '@nestjs/testing';
-import { CreateProductVariantDto } from './dto/create-product-variant.dto.js';
 import { ProductVariantResponseDto } from './dto/product-variant-response.dto.js';
-import { UpdateProductVariantDto } from './dto/update-product-variant.dto.js';
 import { ProductVariantsController } from './product-variants.controller.js';
 import { ProductVariantsService } from './product-variants.service.js';
 
@@ -26,20 +24,14 @@ const buildResponse = (
 describe('ProductVariantsController', () => {
   let controller: ProductVariantsController;
   let service: {
-    create: ReturnType<typeof vi.fn>;
     findAllByProductId: ReturnType<typeof vi.fn>;
     findOne: ReturnType<typeof vi.fn>;
-    update: ReturnType<typeof vi.fn>;
-    remove: ReturnType<typeof vi.fn>;
   };
 
   beforeEach(async () => {
     service = {
-      create: vi.fn(),
       findAllByProductId: vi.fn(),
       findOne: vi.fn(),
-      update: vi.fn(),
-      remove: vi.fn(),
     };
 
     const module: TestingModule = await Test.createTestingModule({
@@ -54,18 +46,6 @@ describe('ProductVariantsController', () => {
     expect(controller).toBeDefined();
   });
 
-  it('delegates creation with the path product id', () => {
-    const dto = Object.assign(new CreateProductVariantDto(), {
-      sku: 'AB-1',
-      price: '10.00',
-    });
-    const expected = buildResponse();
-    service.create.mockReturnValue(expected);
-
-    expect(controller.create(PRODUCT_ID, dto)).toBe(expected);
-    expect(service.create).toHaveBeenCalledWith(PRODUCT_ID, dto);
-  });
-
   it('delegates the listing', () => {
     service.findAllByProductId.mockReturnValue([buildResponse()]);
     expect(controller.findAll(PRODUCT_ID)).toHaveLength(1);
@@ -78,39 +58,19 @@ describe('ProductVariantsController', () => {
     expect(service.findOne).toHaveBeenCalledWith(PRODUCT_ID, VARIANT_ID);
   });
 
-  it('delegates update with both ids and the dto', () => {
-    const dto = Object.assign(new UpdateProductVariantDto(), { price: '12.00' });
-    service.update.mockReturnValue(buildResponse({ price: '12.00' }));
-    expect(controller.update(PRODUCT_ID, VARIANT_ID, dto)).toBeDefined();
-    expect(service.update).toHaveBeenCalledWith(PRODUCT_ID, VARIANT_ID, dto);
-  });
-
-  it('delegates remove with both ids', async () => {
-    service.remove.mockResolvedValue(undefined);
-    await expect(
-      controller.remove(PRODUCT_ID, VARIANT_ID),
-    ).resolves.toBeUndefined();
-    expect(service.remove).toHaveBeenCalledWith(PRODUCT_ID, VARIANT_ID);
-  });
 });
 
 describe('ProductVariantsController (HTTP)', () => {
   let app: INestApplication;
   let service: {
-    create: ReturnType<typeof vi.fn>;
     findAllByProductId: ReturnType<typeof vi.fn>;
     findOne: ReturnType<typeof vi.fn>;
-    update: ReturnType<typeof vi.fn>;
-    remove: ReturnType<typeof vi.fn>;
   };
 
   beforeEach(async () => {
     service = {
-      create: vi.fn(),
       findAllByProductId: vi.fn(),
       findOne: vi.fn(),
-      update: vi.fn(),
-      remove: vi.fn(),
     };
 
     const module: TestingModule = await Test.createTestingModule({
@@ -133,24 +93,6 @@ describe('ProductVariantsController (HTTP)', () => {
     await app.close();
   });
 
-  it('POST → 201 and the pipe normalizes sku and price', async () => {
-    service.create.mockResolvedValue(buildResponse());
-
-    const res = await fetch(
-      `${await app.getUrl()}/products/${PRODUCT_ID}/variants`,
-      {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ sku: '  ab-1  ', price: '5.5' }),
-      },
-    );
-
-    expect(res.status).toBe(HttpStatus.CREATED);
-    const dto = service.create.mock.calls[0][1];
-    expect(dto.sku).toBe('AB-1');
-    expect(dto.price).toBe('5.50');
-  });
-
   it('GET list → 200', async () => {
     service.findAllByProductId.mockResolvedValue([]);
     const res = await fetch(
@@ -167,28 +109,6 @@ describe('ProductVariantsController (HTTP)', () => {
     expect(res.status).toBe(HttpStatus.OK);
   });
 
-  it('PATCH → 200', async () => {
-    service.update.mockResolvedValue(buildResponse());
-    const res = await fetch(
-      `${await app.getUrl()}/products/${PRODUCT_ID}/variants/${VARIANT_ID}`,
-      {
-        method: 'PATCH',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ price: '12.00' }),
-      },
-    );
-    expect(res.status).toBe(HttpStatus.OK);
-  });
-
-  it('DELETE → 204', async () => {
-    service.remove.mockResolvedValue(undefined);
-    const res = await fetch(
-      `${await app.getUrl()}/products/${PRODUCT_ID}/variants/${VARIANT_ID}`,
-      { method: 'DELETE' },
-    );
-    expect(res.status).toBe(HttpStatus.NO_CONTENT);
-  });
-
   it('malformed product id → 400 before the service is called', async () => {
     const res = await fetch(`${await app.getUrl()}/products/not-a-uuid/variants`);
     expect(res.status).toBe(HttpStatus.BAD_REQUEST);
@@ -203,60 +123,29 @@ describe('ProductVariantsController (HTTP)', () => {
     expect(service.findOne).not.toHaveBeenCalled();
   });
 
-  it('rejects forbidden identity fields', async () => {
-    const res = await fetch(
-      `${await app.getUrl()}/products/${PRODUCT_ID}/variants`,
+  it('does not expose public mutation routes', async () => {
+    const base = `${await app.getUrl()}/products/${PRODUCT_ID}/variants`;
+    const requests: Array<{ method: string; path: string; body?: unknown }> = [
+      { method: 'POST', path: base, body: { sku: 'AB-1', price: '10.00' } },
       {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          sku: 'AB-1',
-          price: '10.00',
-          id: VARIANT_ID,
-          productId: PRODUCT_ID,
-          createdAt: '2026-01-01T00:00:00.000Z',
-        }),
+        method: 'PATCH',
+        path: `${base}/${VARIANT_ID}`,
+        body: { price: '12.00' },
       },
-    );
-    expect(res.status).toBe(HttpStatus.BAD_REQUEST);
-    expect(service.create).not.toHaveBeenCalled();
-  });
+      { method: 'DELETE', path: `${base}/${VARIANT_ID}` },
+    ];
 
-  it('rejects a zero price', async () => {
-    const res = await fetch(
-      `${await app.getUrl()}/products/${PRODUCT_ID}/variants`,
-      {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ sku: 'AB-1', price: '0.00' }),
-      },
-    );
-    expect(res.status).toBe(HttpStatus.BAD_REQUEST);
-  });
-
-  it('rejects a negative or non-numeric price', async () => {
-    for (const price of ['-1.00', 'abc', '1.999']) {
-      const res = await fetch(
-        `${await app.getUrl()}/products/${PRODUCT_ID}/variants`,
-        {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ sku: 'AB-1', price }),
-        },
-      );
-      expect(res.status).toBe(HttpStatus.BAD_REQUEST);
+    for (const request of requests) {
+      const res = await fetch(request.path, {
+        method: request.method,
+        ...(request.body === undefined
+          ? {}
+          : {
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify(request.body),
+            }),
+      });
+      expect(res.status).toBe(HttpStatus.NOT_FOUND);
     }
-  });
-
-  it('rejects an empty body', async () => {
-    const res = await fetch(
-      `${await app.getUrl()}/products/${PRODUCT_ID}/variants`,
-      {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({}),
-      },
-    );
-    expect(res.status).toBe(HttpStatus.BAD_REQUEST);
   });
 });

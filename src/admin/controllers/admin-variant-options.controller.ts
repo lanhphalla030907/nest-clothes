@@ -1,7 +1,7 @@
 import {
-  Body,
   Controller,
   Delete,
+  GoneException,
   Get,
   HttpCode,
   HttpStatus,
@@ -15,8 +15,6 @@ import { Roles } from '../../auth/decorators/roles.decorator.js';
 import { JwtAuthGuard } from '../../auth/guards/jwt-auth.guard.js';
 import { RolesGuard } from '../../auth/guards/roles.guard.js';
 import { Role } from '../../generated/prisma/enums.js';
-import { CreateVariantOptionDto } from '../../variant-options/dto/create-variant-option.dto.js';
-import { UpdateVariantOptionDto } from '../../variant-options/dto/update-variant-option.dto.js';
 import { VariantOptionResponseDto } from '../../variant-options/dto/variant-option-response.dto.js';
 import { VariantOptionsService } from '../../variant-options/variant-options.service.js';
 
@@ -67,31 +65,24 @@ export class AdminVariantOptionsController {
    * does not name.
    */
   @Post()
-  create(
-    @Param('productId', ParseUUIDPipe) productId: string,
-    @Param('variantId', ParseUUIDPipe) variantId: string,
-    @Body() dto: CreateVariantOptionDto,
-  ): Promise<VariantOptionResponseDto> {
-    return this.variantOptionsService.create(productId, variantId, dto);
+  create(): never {
+    throw new GoneException(
+      'Variant options are managed as product-level options. Use the product option matrix.',
+    );
   }
 
   @Patch(':optionId')
-  update(
-    @Param('productId', ParseUUIDPipe) productId: string,
-    @Param('variantId', ParseUUIDPipe) variantId: string,
-    @Param('optionId', ParseUUIDPipe) optionId: string,
-    @Body() dto: UpdateVariantOptionDto,
-  ): Promise<VariantOptionResponseDto> {
-    return this.variantOptionsService.update(productId, variantId, optionId, dto);
+  update(): never {
+    throw new GoneException(
+      'Variant options are managed as product-level options. Use the product option matrix.',
+    );
   }
 
   @Delete(':optionId')
   @HttpCode(HttpStatus.NO_CONTENT)
-  remove(
-    @Param('productId', ParseUUIDPipe) productId: string,
-    @Param('variantId', ParseUUIDPipe) variantId: string,
-    @Param('optionId', ParseUUIDPipe) optionId: string,
-  ): Promise<void> {
-    return this.variantOptionsService.remove(productId, variantId, optionId);
+  remove(): never {
+    throw new GoneException(
+      'Variant options are managed as product-level options. Use the product option matrix.',
+    );
   }
 }

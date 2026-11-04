@@ -1,24 +1,15 @@
 import {
-  Body,
   Controller,
-  Delete,
   Get,
-  HttpCode,
-  HttpStatus,
   Param,
   ParseUUIDPipe,
-  Patch,
-  Post,
 } from '@nestjs/common';
-import { CreateProductVariantDto } from './dto/create-product-variant.dto.js';
 import { ProductVariantResponseDto } from './dto/product-variant-response.dto.js';
-import { UpdateProductVariantDto } from './dto/update-product-variant.dto.js';
 import { ProductVariantsService } from './product-variants.service.js';
 
 /**
- * HTTP routing only: parse the request through the pipes and DTOs, delegate to
- * `ProductVariantsService`, return its result. No business rules and no database
- * access live here.
+ * Public read-only variant routes. Mutations are available only from the
+ * role-guarded admin controller.
  *
  * The controller is mounted under `/products/:productId/variants`, so every
  * variant is addressed through the product that owns it. Both path parameters run
@@ -32,14 +23,6 @@ export class ProductVariantsController {
   constructor(
     private readonly productVariantsService: ProductVariantsService,
   ) {}
-
-  @Post()
-  create(
-    @Param('productId', ParseUUIDPipe) productId: string,
-    @Body() dto: CreateProductVariantDto,
-  ): Promise<ProductVariantResponseDto> {
-    return this.productVariantsService.create(productId, dto);
-  }
 
   @Get()
   findAll(
@@ -56,21 +39,4 @@ export class ProductVariantsController {
     return this.productVariantsService.findOne(productId, variantId);
   }
 
-  @Patch(':variantId')
-  update(
-    @Param('productId', ParseUUIDPipe) productId: string,
-    @Param('variantId', ParseUUIDPipe) variantId: string,
-    @Body() dto: UpdateProductVariantDto,
-  ): Promise<ProductVariantResponseDto> {
-    return this.productVariantsService.update(productId, variantId, dto);
-  }
-
-  @Delete(':variantId')
-  @HttpCode(HttpStatus.NO_CONTENT)
-  remove(
-    @Param('productId', ParseUUIDPipe) productId: string,
-    @Param('variantId', ParseUUIDPipe) variantId: string,
-  ): Promise<void> {
-    return this.productVariantsService.remove(productId, variantId);
-  }
 }

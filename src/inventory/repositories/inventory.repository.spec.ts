@@ -64,8 +64,8 @@ describe('InventoryRepository', () => {
 
   it('runInTransaction delegates to $transaction and forwards its result', async () => {
     const expected = buildInventory();
-    transaction.mockImplementation(
-      (work: (tx: unknown) => Promise<unknown>) => work({ tx: true }),
+    transaction.mockImplementation((work: (tx: unknown) => Promise<unknown>) =>
+      work({ tx: true }),
     );
     const work = vi.fn().mockResolvedValue(expected);
 
@@ -114,11 +114,40 @@ describe('InventoryRepository', () => {
       const rows = [buildInventory(), buildInventory({ variantId: 'v-2' })];
       findMany.mockResolvedValue(rows);
 
-      await expect(
-        repository.findByVariantIds(['v-1', 'v-2']),
-      ).resolves.toBe(rows);
+      await expect(repository.findByVariantIds(['v-1', 'v-2'])).resolves.toBe(
+        rows,
+      );
       expect(findMany).toHaveBeenCalledWith({
         where: { variantId: { in: ['v-1', 'v-2'] } },
+      });
+    });
+
+    describe('lockByVariantIds', () => {
+      it('locks rows in stable variant-id order inside the supplied transaction', async () => {
+        const queryRaw = vi.fn().mockResolvedValue([]);
+
+        await repository.lockByVariantIds(
+          [
+            'f0000000-0000-4000-8000-000000000001',
+            'a0000000-0000-4000-8000-000000000001',
+          ],
+          { $queryRaw: queryRaw } as never,
+        );
+
+        expect(queryRaw).toHaveBeenCalledTimes(1);
+        expect(queryRaw.mock.calls[0][1]).toEqual([
+          'a0000000-0000-4000-8000-000000000001',
+          'f0000000-0000-4000-8000-000000000001',
+        ]);
+        expect(queryRaw.mock.calls[0][0].join('')).toContain('FOR UPDATE');
+      });
+
+      it('does not query for an empty id list', async () => {
+        const queryRaw = vi.fn();
+
+        await repository.lockByVariantIds([], { $queryRaw: queryRaw } as never);
+
+        expect(queryRaw).not.toHaveBeenCalled();
       });
     });
 
@@ -159,11 +188,9 @@ describe('InventoryRepository', () => {
     const txUpdate = vi.fn().mockResolvedValue(inventory);
 
     await expect(
-      repository.update(
-        'v-1',
-        { quantity: 7 },
-        { inventory: { update: txUpdate } } as never,
-      ),
+      repository.update('v-1', { quantity: 7 }, {
+        inventory: { update: txUpdate },
+      } as never),
     ).resolves.toBe(inventory);
     expect(txUpdate).toHaveBeenCalledWith({
       where: { variantId: 'v-1' },
@@ -217,10 +244,7 @@ describe('InventoryRepository', () => {
       await repository.reserve('v-1', 3);
 
       const { sql } = reservedSql();
-      const setClause = sql.slice(
-        sql.indexOf('SET'),
-        sql.indexOf('WHERE'),
-      );
+      const setClause = sql.slice(sql.indexOf('SET'), sql.indexOf('WHERE'));
 
       expect(setClause).not.toContain('"quantity"');
     });
@@ -278,9 +302,7 @@ describe('InventoryRepository', () => {
 
       const { sql } = executedStatement();
 
-      expect(sql).toContain(
-        '"reserved_quantity" = "reserved_quantity" - ?',
-      );
+      expect(sql).toContain('"reserved_quantity" = "reserved_quantity" - ?');
       expect(sql).not.toMatch(/SET\s+"reserved_quantity"\s*=\s*\?/);
     });
 
@@ -359,9 +381,7 @@ describe('InventoryRepository', () => {
       const { sql } = executedStatement();
 
       expect(sql).toContain('"quantity" = "quantity" - ?');
-      expect(sql).toContain(
-        '"reserved_quantity" = "reserved_quantity" - ?',
-      );
+      expect(sql).toContain('"reserved_quantity" = "reserved_quantity" - ?');
     });
 
     it('requires both physical stock and reserved stock to cover the movement', async () => {
@@ -402,9 +422,9 @@ describe('InventoryRepository', () => {
       await expect(repository.commitReserved('v-1', 0)).rejects.toBeInstanceOf(
         RangeError,
       );
-      await expect(
-        repository.commitReserved('v-1', -1),
-      ).rejects.toBeInstanceOf(RangeError);
+      await expect(repository.commitReserved('v-1', -1)).rejects.toBeInstanceOf(
+        RangeError,
+      );
       await expect(
         repository.commitReserved('v-1', 1.5),
       ).rejects.toBeInstanceOf(RangeError);

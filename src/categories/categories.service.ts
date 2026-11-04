@@ -2,10 +2,12 @@ import {
   BadRequestException,
   ConflictException,
   Injectable,
+  Logger,
   NotFoundException,
 } from '@nestjs/common';
 import { normalizeCategoryName } from '../common/utils/normalize-category-name.js';
 import { normalizeSlug } from '../common/utils/normalize-slug.js';
+import { CloudinaryService } from '../cloudinary/cloudinary.service.js';
 import {
   Prisma,
   type Category,
@@ -13,6 +15,8 @@ import {
 import { CategoryResponseDto } from './dto/category-response.dto.js';
 import { CreateCategoryDto } from './dto/create-category.dto.js';
 import { UpdateCategoryDto } from './dto/update-category.dto.js';
+import { UploadCategoryImageDto } from './dto/upload-category-image.dto.js';
+import type { UploadedCategoryImageFile } from './interfaces/uploaded-category-image-file.js';
 import {
   CategoriesRepository,
   type CreateCategoryData,
@@ -49,7 +53,12 @@ const CATEGORY_HAS_CHILDREN_MESSAGE =
  */
 @Injectable()
 export class CategoriesService {
-  constructor(private readonly categoriesRepository: CategoriesRepository) {}
+  constructor(
+    private readonly categoriesRepository: CategoriesRepository,
+    private readonly cloudinaryService: CloudinaryService,
+  ) {}
+
+  private readonly logger = new Logger(CategoriesService.name);
 
   async create(dto: CreateCategoryDto): Promise<CategoryResponseDto> {
     const data: CreateCategoryData = {
@@ -58,6 +67,9 @@ export class CategoriesService {
       description: this.normalizeDescription(dto.description),
       parentId: dto.parentId ?? null,
       isActive: dto.isActive ?? true,
+      imageUrl: null,
+      publicId: null,
+      altText: null,
     };
 
     await this.assertSlugAvailable(data.slug);
@@ -128,11 +140,132 @@ export class CategoriesService {
   }
 
   /**
+   * Uploads an image for `id` and records its Cloudinary metadata on the
+   * category.
+   *
+   * A remote upload and a local write cannot share a transaction, so the order
+   * of operations is the whole design:
+   *
+   * 1. The category is confirmed to exist — before anything is uploaded, so a
+   *    typo in the path costs a database read rather than a wasted asset.
+   * 2. The file is validated by `CloudinaryService`, which refuses an empty,
+   *    oversized or non-image payload before a single byte leaves the process.
+   * 3. The bytes go to Cloudinary.
+   * 4. `imageUrl` and `publicId` are read **off the upload result**, never off
+   *    the request. The client has no way to influence either.
+   * 5. The category record is updated with the new image metadata.
+   * 6. If step 5 throws, the asset uploaded in step 3 is deleted before the
+   *    error propagates, so no orphaned asset is left behind.
+   * 7. Only after the category record is updated is the previous Cloudinary
+   *    asset (if any) deleted. The category never points at a deleted asset:
+   *    the new row is in place before the old asset is removed.
+   */
+  async uploadImage(
+    id: string,
+    file: UploadedCategoryImageFile | undefined,
+    dto: UploadCategoryImageDto,
+  ): Promise<CategoryResponseDto> {
+    const existing = await this.requireCategory(id);
+    const previousPublicId = existing.publicId;
+    const uploadedFile = this.assertFileIsPresent(file);
+
+    const uploaded = await this.cloudinaryService.upload({
+      buffer: uploadedFile.buffer,
+      mimeType: uploadedFile.mimetype,
+    });
+
+    const data: UpdateCategoryData = {
+      imageUrl: uploaded.secureUrl,
+      publicId: uploaded.publicId,
+      altText: this.normalizeAltText(dto.altText),
+    };
+
+    let category: Category;
+
+    try {
+      category = await this.categoriesRepository.update(id, data);
+    } catch (error) {
+      await this.compensateFailedUpload(uploaded.publicId, error);
+
+      throw error;
+    }
+
+    /**
+     * The previous Cloudinary asset is deleted only after the category record
+     * points at the new one. If this delete fails the category already holds the
+     * new asset, so the worst case is an orphaned old asset — visible and
+     * repairable — rather than a category that references a deleted image.
+     */
+    if (previousPublicId && previousPublicId !== uploaded.publicId) {
+      await this.cloudinaryService.deleteAsset(previousPublicId).catch((error) => {
+        this.logger.error(
+          `Failed to remove previous Cloudinary asset ${previousPublicId} after category image replacement: ${error}`,
+        );
+      });
+    }
+
+    return CategoryResponseDto.fromEntity(category);
+  }
+
+  /**
+   * Removes a category's image: clears the database fields first, then deletes
+   * the Cloudinary asset.
+   *
+   * The order is deliberate. Clearing the database first means the category can
+   * never reference a deleted asset — even if Cloudinary deletion fails, the
+   * row no longer points at anything. Deleting the Cloudinary asset second
+   * means the worst case of a Cloudinary failure is an orphaned asset in the
+   * account (visible, repairable, billable) rather than a broken reference on
+   * the category row (invisible, unrecoverable through the API).
+   *
+   * If the database update fails, the Cloudinary asset is never touched: the
+   * category still references a live asset, which is consistent and safe.
+   *
+   * If Cloudinary deletion fails, the error is logged and swallowed. The
+   * `publicId` was already cleared from the category row, so the asset becomes
+   * an unrecoverable orphan in Cloudinary. This is the lesser of two evils:
+   * a billing leak is preferable to a dangling reference that no caller can
+   * repair. Operators can reclaim orphaned assets through the Cloudinary
+   * dashboard or a cleanup job.
+   */
+  async removeImage(id: string): Promise<void> {
+    const category = await this.requireCategory(id);
+
+    if (category.publicId === null) {
+      return;
+    }
+
+    const publicId = category.publicId;
+
+    await this.categoriesRepository.update(id, {
+      imageUrl: null,
+      publicId: null,
+      altText: null,
+    });
+
+    /**
+     * Delete the Cloudinary asset only after the database fields are cleared.
+     * A failure here leaves an orphaned asset in Cloudinary, but the category
+     * row no longer references it — so nothing is broken for callers.
+     */
+    await this.cloudinaryService.deleteAsset(publicId).catch((error) => {
+      this.logger.error(
+        `Failed to remove Cloudinary asset ${publicId} after clearing category ${id} image fields; the asset must be deleted manually (error: ${this.describe(error)})`,
+      );
+    });
+  }
+
+  /**
    * Builds the update payload from the fields the client actually sent.
    *
    * An absent key is left out of the object entirely so Prisma never writes an
    * `undefined` column, while an explicit `null` is forwarded and therefore
    * clears `description` or detaches `parentId`.
+   *
+   * Image fields (`imageUrl`, `publicId`, `altText`) are absent from this
+   * method on purpose: they are written only by {@link uploadImage} and
+   * {@link removeImage}, never by a metadata PATCH. The client cannot forge
+   * them through `PATCH /categories/:id`.
    */
   private buildUpdateData(dto: UpdateCategoryDto): UpdateCategoryData {
     const data: UpdateCategoryData = {};
@@ -321,5 +454,58 @@ export class CategoriesService {
     }
 
     return meta?.['modelName'] === CATEGORY_MODEL;
+  }
+
+  /**
+   * Rejects a request that carried no usable file part, and returns the file so
+   * the caller does not have to narrow the type itself.
+   */
+  private assertFileIsPresent(
+    file: UploadedCategoryImageFile | undefined,
+  ): UploadedCategoryImageFile {
+    if (!file || !Buffer.isBuffer(file.buffer) || file.buffer.length === 0) {
+      throw new BadRequestException(
+        'An image file is required in the "file" field',
+      );
+    }
+
+    return file;
+  }
+
+  /**
+   * Deletes an orphaned asset after its database update failed, then rethrows
+   * the original error.
+   *
+   * Without this, a rejected update leaves the file uploaded in Cloudinary with
+   * no category row referencing it. The `publicId` is the only pointer, and it
+   * was never stored, so nothing else would ever find it.
+   *
+   * The compensation failure is logged and swallowed, never propagated. The
+   * caller needs the *original* database error.
+   */
+  private async compensateFailedUpload(
+    publicId: string,
+    originalError: unknown,
+  ): Promise<void> {
+    try {
+      await this.cloudinaryService.deleteAsset(publicId);
+    } catch (compensationError) {
+      this.logger.error(
+        `Failed to remove orphaned Cloudinary asset ${publicId} after a category database error; it must be deleted manually (original error: ${this.describe(originalError)}, cleanup error: ${this.describe(compensationError)})`,
+      );
+    }
+  }
+
+  /** Renders an unknown thrown value for a log line, without assuming a shape. */
+  private describe(error: unknown): string {
+    if (error instanceof Error) {
+      return error.message;
+    }
+
+    return typeof error === 'string' ? error : 'unknown error';
+  }
+
+  private normalizeAltText(altText?: string | null): string | null {
+    return altText === undefined || altText === null ? null : altText.trim();
   }
 }

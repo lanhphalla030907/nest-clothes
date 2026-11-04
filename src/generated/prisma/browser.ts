@@ -120,6 +120,32 @@ export type ProductImage = Prisma.ProductImageModel
  */
 export type ProductVariant = Prisma.ProductVariantModel
 /**
+ * Model ProductOption
+ * One product-level option axis, such as Color, Size or Material.
+ * 
+ * The option ID remains stable when its displayed name or position changes.
+ * Functional unique indexes in the migration enforce case-insensitive names
+ * within a product; Prisma cannot express those indexes directly.
+ */
+export type ProductOption = Prisma.ProductOptionModel
+/**
+ * Model ProductOptionValue
+ * One selectable value belonging to a product option.
+ * 
+ * `productId` is repeated intentionally so composite foreign keys can ensure a
+ * value and every variant mapping to it belong to the same product.
+ */
+export type ProductOptionValue = Prisma.ProductOptionValueModel
+/**
+ * Model VariantOptionValue
+ * The selected product option value for one variant and one axis.
+ * 
+ * Composite foreign keys enforce that the option value, product option and
+ * variant all belong to the same product. The unique variant/option pair means
+ * a variant can select at most one value for each axis.
+ */
+export type VariantOptionValue = Prisma.VariantOptionValueModel
+/**
  * Model VariantOption
  * A single named axis of a variant, for example `Color = Black` or `Size = M`.
  * 

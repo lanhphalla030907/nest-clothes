@@ -8,6 +8,7 @@ import { OrderModule } from '../orders/order.module.js';
 import { ProductImagesModule } from '../product-images/product-images.module.js';
 import { ProductsModule } from '../products/products.module.js';
 import { ProductVariantsModule } from '../product-variants/product-variants.module.js';
+import { ProductOptionsModule } from '../product-options/product-options.module.js';
 import { ShippingProvidersModule } from '../shipping-providers/shipping-providers.module.js';
 import { UsersModule } from '../users/users.module.js';
 import { LocationsModule } from '../locations/locations.module.js';
@@ -18,10 +19,14 @@ import { AdminCodAreasController } from './controllers/admin-cod-areas.controlle
 import { AdminCodCollectionsController } from './controllers/admin-cod-collections.controller.js';
 import { AdminCodReconciliationController } from './controllers/admin-cod-reconciliation.controller.js';
 import { AdminCodEligibilityController } from './controllers/admin-cod-eligibility.controller.js';
-import { AdminInventoryController } from './controllers/admin-inventory.controller.js';
+import {
+  AdminBulkInventoryController,
+  AdminInventoryController,
+} from './controllers/admin-inventory.controller.js';
 import { AdminOrdersController } from './controllers/admin-orders.controller.js';
 import { AdminProductImagesController } from './controllers/admin-product-images.controller.js';
 import { AdminProductVariantsController } from './controllers/admin-product-variants.controller.js';
+import { AdminProductOptionsController } from './controllers/admin-product-options.controller.js';
 import { AdminProductsController } from './controllers/admin-products.controller.js';
 import { AdminShippingProvidersController } from './controllers/admin-shipping-providers.controller.js';
 import { AdminVariantOptionsController } from './controllers/admin-variant-options.controller.js';
@@ -87,6 +92,7 @@ import { AdminVariantOptionsController } from './controllers/admin-variant-optio
     ProductsModule,
     ProductImagesModule,
     ProductVariantsModule,
+    ProductOptionsModule,
     VariantOptionsModule,
     InventoryModule,
     OrderModule,
@@ -103,8 +109,10 @@ import { AdminVariantOptionsController } from './controllers/admin-variant-optio
     AdminProductsController,
     AdminProductImagesController,
     AdminProductVariantsController,
+    AdminProductOptionsController,
     AdminVariantOptionsController,
     AdminInventoryController,
+    AdminBulkInventoryController,
     AdminOrdersController,
     AdminShippingProvidersController,
   ],

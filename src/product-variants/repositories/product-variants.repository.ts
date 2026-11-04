@@ -16,6 +16,7 @@ export interface CreateProductVariantData {
   sku: string;
   price: string;
   isActive: boolean;
+  combinationKey: string;
 }
 
 /**
@@ -51,6 +52,35 @@ export class ProductVariantsRepository {
     return this.prisma.productVariant.create({ data });
   }
 
+  createDefaultIfUnconfigured(
+    data: CreateProductVariantData,
+  ): Promise<ProductVariant | null> {
+    return this.prisma.$transaction(async (tx) => {
+      const locked = await tx.$queryRaw<{ id: string }[]>`
+        SELECT "id"
+        FROM "products"
+        WHERE "id" = ${data.productId}::uuid
+        FOR UPDATE
+      `;
+      if (locked.length === 0) return null;
+
+      const [variantCount, activeOptionCount] = await Promise.all([
+        tx.productVariant.count({ where: { productId: data.productId } }),
+        tx.productOption.count({
+          where: { productId: data.productId, isActive: true },
+        }),
+      ]);
+      if (variantCount > 0 || activeOptionCount > 0) return null;
+
+      const variant = await tx.productVariant.create({ data });
+      await tx.product.update({
+        where: { id: data.productId },
+        data: { optionsRevision: { increment: 1 } },
+      });
+      return variant;
+    });
+  }
+
   /**
    * Returns every variant belonging to `productId`, oldest first.
    *
@@ -84,6 +114,17 @@ export class ProductVariantsRepository {
     });
   }
 
+  findByIdsAndProductId(
+    ids: string[],
+    productId: string,
+  ): Promise<ProductVariant[]> {
+    if (ids.length === 0) return Promise.resolve([]);
+
+    return this.prisma.productVariant.findMany({
+      where: { id: { in: ids }, productId },
+    });
+  }
+
   /**
    * Returns the variant carrying `sku`, or `null` when none does.
    *
@@ -92,6 +133,18 @@ export class ProductVariantsRepository {
    */
   findBySku(sku: string): Promise<ProductVariant | null> {
     return this.prisma.productVariant.findUnique({ where: { sku } });
+  }
+
+  hasVariantsForProduct(productId: string): Promise<boolean> {
+    return this.prisma.productVariant
+      .count({ where: { productId } })
+      .then((count) => count > 0);
+  }
+
+  hasActiveOptionsForProduct(productId: string): Promise<boolean> {
+    return this.prisma.productOption
+      .count({ where: { productId, isActive: true } })
+      .then((count) => count > 0);
   }
 
   /**
@@ -114,6 +167,38 @@ export class ProductVariantsRepository {
    */
   update(id: string, data: UpdateProductVariantData): Promise<ProductVariant> {
     return this.prisma.productVariant.update({ where: { id }, data });
+  }
+
+  updateForProduct(
+    productId: string,
+    variantId: string,
+    data: UpdateProductVariantData,
+  ): Promise<ProductVariant | null> {
+    return this.prisma.$transaction(async (tx) => {
+      const locked = await tx.$queryRaw<{ id: string }[]>`
+        SELECT "id"
+        FROM "products"
+        WHERE "id" = ${productId}::uuid
+        FOR UPDATE
+      `;
+      if (locked.length === 0) return null;
+
+      const ownedVariant = await tx.productVariant.findFirst({
+        where: { id: variantId, productId },
+        select: { id: true },
+      });
+      if (ownedVariant === null) return null;
+
+      const variant = await tx.productVariant.update({
+        where: { id: variantId },
+        data,
+      });
+      await tx.product.update({
+        where: { id: productId },
+        data: { optionsRevision: { increment: 1 } },
+      });
+      return variant;
+    });
   }
 
   /** Removes the variant owning `id` and returns the row as it was. */

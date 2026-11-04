@@ -441,6 +441,20 @@ describe('CartService', () => {
       expect(cartCreateItem).not.toHaveBeenCalled();
     });
 
+    it('rejects a stocked variant with zero available units', async () => {
+      inventoryFindByVariantId.mockResolvedValue(
+        buildInventory({ quantity: 0, reservedQuantity: 0 }),
+      );
+
+      await expect(
+        service.addItem(
+          USER_ID,
+          buildAddDto({ variantId: VARIANT_ID, quantity: 1 }),
+        ),
+      ).rejects.toBeInstanceOf(ConflictException);
+      expect(cartCreateItem).not.toHaveBeenCalled();
+    });
+
     it('compares against available, not against total stock', async () => {
       inventoryFindByVariantId.mockResolvedValue(
         buildInventory({ quantity: 10, reservedQuantity: 4 }),

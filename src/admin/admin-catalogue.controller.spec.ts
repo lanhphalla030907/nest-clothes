@@ -5,7 +5,10 @@ import {
   type INestApplication,
 } from '@nestjs/common';
 import { Test, TestingModule } from '@nestjs/testing';
-import { TestIdentityRegistry, signRawToken } from '../../test/support/auth-fixtures.js';
+import {
+  TestIdentityRegistry,
+  signRawToken,
+} from '../../test/support/auth-fixtures.js';
 import { CategoriesService } from '../categories/categories.service.js';
 import { Role } from '../generated/prisma/enums.js';
 import { InventoryService } from '../inventory/inventory.service.js';
@@ -14,7 +17,10 @@ import { ProductsService } from '../products/products.service.js';
 import { ProductVariantsService } from '../product-variants/product-variants.service.js';
 import { VariantOptionsService } from '../variant-options/variant-options.service.js';
 import { AdminCategoriesController } from './controllers/admin-categories.controller.js';
-import { AdminInventoryController } from './controllers/admin-inventory.controller.js';
+import {
+  AdminBulkInventoryController,
+  AdminInventoryController,
+} from './controllers/admin-inventory.controller.js';
 import { AdminProductImagesController } from './controllers/admin-product-images.controller.js';
 import { AdminProductVariantsController } from './controllers/admin-product-variants.controller.js';
 import { AdminProductsController } from './controllers/admin-products.controller.js';
@@ -94,13 +100,22 @@ describe('Admin catalogue controllers (HTTP)', () => {
       create: vi.fn(),
       findOne: vi.fn(),
       update: vi.fn(),
+      bulkUpdate: vi.fn(),
     },
   };
 
   beforeAll(async () => {
     identities = new TestIdentityRegistry();
-    identities.register({ id: ADMIN_ID, email: 'root@example.test', role: Role.ADMIN });
-    identities.register({ id: CUSTOMER_ID, email: 'ada@example.test', role: Role.CUSTOMER });
+    identities.register({
+      id: ADMIN_ID,
+      email: 'root@example.test',
+      role: Role.ADMIN,
+    });
+    identities.register({
+      id: CUSTOMER_ID,
+      email: 'ada@example.test',
+      role: Role.CUSTOMER,
+    });
 
     const module: TestingModule = await Test.createTestingModule({
       controllers: [
@@ -110,14 +125,21 @@ describe('Admin catalogue controllers (HTTP)', () => {
         AdminProductVariantsController,
         AdminVariantOptionsController,
         AdminInventoryController,
+        AdminBulkInventoryController,
       ],
       providers: [
         ...identities.providers(),
         { provide: CategoriesService, useValue: stub.categoriesService },
         { provide: ProductsService, useValue: stub.productsService },
         { provide: ProductImagesService, useValue: stub.productImagesService },
-        { provide: ProductVariantsService, useValue: stub.productVariantsService },
-        { provide: VariantOptionsService, useValue: stub.variantOptionsService },
+        {
+          provide: ProductVariantsService,
+          useValue: stub.productVariantsService,
+        },
+        {
+          provide: VariantOptionsService,
+          useValue: stub.variantOptionsService,
+        },
         { provide: InventoryService, useValue: stub.inventoryService },
       ],
     }).compile();
@@ -149,7 +171,11 @@ describe('Admin catalogue controllers (HTTP)', () => {
 
   const call = (
     path: string,
-    options: { method?: string; headers?: Record<string, string>; body?: BodyInit } = {},
+    options: {
+      method?: string;
+      headers?: Record<string, string>;
+      body?: BodyInit;
+    } = {},
   ) =>
     fetch(`${base}${path}`, {
       method: options.method ?? 'GET',
@@ -164,12 +190,27 @@ describe('Admin catalogue controllers (HTTP)', () => {
    * table is about the guard and not about payload handling.
    */
   const guardedRoutes = [
-    { path: '/admin/categories', reached: () => stub.categoriesService.findAll },
+    {
+      path: '/admin/categories',
+      reached: () => stub.categoriesService.findAll,
+    },
     { path: '/admin/products', reached: () => stub.productsService.findMany },
-    { path: `/admin/products/${PRODUCT_ID}/images`, reached: () => stub.productImagesService.findAllByProductId },
-    { path: `/admin/products/${PRODUCT_ID}/variants`, reached: () => stub.productVariantsService.findAllByProductId },
-    { path: `/admin/products/${PRODUCT_ID}/variants/${VARIANT_ID}/options`, reached: () => stub.variantOptionsService.findAllByVariantId },
-    { path: `/admin/products/${PRODUCT_ID}/variants/${VARIANT_ID}/inventory`, reached: () => stub.inventoryService.findOne },
+    {
+      path: `/admin/products/${PRODUCT_ID}/images`,
+      reached: () => stub.productImagesService.findAllByProductId,
+    },
+    {
+      path: `/admin/products/${PRODUCT_ID}/variants`,
+      reached: () => stub.productVariantsService.findAllByProductId,
+    },
+    {
+      path: `/admin/products/${PRODUCT_ID}/variants/${VARIANT_ID}/options`,
+      reached: () => stub.variantOptionsService.findAllByVariantId,
+    },
+    {
+      path: `/admin/products/${PRODUCT_ID}/variants/${VARIANT_ID}/inventory`,
+      reached: () => stub.inventoryService.findOne,
+    },
   ];
 
   describe.each(guardedRoutes)('$path', ({ path, reached }) => {
@@ -341,7 +382,8 @@ describe('Admin catalogue controllers (HTTP)', () => {
 
       expect(res.status).toBe(HttpStatus.OK);
       expect(stub.productsService.update).toHaveBeenCalledTimes(1);
-      const [pathId, dto, lifecycle] = stub.productsService.update.mock.calls[0];
+      const [pathId, dto, lifecycle] =
+        stub.productsService.update.mock.calls[0];
       expect(pathId).toBe(PRODUCT_ID);
       expect(dto).toMatchObject({ basePrice: '29.90', isActive: false });
       expect(lifecycle).toBe(dto);
@@ -416,6 +458,50 @@ describe('Admin catalogue controllers (HTTP)', () => {
   });
 
   describe('ownership is read from the path, never the body', () => {
+    it('requires ADMIN for the bulk inventory endpoint', async () => {
+      const path = `/admin/products/${PRODUCT_ID}/inventory/bulk`;
+      const body = {
+        variantIds: [VARIANT_ID],
+        operation: 'INCREASE',
+        quantity: 2,
+        expectedInventory: [
+          { variantId: VARIANT_ID, quantity: 5, reservedQuantity: 1 },
+        ],
+      };
+
+      expect(
+        (
+          await call(path, {
+            method: 'PATCH',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(body),
+          })
+        ).status,
+      ).toBe(HttpStatus.UNAUTHORIZED);
+      expect(
+        (
+          await call(path, {
+            method: 'PATCH',
+            headers: { ...as(CUSTOMER_ID), 'Content-Type': 'application/json' },
+            body: JSON.stringify(body),
+          })
+        ).status,
+      ).toBe(HttpStatus.FORBIDDEN);
+
+      stub.inventoryService.bulkUpdate.mockResolvedValue([]);
+      const adminResponse = await call(path, {
+        method: 'PATCH',
+        headers: { ...as(ADMIN_ID), 'Content-Type': 'application/json' },
+        body: JSON.stringify(body),
+      });
+
+      expect(adminResponse.status).toBe(HttpStatus.OK);
+      expect(stub.inventoryService.bulkUpdate).toHaveBeenCalledWith(
+        PRODUCT_ID,
+        expect.objectContaining(body),
+      );
+    });
+
     it('an image body carrying another product id is handed to the service, which refuses it', async () => {
       // `CreateProductImageDto.productId` is required, so the pipe cannot discard a
       // body that disagrees with the path — it validates it and the service compares it
@@ -479,13 +565,9 @@ describe('Admin catalogue controllers (HTTP)', () => {
       });
     });
 
-    it('an option created under the wrong variant is a 404, not a 403', async () => {
-      stub.variantOptionsService.create.mockRejectedValue(
-        new NotFoundException('Product does not exist'),
-      );
-
+    it('retires the legacy per-variant option write route', async () => {
       const res = await call(
-        `/admin/products/${OTHER_ID}/variants/${VARIANT_ID}/options`,
+        `/admin/products/${PRODUCT_ID}/variants/${VARIANT_ID}/options`,
         {
           method: 'POST',
           headers: { ...as(ADMIN_ID), 'Content-Type': 'application/json' },
@@ -493,7 +575,8 @@ describe('Admin catalogue controllers (HTTP)', () => {
         },
       );
 
-      expect(res.status).toBe(HttpStatus.NOT_FOUND);
+      expect(res.status).toBe(HttpStatus.GONE);
+      expect(stub.variantOptionsService.create).not.toHaveBeenCalled();
     });
 
     it('a variant reached through another product is a 404, not a 403', async () => {
@@ -531,11 +614,6 @@ describe('Admin catalogue controllers (HTTP)', () => {
         reached: () => stub.productVariantsService.remove,
         args: [PRODUCT_ID, VARIANT_ID],
       },
-      {
-        path: `/admin/products/${PRODUCT_ID}/variants/${VARIANT_ID}/options/${OPTION_ID}`,
-        reached: () => stub.variantOptionsService.remove,
-        args: [PRODUCT_ID, VARIANT_ID, OPTION_ID],
-      },
     ])('$path', async ({ path, reached, args }) => {
       reached().mockResolvedValue(undefined);
 
@@ -545,16 +623,22 @@ describe('Admin catalogue controllers (HTTP)', () => {
       expect(await res.text()).toBe('');
       expect(reached()).toHaveBeenCalledWith(...args);
     });
+
+    it('retires the legacy per-variant option delete route', async () => {
+      const res = await call(
+        `/admin/products/${PRODUCT_ID}/variants/${VARIANT_ID}/options/${OPTION_ID}`,
+        { method: 'DELETE', headers: as(ADMIN_ID) },
+      );
+
+      expect(res.status).toBe(HttpStatus.GONE);
+      expect(stub.variantOptionsService.remove).not.toHaveBeenCalled();
+    });
   });
 
   describe('the image upload route', () => {
     const upload = async (filename: string, type: string, content: string) => {
       const form = new FormData();
-      form.append(
-        'file',
-        new Blob([content], { type }),
-        filename,
-      );
+      form.append('file', new Blob([content], { type }), filename);
 
       return call(`/admin/products/${PRODUCT_ID}/images/upload`, {
         method: 'POST',
@@ -570,7 +654,9 @@ describe('Admin catalogue controllers (HTTP)', () => {
 
       expect(res.status).toBe(HttpStatus.CREATED);
       expect(stub.productImagesService.upload).toHaveBeenCalledTimes(1);
-      expect(stub.productImagesService.upload.mock.calls[0][0]).toBe(PRODUCT_ID);
+      expect(stub.productImagesService.upload.mock.calls[0][0]).toBe(
+        PRODUCT_ID,
+      );
     });
 
     it('refuses a non-image before any service call', async () => {
@@ -582,7 +668,11 @@ describe('Admin catalogue controllers (HTTP)', () => {
 
     it('refuses an upload from a customer', async () => {
       const form = new FormData();
-      form.append('file', new Blob(['jpeg-bytes'], { type: 'image/jpeg' }), 'coat.jpg');
+      form.append(
+        'file',
+        new Blob(['jpeg-bytes'], { type: 'image/jpeg' }),
+        'coat.jpg',
+      );
 
       const res = await call(`/admin/products/${PRODUCT_ID}/images/upload`, {
         method: 'POST',

@@ -7,7 +7,11 @@ import {
 import { Test, TestingModule } from '@nestjs/testing';
 import { randomUUID } from 'node:crypto';
 import { AppModule } from '../src/app.module.js';
-import { bearerHeaders, tokenIssuerFor, type IssueToken } from './support/e2e-auth.js';
+import {
+  bearerHeaders,
+  tokenIssuerFor,
+  type IssueToken,
+} from './support/e2e-auth.js';
 import { AccessTokenService } from '../src/auth/jwt/access-token.service.js';
 import { Role } from '../src/generated/prisma/enums.js';
 import { PrismaService } from '../src/prisma/prisma.service.js';
@@ -64,7 +68,11 @@ describe('Admin catalogue (PostgreSQL)', () => {
   const api = async (
     method: string,
     path: string,
-    options: { user?: string; body?: unknown; rawHeaders?: Record<string, string> } = {},
+    options: {
+      user?: string;
+      body?: unknown;
+      rawHeaders?: Record<string, string>;
+    } = {},
   ) => {
     const res = await fetch(`${base}${path}`, {
       method,
@@ -327,10 +335,12 @@ describe('Admin catalogue (PostgreSQL)', () => {
       });
 
       expect(active.status).toBe(HttpStatus.OK);
-      expect(active.body.some((p: { id: string }) => p.id === productId)).toBe(true);
-      expect(archived.body.some((p: { id: string }) => p.id === productId)).toBe(
-        false,
+      expect(active.body.some((p: { id: string }) => p.id === productId)).toBe(
+        true,
       );
+      expect(
+        archived.body.some((p: { id: string }) => p.id === productId),
+      ).toBe(false);
     });
 
     it('refuses a status that is not part of the lifecycle', async () => {
@@ -425,6 +435,7 @@ describe('Admin catalogue (PostgreSQL)', () => {
     let productId: string;
     let otherProductId: string;
     let variantId: string;
+    const variantSku = `admin-${run}-m`;
 
     beforeAll(async () => {
       const first = await createProduct({ slug: slug('variant-parent') });
@@ -434,16 +445,16 @@ describe('Admin catalogue (PostgreSQL)', () => {
     });
 
     it('creates a variant with the SKU normalised', async () => {
-      const res = await createVariant(productId, '  admin-run-m ');
+      const res = await createVariant(productId, `  ${variantSku} `);
       variantId = res.body.id;
 
       expect(res.status).toBe(HttpStatus.CREATED);
-      expect(res.body.sku).toBe('ADMIN-RUN-M');
+      expect(res.body.sku).toBe(variantSku.toUpperCase());
       expect(res.body.price).toBe('39.90');
     });
 
     it('refuses a second variant with the same SKU anywhere in the catalogue', async () => {
-      const res = await createVariant(otherProductId, 'admin-run-m');
+      const res = await createVariant(otherProductId, variantSku);
 
       expect(res.status).toBe(HttpStatus.CONFLICT);
     });
@@ -467,7 +478,7 @@ describe('Admin catalogue (PostgreSQL)', () => {
 
       expect(res.status).toBe(HttpStatus.OK);
       expect(res.body.price).toBe('44.90');
-      expect(res.body.sku).toBe('ADMIN-RUN-M');
+      expect(res.body.sku).toBe(`ADMIN-${run.toUpperCase()}-M`);
     });
 
     it('lists the variants of a product', async () => {
@@ -478,6 +489,94 @@ describe('Admin catalogue (PostgreSQL)', () => {
       expect(res.status).toBe(HttpStatus.OK);
       expect(res.body).toHaveLength(1);
       expect(res.body[0].id).toBe(variantId);
+
+      const publicRead = await api('GET', `/products/${productId}/variants`);
+      expect(publicRead.status).toBe(HttpStatus.OK);
+      expect(publicRead.body[0].id).toBe(variantId);
+    });
+
+    it('requires ADMIN for mutations and removes the public write routes', async () => {
+      const adminBase = `/admin/products/${productId}/variants`;
+      const publicBase = `/products/${productId}/variants`;
+      const operations = [
+        {
+          method: 'POST',
+          adminPath: adminBase,
+          publicPath: publicBase,
+          body: { sku: `BLOCKED-${run}`, price: '10.00' },
+        },
+        {
+          method: 'PATCH',
+          adminPath: `${adminBase}/${variantId}`,
+          publicPath: `${publicBase}/${variantId}`,
+          body: { price: '10.00' },
+        },
+        {
+          method: 'DELETE',
+          adminPath: `${adminBase}/${variantId}`,
+          publicPath: `${publicBase}/${variantId}`,
+        },
+      ] as const;
+
+      for (const operation of operations) {
+        expect(
+          (
+            await api(operation.method, operation.adminPath, {
+              body: operation.body,
+            })
+          ).status,
+        ).toBe(HttpStatus.UNAUTHORIZED);
+        expect(
+          (
+            await api(operation.method, operation.adminPath, {
+              user: customerId,
+              body: operation.body,
+            })
+          ).status,
+        ).toBe(HttpStatus.FORBIDDEN);
+        expect(
+          (
+            await api(operation.method, operation.publicPath, {
+              body: operation.body,
+            })
+          ).status,
+        ).toBe(HttpStatus.NOT_FOUND);
+      }
+    });
+
+    it('retires a variant without deleting its inventory', async () => {
+      const deleteProduct = await createProduct({
+        slug: slug('retire-variant'),
+      });
+      const created = await createVariant(
+        deleteProduct.body.id,
+        `admin-${run}-delete`,
+      );
+      await api(
+        'POST',
+        `/admin/products/${deleteProduct.body.id}/variants/${created.body.id}/inventory`,
+        { user: adminId, body: { quantity: 7, reservedQuantity: 2 } },
+      );
+      const res = await api(
+        'DELETE',
+        `/admin/products/${deleteProduct.body.id}/variants/${created.body.id}`,
+        { user: adminId },
+      );
+
+      expect(created.status).toBe(HttpStatus.CREATED);
+      expect(res.status).toBe(HttpStatus.NO_CONTENT);
+      expect(
+        await prisma.productVariant.findUnique({
+          where: { id: created.body.id },
+          select: { isActive: true },
+        }),
+      ).toEqual({ isActive: false });
+      expect(
+        await prisma.inventory.findUnique({
+          where: { variantId: created.body.id },
+          select: { quantity: true, reservedQuantity: true },
+        }),
+      ).toEqual({ quantity: 7, reservedQuantity: 2 });
     });
   });
 
@@ -488,32 +587,45 @@ describe('Admin catalogue (PostgreSQL)', () => {
     beforeAll(async () => {
       const product = await createProduct({ slug: slug('option-parent') });
       productId = product.body.id;
-      const variant = await createVariant(productId, 'admin-run-option');
-      variantId = variant.body.id;
+      const preview = await api(
+        'POST',
+        `/admin/products/${productId}/options/preview`,
+        {
+          user: adminId,
+          body: {
+            options: [{ name: 'Color', values: [{ value: 'Navy' }] }],
+          },
+        },
+      );
+      const saved = await api('PUT', `/admin/products/${productId}/options`, {
+        user: adminId,
+        body: {
+          expectedRevision: preview.body.expectedRevision,
+          options: preview.body.options,
+          variants: [
+            {
+              optionValueIds: [preview.body.options[0].values[0].id],
+              sku: `ADMIN-${run.toUpperCase()}-OPTION`,
+              price: '39.90',
+              isActive: true,
+            },
+          ],
+        },
+      });
+      variantId = saved.body.variants[0].id;
     });
 
-    it('creates an option', async () => {
-      const res = await api(
-        'POST',
-        `/admin/products/${productId}/variants/${variantId}/options`,
-        { user: adminId, body: { optionName: '  Color ', optionValue: ' Navy ' } },
+    it('projects normalized options through the existing public read contract', async () => {
+      const publicRead = await api(
+        'GET',
+        `/products/${productId}/variants/${variantId}/options`,
       );
-
-      expect(res.status).toBe(HttpStatus.CREATED);
-      expect(res.body.optionName).toBe('Color');
-      expect(res.body.optionValue).toBe('Navy');
-    });
-
-    it('refuses the same option name on the same variant, case-insensitively', async () => {
-      const res = await api(
-        'POST',
-        `/admin/products/${productId}/variants/${variantId}/options`,
-        { user: adminId, body: { optionName: 'COLOR', optionValue: 'Black' } },
-      );
-
-      // `Color` and `COLOR` are the same name to a case-insensitive unique index,
-      // which a plain string comparison in the service would not have caught.
-      expect(res.status).toBe(HttpStatus.CONFLICT);
+      expect(publicRead.status).toBe(HttpStatus.OK);
+      expect(publicRead.body).toHaveLength(1);
+      expect(publicRead.body[0]).toMatchObject({
+        optionName: 'Color',
+        optionValue: 'Navy',
+      });
     });
 
     it('reports an option reached through another product as 404', async () => {
@@ -526,33 +638,352 @@ describe('Admin catalogue (PostgreSQL)', () => {
       expect(res.status).toBe(HttpStatus.NOT_FOUND);
     });
 
-    it('rejects an option name that is only whitespace', async () => {
-      const res = await api(
+    it('retires old per-variant option mutations and protects the matrix endpoints', async () => {
+      const adminBase = `/admin/products/${productId}/variants/${variantId}/options`;
+      const publicBase = `/products/${productId}/variants/${variantId}/options`;
+      const legacy = await api('POST', adminBase, {
+        user: adminId,
+        body: { optionName: 'Size', optionValue: 'M' },
+      });
+      expect(legacy.status).toBe(HttpStatus.GONE);
+      expect((await api('GET', publicBase)).status).toBe(HttpStatus.OK);
+
+      const previewPath = `/admin/products/${productId}/options/preview`;
+      const savePath = `/admin/products/${productId}/options`;
+      expect(
+        (await api('POST', previewPath, { body: { options: [] } })).status,
+      ).toBe(HttpStatus.UNAUTHORIZED);
+      expect(
+        (
+          await api('POST', previewPath, {
+            user: customerId,
+            body: { options: [] },
+          })
+        ).status,
+      ).toBe(HttpStatus.FORBIDDEN);
+      expect(
+        (
+          await api('PUT', savePath, {
+            user: customerId,
+            body: { expectedRevision: 1, options: [], variants: [] },
+          })
+        ).status,
+      ).toBe(HttpStatus.FORBIDDEN);
+      expect(
+        (
+          await api('POST', previewPath, {
+            user: adminId,
+            body: { options: [{ name: 'COLOR', values: [{ value: 'Navy' }] }] },
+          })
+        ).status,
+      ).toBe(HttpStatus.OK);
+    });
+  });
+
+  describe('product option matrix', () => {
+    let productId: string;
+
+    beforeAll(async () => {
+      const product = await createProduct({ slug: slug('matrix') });
+      productId = product.body.id;
+    });
+
+    it('generates, saves, extends and retires combinations without losing variant inventory', async () => {
+      const options = [
+        {
+          name: 'Color',
+          values: [{ value: 'Black' }, { value: 'White' }, { value: 'Beige' }],
+        },
+        {
+          name: 'Size',
+          values: [
+            { value: 'S' },
+            { value: 'M' },
+            { value: 'L' },
+            { value: 'XL' },
+          ],
+        },
+      ];
+      const preview = await api(
         'POST',
-        `/admin/products/${productId}/variants/${variantId}/options`,
-        { user: adminId, body: { optionName: '   ', optionValue: 'x' } },
+        `/admin/products/${productId}/options/preview`,
+        { user: adminId, body: { options } },
       );
 
-      expect(res.status).toBe(HttpStatus.BAD_REQUEST);
+      expect(preview.status).toBe(HttpStatus.OK);
+      expect(preview.body.variants).toHaveLength(12);
+
+      const sku = (index: number) => `MATRIX-${run.toUpperCase()}-${index}`;
+      const savePreview = async (
+        generated: typeof preview.body,
+        expectedRevision: number,
+        startingSku: number,
+      ) =>
+        api('PUT', `/admin/products/${productId}/options`, {
+          user: adminId,
+          body: {
+            expectedRevision,
+            options: generated.options,
+            variants: generated.variants.map(
+              (variant: Record<string, unknown>, index: number) => ({
+                ...(variant.id === undefined ? {} : { id: variant.id }),
+                optionValueIds: variant.optionValueIds,
+                sku: variant.sku || sku(startingSku + index),
+                price: variant.price || '19.90',
+                isActive: variant.isActive ?? true,
+              }),
+            ),
+          },
+        });
+
+      const duplicateCombination = await api(
+        'PUT',
+        `/admin/products/${productId}/options`,
+        {
+          user: adminId,
+          body: {
+            expectedRevision: preview.body.expectedRevision,
+            options: preview.body.options,
+            variants: [
+              {
+                optionValueIds: preview.body.variants[0].optionValueIds,
+                sku: sku(90),
+                price: '19.90',
+                isActive: true,
+              },
+              {
+                optionValueIds: preview.body.variants[0].optionValueIds,
+                sku: sku(91),
+                price: '19.90',
+                isActive: true,
+              },
+            ],
+          },
+        },
+      );
+      expect(duplicateCombination.status).toBe(HttpStatus.BAD_REQUEST);
+
+      const duplicateSku = await api(
+        'PUT',
+        `/admin/products/${productId}/options`,
+        {
+          user: adminId,
+          body: {
+            expectedRevision: preview.body.expectedRevision,
+            options: preview.body.options,
+            variants: preview.body.variants
+              .slice(0, 2)
+              .map((variant: Record<string, unknown>) => ({
+                optionValueIds: variant.optionValueIds,
+                sku: sku(92),
+                price: '19.90',
+                isActive: true,
+              })),
+          },
+        },
+      );
+      expect(duplicateSku.status).toBe(HttpStatus.CONFLICT);
+
+      const initial = await savePreview(
+        preview.body,
+        preview.body.expectedRevision,
+        1,
+      );
+      expect(initial.status).toBe(HttpStatus.OK);
+      expect(initial.body.variants).toHaveLength(12);
+      expect(
+        await prisma.variantOptionValue.count({
+          where: { variant: { productId } },
+        }),
+      ).toBe(24);
+
+      const color = initial.body.options.find(
+        (option: { name: string }) => option.name === 'Color',
+      );
+      const size = initial.body.options.find(
+        (option: { name: string }) => option.name === 'Size',
+      );
+      const blackId = color.values.find(
+        (value: { value: string }) => value.value === 'Black',
+      ).id;
+      const whiteId = color.values.find(
+        (value: { value: string }) => value.value === 'White',
+      ).id;
+      const smallId = size.values.find(
+        (value: { value: string }) => value.value === 'S',
+      ).id;
+      const blackSmall = initial.body.variants.find(
+        (variant: { optionValueIds: string[] }) =>
+          variant.optionValueIds.includes(blackId) &&
+          variant.optionValueIds.includes(smallId),
+      );
+      const whiteSmall = initial.body.variants.find(
+        (variant: { optionValueIds: string[] }) =>
+          variant.optionValueIds.includes(whiteId) &&
+          variant.optionValueIds.includes(smallId),
+      );
+
+      for (const variant of [blackSmall, whiteSmall]) {
+        const stock = await api(
+          'POST',
+          `/admin/products/${productId}/variants/${variant.id}/inventory`,
+          { user: adminId, body: { quantity: 6, reservedQuantity: 2 } },
+        );
+        expect(stock.status).toBe(HttpStatus.CREATED);
+      }
+
+      const addedColorOptions = initial.body.options.map(
+        (option: {
+          id: string;
+          name: string;
+          values: Array<{ id: string; value: string }>;
+        }) => ({
+          id: option.id,
+          name: option.name,
+          values:
+            option.name === 'Color'
+              ? [
+                  ...option.values.map(({ id, value }) => ({ id, value })),
+                  { value: 'Olive' },
+                ]
+              : option.values.map(({ id, value }) => ({ id, value })),
+        }),
+      );
+      const additionPreview = await api(
+        'POST',
+        `/admin/products/${productId}/options/preview`,
+        { user: adminId, body: { options: addedColorOptions } },
+      );
+      expect(additionPreview.status, JSON.stringify(additionPreview.body)).toBe(
+        HttpStatus.OK,
+      );
+      expect(additionPreview.body.variants).toHaveLength(16);
+      expect(
+        additionPreview.body.variants.find(
+          (variant: { id?: string }) => variant.id === blackSmall.id,
+        ),
+      ).toBeDefined();
+
+      const extended = await savePreview(
+        additionPreview.body,
+        initial.body.revision,
+        13,
+      );
+      expect(extended.status).toBe(HttpStatus.OK);
+      expect(extended.body.variants).toHaveLength(16);
+      expect(
+        extended.body.variants.find(
+          (variant: { id: string }) => variant.id === blackSmall.id,
+        ).inventory,
+      ).toMatchObject({ quantity: 6, reservedQuantity: 2, available: 4 });
+
+      const staleSave = await savePreview(
+        additionPreview.body,
+        initial.body.revision,
+        13,
+      );
+      expect(staleSave.status).toBe(HttpStatus.CONFLICT);
+
+      const removeWhiteOptions = extended.body.options.map(
+        (option: {
+          id: string;
+          name: string;
+          values: Array<{ id: string; value: string }>;
+        }) => ({
+          id: option.id,
+          name: option.name,
+          values:
+            option.name === 'Color'
+              ? option.values
+                  .filter((value) => value.value !== 'White')
+                  .map(({ id, value }) => ({ id, value }))
+              : option.values.map(({ id, value }) => ({ id, value })),
+        }),
+      );
+      const retirementPreview = await api(
+        'POST',
+        `/admin/products/${productId}/options/preview`,
+        { user: adminId, body: { options: removeWhiteOptions } },
+      );
+      expect(retirementPreview.body.variants).toHaveLength(12);
+      const retired = await savePreview(
+        retirementPreview.body,
+        extended.body.revision,
+        30,
+      );
+      expect(retired.status).toBe(HttpStatus.OK);
+      expect(
+        await prisma.productVariant.findUnique({
+          where: { id: whiteSmall.id },
+          select: { isActive: true },
+        }),
+      ).toEqual({ isActive: false });
+      expect(
+        await prisma.inventory.findUnique({
+          where: { variantId: whiteSmall.id },
+          select: { quantity: true, reservedQuantity: true },
+        }),
+      ).toEqual({ quantity: 6, reservedQuantity: 2 });
+      expect(
+        await prisma.variantOptionValue.count({
+          where: { variant: { productId } },
+        }),
+      ).toBe(32);
     });
   });
 
   describe('inventory', () => {
     let productId: string;
     let variantId: string;
+    let secondVariantId: string;
+    let unstockedVariantId: string;
     let otherProductId: string;
 
     beforeAll(async () => {
       const product = await createProduct({ slug: slug('stock-parent') });
       productId = product.body.id;
-      const variant = await createVariant(productId, 'admin-run-stock');
-      variantId = variant.body.id;
+      const generated = await api(
+        'POST',
+        `/admin/products/${productId}/options/preview`,
+        {
+          user: adminId,
+          body: {
+            options: [
+              {
+                name: 'Size',
+                values: [{ value: 'S' }, { value: 'M' }, { value: 'L' }],
+              },
+            ],
+          },
+        },
+      );
+      const saved = await api('PUT', `/admin/products/${productId}/options`, {
+        user: adminId,
+        body: {
+          expectedRevision: generated.body.expectedRevision,
+          options: generated.body.options,
+          variants: generated.body.variants.map(
+            (variant: Record<string, unknown>, index: number) => ({
+              optionValueIds: variant.optionValueIds,
+              sku: `STOCK-${run.toUpperCase()}-${index}`,
+              price: '19.90',
+              isActive: true,
+            }),
+          ),
+        },
+      });
+      expect(saved.status).toBe(HttpStatus.OK);
+      variantId = saved.body.variants[0].id;
+      secondVariantId = saved.body.variants[1].id;
+      unstockedVariantId = saved.body.variants[2].id;
       const other = await createProduct({ slug: slug('stock-other') });
       otherProductId = other.body.id;
     });
 
     const inventoryPath = (ownerProduct = productId) =>
       `/admin/products/${ownerProduct}/variants/${variantId}/inventory`;
+    const bulkInventoryPath = () =>
+      `/admin/products/${productId}/inventory/bulk`;
 
     it('has no row until one is created', async () => {
       const res = await api('GET', inventoryPath(), { user: adminId });
@@ -572,6 +1003,13 @@ describe('Admin catalogue (PostgreSQL)', () => {
         reservedQuantity: 2,
         available: 3,
       });
+
+      const publicRead = await api(
+        'GET',
+        `/products/${productId}/variants/${variantId}/inventory`,
+      );
+      expect(publicRead.status).toBe(HttpStatus.OK);
+      expect(publicRead.body.available).toBe(3);
     });
 
     it('refuses a second row for the same variant', async () => {
@@ -624,6 +1062,314 @@ describe('Admin catalogue (PostgreSQL)', () => {
       expect(res.status).toBe(HttpStatus.BAD_REQUEST);
       const row = await prisma.inventory.findUnique({ where: { variantId } });
       expect(row?.quantity).toBe(10);
+    });
+
+    it('previews via expected counters and applies set, increase, and decrease without changing reservations', async () => {
+      const secondInventory = await api(
+        'POST',
+        `/admin/products/${productId}/variants/${secondVariantId}/inventory`,
+        {
+          user: adminId,
+          body: { quantity: 7, reservedQuantity: 3 },
+        },
+      );
+      expect(secondInventory.status).toBe(HttpStatus.CREATED);
+
+      const body = (
+        operation: 'SET' | 'INCREASE' | 'DECREASE',
+        quantity: number,
+        expected: Array<{
+          variantId: string;
+          inventoryExists: boolean;
+          quantity: number;
+          reservedQuantity: number;
+        }>,
+      ) => ({
+        variantIds: [variantId, secondVariantId],
+        operation,
+        quantity,
+        expectedInventory: expected,
+      });
+      const initial = [
+        { variantId, inventoryExists: true, quantity: 10, reservedQuantity: 2 },
+        {
+          variantId: secondVariantId,
+          inventoryExists: true,
+          quantity: 7,
+          reservedQuantity: 3,
+        },
+      ];
+
+      const increased = await api('PATCH', bulkInventoryPath(), {
+        user: adminId,
+        body: body('INCREASE', 3, initial),
+      });
+      expect(increased.status).toBe(HttpStatus.OK);
+      expect(
+        increased.body.map(
+          (row: { quantity: number; reservedQuantity: number }) => [
+            row.quantity,
+            row.reservedQuantity,
+          ],
+        ),
+      ).toEqual([
+        [13, 2],
+        [10, 3],
+      ]);
+
+      const decreased = await api('PATCH', bulkInventoryPath(), {
+        user: adminId,
+        body: body('DECREASE', 4, [
+          {
+            variantId,
+            inventoryExists: true,
+            quantity: 13,
+            reservedQuantity: 2,
+          },
+          {
+            variantId: secondVariantId,
+            inventoryExists: true,
+            quantity: 10,
+            reservedQuantity: 3,
+          },
+        ]),
+      });
+      expect(decreased.status).toBe(HttpStatus.OK);
+      expect(
+        decreased.body.map((row: { quantity: number }) => row.quantity),
+      ).toEqual([9, 6]);
+
+      const set = await api('PATCH', bulkInventoryPath(), {
+        user: adminId,
+        body: body('SET', 8, [
+          {
+            variantId,
+            inventoryExists: true,
+            quantity: 9,
+            reservedQuantity: 2,
+          },
+          {
+            variantId: secondVariantId,
+            inventoryExists: true,
+            quantity: 6,
+            reservedQuantity: 3,
+          },
+        ]),
+      });
+      expect(set.status).toBe(HttpStatus.OK);
+      expect(
+        set.body.map((row: { quantity: number; reservedQuantity: number }) => [
+          row.quantity,
+          row.reservedQuantity,
+        ]),
+      ).toEqual([
+        [8, 2],
+        [8, 3],
+      ]);
+    });
+
+    it('creates missing stock in mixed batches for set and increase', async () => {
+      const set = await api('PATCH', bulkInventoryPath(), {
+        user: adminId,
+        body: {
+          variantIds: [variantId, unstockedVariantId],
+          operation: 'SET',
+          quantity: 9,
+          expectedInventory: [
+            {
+              variantId,
+              inventoryExists: true,
+              quantity: 8,
+              reservedQuantity: 2,
+            },
+            {
+              variantId: unstockedVariantId,
+              inventoryExists: false,
+              quantity: 0,
+              reservedQuantity: 0,
+            },
+          ],
+        },
+      });
+      expect(set.status).toBe(HttpStatus.OK);
+      expect(
+        set.body.map((row: { quantity: number; reservedQuantity: number }) => [
+          row.quantity,
+          row.reservedQuantity,
+        ]),
+      ).toEqual([
+        [9, 2],
+        [9, 0],
+      ]);
+
+      await prisma.inventory.delete({
+        where: { variantId: unstockedVariantId },
+      });
+      const increased = await api('PATCH', bulkInventoryPath(), {
+        user: adminId,
+        body: {
+          variantIds: [variantId, unstockedVariantId],
+          operation: 'INCREASE',
+          quantity: 2,
+          expectedInventory: [
+            {
+              variantId,
+              inventoryExists: true,
+              quantity: 9,
+              reservedQuantity: 2,
+            },
+            {
+              variantId: unstockedVariantId,
+              inventoryExists: false,
+              quantity: 0,
+              reservedQuantity: 0,
+            },
+          ],
+        },
+      });
+      expect(increased.status).toBe(HttpStatus.OK);
+      expect(
+        increased.body.map(
+          (row: { quantity: number; reservedQuantity: number }) => [
+            row.quantity,
+            row.reservedQuantity,
+          ],
+        ),
+      ).toEqual([
+        [11, 2],
+        [2, 0],
+      ]);
+    });
+
+    it('rejects a mixed decrease that would make new stock negative', async () => {
+      await prisma.inventory.delete({
+        where: { variantId: unstockedVariantId },
+      });
+      const decreased = await api('PATCH', bulkInventoryPath(), {
+        user: adminId,
+        body: {
+          variantIds: [variantId, unstockedVariantId],
+          operation: 'DECREASE',
+          quantity: 1,
+          expectedInventory: [
+            {
+              variantId,
+              inventoryExists: true,
+              quantity: 11,
+              reservedQuantity: 2,
+            },
+            {
+              variantId: unstockedVariantId,
+              inventoryExists: false,
+              quantity: 0,
+              reservedQuantity: 0,
+            },
+          ],
+        },
+      });
+      expect(decreased.status).toBe(HttpStatus.BAD_REQUEST);
+      expect(
+        await prisma.inventory.findUnique({ where: { variantId } }),
+      ).toMatchObject({ quantity: 11, reservedQuantity: 2 });
+      expect(
+        await prisma.inventory.findUnique({
+          where: { variantId: unstockedVariantId },
+        }),
+      ).toBeNull();
+    });
+
+    it('rejects setting existing reserved stock below its reservation without partial creation', async () => {
+      await prisma.inventory.delete({
+        where: { variantId: unstockedVariantId },
+      });
+      const response = await api('PATCH', bulkInventoryPath(), {
+        user: adminId,
+        body: {
+          variantIds: [variantId, unstockedVariantId],
+          operation: 'SET',
+          quantity: 1,
+          expectedInventory: [
+            {
+              variantId,
+              inventoryExists: true,
+              quantity: 11,
+              reservedQuantity: 2,
+            },
+            {
+              variantId: unstockedVariantId,
+              inventoryExists: false,
+              quantity: 0,
+              reservedQuantity: 0,
+            },
+          ],
+        },
+      });
+      expect(response.status).toBe(HttpStatus.BAD_REQUEST);
+      expect(
+        await prisma.inventory.findUnique({ where: { variantId } }),
+      ).toMatchObject({ quantity: 11, reservedQuantity: 2 });
+      expect(
+        await prisma.inventory.findUnique({
+          where: { variantId: unstockedVariantId },
+        }),
+      ).toBeNull();
+    });
+
+    it('rejects stale previews without modifying stock', async () => {
+      const stale = await api('PATCH', bulkInventoryPath(), {
+        user: adminId,
+        body: {
+          variantIds: [variantId],
+          operation: 'INCREASE',
+          quantity: 2,
+          expectedInventory: [
+            {
+              variantId,
+              inventoryExists: true,
+              quantity: 9,
+              reservedQuantity: 2,
+            },
+          ],
+        },
+      });
+      expect(stale.status).toBe(HttpStatus.CONFLICT);
+      expect(
+        await prisma.inventory.findUnique({ where: { variantId } }),
+      ).toMatchObject({ quantity: 11, reservedQuantity: 2 });
+    });
+
+    it('requires ADMIN for mutations and removes the public write routes', async () => {
+      const adminPath = inventoryPath();
+      const publicPath = `/products/${productId}/variants/${variantId}/inventory`;
+      const operations = [
+        { method: 'POST', body: { quantity: 1 } },
+        { method: 'PATCH', body: { quantity: 1 } },
+      ] as const;
+
+      for (const operation of operations) {
+        expect(
+          (
+            await api(operation.method, adminPath, {
+              body: operation.body,
+            })
+          ).status,
+        ).toBe(HttpStatus.UNAUTHORIZED);
+        expect(
+          (
+            await api(operation.method, adminPath, {
+              user: customerId,
+              body: operation.body,
+            })
+          ).status,
+        ).toBe(HttpStatus.FORBIDDEN);
+        expect(
+          (
+            await api(operation.method, publicPath, {
+              body: operation.body,
+            })
+          ).status,
+        ).toBe(HttpStatus.NOT_FOUND);
+      }
     });
   });
 

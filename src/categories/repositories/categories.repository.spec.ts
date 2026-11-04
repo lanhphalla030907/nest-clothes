@@ -13,6 +13,9 @@ const buildCategoryData = (
   description: null,
   parentId: null,
   isActive: true,
+  imageUrl: null,
+  publicId: null,
+  altText: null,
   ...overrides,
 });
 

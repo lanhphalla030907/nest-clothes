@@ -16,6 +16,9 @@ export class CategoryResponseDto {
   description: string | null;
   parentId: string | null;
   isActive: boolean;
+  imageUrl: string | null;
+  publicId: string | null;
+  altText: string | null;
   createdAt: Date;
   updatedAt: Date;
 
@@ -28,6 +31,9 @@ export class CategoryResponseDto {
     dto.description = category.description;
     dto.parentId = category.parentId;
     dto.isActive = category.isActive;
+    dto.imageUrl = category.imageUrl;
+    dto.publicId = category.publicId;
+    dto.altText = category.altText;
     dto.createdAt = category.createdAt;
     dto.updatedAt = category.updatedAt;
     return dto;

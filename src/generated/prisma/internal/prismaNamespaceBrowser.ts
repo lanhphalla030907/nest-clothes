@@ -56,6 +56,9 @@ export const ModelName = {
   Product: 'Product',
   ProductImage: 'ProductImage',
   ProductVariant: 'ProductVariant',
+  ProductOption: 'ProductOption',
+  ProductOptionValue: 'ProductOptionValue',
+  VariantOptionValue: 'VariantOptionValue',
   VariantOption: 'VariantOption',
   ProductAttribute: 'ProductAttribute',
   Inventory: 'Inventory',
@@ -118,6 +121,9 @@ export const CategoryScalarFieldEnum = {
   description: 'description',
   parentId: 'parentId',
   isActive: 'isActive',
+  imageUrl: 'imageUrl',
+  publicId: 'publicId',
+  altText: 'altText',
   createdAt: 'createdAt',
   updatedAt: 'updatedAt'
 } as const
@@ -134,6 +140,7 @@ export const ProductScalarFieldEnum = {
   basePrice: 'basePrice',
   status: 'status',
   isActive: 'isActive',
+  optionsRevision: 'optionsRevision',
   createdAt: 'createdAt',
   updatedAt: 'updatedAt'
 } as const
@@ -162,11 +169,50 @@ export const ProductVariantScalarFieldEnum = {
   sku: 'sku',
   price: 'price',
   isActive: 'isActive',
+  combinationKey: 'combinationKey',
   createdAt: 'createdAt',
   updatedAt: 'updatedAt'
 } as const
 
 export type ProductVariantScalarFieldEnum = (typeof ProductVariantScalarFieldEnum)[keyof typeof ProductVariantScalarFieldEnum]
+
+
+export const ProductOptionScalarFieldEnum = {
+  id: 'id',
+  productId: 'productId',
+  name: 'name',
+  position: 'position',
+  isActive: 'isActive',
+  createdAt: 'createdAt',
+  updatedAt: 'updatedAt'
+} as const
+
+export type ProductOptionScalarFieldEnum = (typeof ProductOptionScalarFieldEnum)[keyof typeof ProductOptionScalarFieldEnum]
+
+
+export const ProductOptionValueScalarFieldEnum = {
+  id: 'id',
+  productId: 'productId',
+  productOptionId: 'productOptionId',
+  value: 'value',
+  position: 'position',
+  isActive: 'isActive',
+  createdAt: 'createdAt',
+  updatedAt: 'updatedAt'
+} as const
+
+export type ProductOptionValueScalarFieldEnum = (typeof ProductOptionValueScalarFieldEnum)[keyof typeof ProductOptionValueScalarFieldEnum]
+
+
+export const VariantOptionValueScalarFieldEnum = {
+  id: 'id',
+  productId: 'productId',
+  variantId: 'variantId',
+  productOptionId: 'productOptionId',
+  optionValueId: 'optionValueId'
+} as const
+
+export type VariantOptionValueScalarFieldEnum = (typeof VariantOptionValueScalarFieldEnum)[keyof typeof VariantOptionValueScalarFieldEnum]
 
 
 export const VariantOptionScalarFieldEnum = {

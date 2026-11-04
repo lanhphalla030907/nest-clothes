@@ -1,7 +1,5 @@
 import { HttpStatus, ValidationPipe, type INestApplication } from '@nestjs/common';
 import { Test, TestingModule } from '@nestjs/testing';
-import { CreateVariantOptionDto } from './dto/create-variant-option.dto.js';
-import { UpdateVariantOptionDto } from './dto/update-variant-option.dto.js';
 import { VariantOptionResponseDto } from './dto/variant-option-response.dto.js';
 import { VariantOptionsController } from './variant-options.controller.js';
 import { VariantOptionsService } from './variant-options.service.js';
@@ -26,20 +24,14 @@ const buildResponse = (
 describe('VariantOptionsController', () => {
   let controller: VariantOptionsController;
   let service: {
-    create: ReturnType<typeof vi.fn>;
     findAllByVariantId: ReturnType<typeof vi.fn>;
     findOne: ReturnType<typeof vi.fn>;
-    update: ReturnType<typeof vi.fn>;
-    remove: ReturnType<typeof vi.fn>;
   };
 
   beforeEach(async () => {
     service = {
-      create: vi.fn(),
       findAllByVariantId: vi.fn(),
       findOne: vi.fn(),
-      update: vi.fn(),
-      remove: vi.fn(),
     };
 
     const module: TestingModule = await Test.createTestingModule({
@@ -52,18 +44,6 @@ describe('VariantOptionsController', () => {
 
   it('should be defined', () => {
     expect(controller).toBeDefined();
-  });
-
-  it('delegates creation with both path ids', () => {
-    const dto = Object.assign(new CreateVariantOptionDto(), {
-      optionName: 'Color',
-      optionValue: 'Black',
-    });
-    const expected = buildResponse();
-    service.create.mockReturnValue(expected);
-
-    expect(controller.create(PRODUCT_ID, VARIANT_ID, dto)).toBe(expected);
-    expect(service.create).toHaveBeenCalledWith(PRODUCT_ID, VARIANT_ID, dto);
   });
 
   it('delegates the listing', () => {
@@ -85,51 +65,20 @@ describe('VariantOptionsController', () => {
     );
   });
 
-  it('delegates update with all three ids and the dto', () => {
-    const dto = Object.assign(new UpdateVariantOptionDto(), {
-      optionValue: 'White',
-    });
-    service.update.mockReturnValue(buildResponse({ optionValue: 'White' }));
-    expect(controller.update(PRODUCT_ID, VARIANT_ID, OPTION_ID, dto)).toBeDefined();
-    expect(service.update).toHaveBeenCalledWith(
-      PRODUCT_ID,
-      VARIANT_ID,
-      OPTION_ID,
-      dto,
-    );
-  });
-
-  it('delegates remove with all three ids', async () => {
-    service.remove.mockResolvedValue(undefined);
-    await expect(
-      controller.remove(PRODUCT_ID, VARIANT_ID, OPTION_ID),
-    ).resolves.toBeUndefined();
-    expect(service.remove).toHaveBeenCalledWith(
-      PRODUCT_ID,
-      VARIANT_ID,
-      OPTION_ID,
-    );
-  });
 });
 
 describe('VariantOptionsController (HTTP)', () => {
   let app: INestApplication;
   let service: {
-    create: ReturnType<typeof vi.fn>;
     findAllByVariantId: ReturnType<typeof vi.fn>;
     findOne: ReturnType<typeof vi.fn>;
-    update: ReturnType<typeof vi.fn>;
-    remove: ReturnType<typeof vi.fn>;
   };
   let base: string;
 
   beforeEach(async () => {
     service = {
-      create: vi.fn(),
       findAllByVariantId: vi.fn(),
       findOne: vi.fn(),
-      update: vi.fn(),
-      remove: vi.fn(),
     };
 
     const module: TestingModule = await Test.createTestingModule({
@@ -153,24 +102,6 @@ describe('VariantOptionsController (HTTP)', () => {
     await app.close();
   });
 
-  it('POST → 201 and the pipe normalizes both fields', async () => {
-    service.create.mockResolvedValue(buildResponse());
-
-    const res = await fetch(base, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        optionName: '  Color  ',
-        optionValue: '  Extra   Large  ',
-      }),
-    });
-
-    expect(res.status).toBe(HttpStatus.CREATED);
-    const dto = service.create.mock.calls[0][2];
-    expect(dto.optionName).toBe('Color');
-    expect(dto.optionValue).toBe('Extra Large');
-  });
-
   it('GET list → 200', async () => {
     service.findAllByVariantId.mockResolvedValue([]);
     const res = await fetch(base);
@@ -181,22 +112,6 @@ describe('VariantOptionsController (HTTP)', () => {
     service.findOne.mockResolvedValue(buildResponse());
     const res = await fetch(`${base}/${OPTION_ID}`);
     expect(res.status).toBe(HttpStatus.OK);
-  });
-
-  it('PATCH → 200', async () => {
-    service.update.mockResolvedValue(buildResponse());
-    const res = await fetch(`${base}/${OPTION_ID}`, {
-      method: 'PATCH',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ optionValue: 'White' }),
-    });
-    expect(res.status).toBe(HttpStatus.OK);
-  });
-
-  it('DELETE → 204', async () => {
-    service.remove.mockResolvedValue(undefined);
-    const res = await fetch(`${base}/${OPTION_ID}`, { method: 'DELETE' });
-    expect(res.status).toBe(HttpStatus.NO_CONTENT);
   });
 
   it('malformed product id → 400 before the service is called', async () => {
@@ -221,70 +136,32 @@ describe('VariantOptionsController (HTTP)', () => {
     expect(service.findOne).not.toHaveBeenCalled();
   });
 
-  it('rejects forbidden identity fields', async () => {
-    const res = await fetch(base, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        optionName: 'Color',
-        optionValue: 'Black',
-        id: OPTION_ID,
-        variantId: VARIANT_ID,
-        createdAt: '2026-01-01T00:00:00.000Z',
-      }),
-    });
-    expect(res.status).toBe(HttpStatus.BAD_REQUEST);
-    expect(service.create).not.toHaveBeenCalled();
-  });
+  it('does not expose public mutation routes', async () => {
+    const requests: Array<{ method: string; path: string; body?: unknown }> = [
+      {
+        method: 'POST',
+        path: base,
+        body: { optionName: 'Color', optionValue: 'Black' },
+      },
+      {
+        method: 'PATCH',
+        path: `${base}/${OPTION_ID}`,
+        body: { optionValue: 'White' },
+      },
+      { method: 'DELETE', path: `${base}/${OPTION_ID}` },
+    ];
 
-  it('rejects an empty body', async () => {
-    const res = await fetch(base, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({}),
-    });
-    expect(res.status).toBe(HttpStatus.BAD_REQUEST);
-  });
-
-  it('rejects a whitespace-only option name', async () => {
-    const res = await fetch(base, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ optionName: '   ', optionValue: 'Black' }),
-    });
-    expect(res.status).toBe(HttpStatus.BAD_REQUEST);
-  });
-
-  it('rejects a missing option value', async () => {
-    const res = await fetch(base, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ optionName: 'Color' }),
-    });
-    expect(res.status).toBe(HttpStatus.BAD_REQUEST);
-  });
-
-  it('rejects an over-length option name', async () => {
-    const res = await fetch(base, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        optionName: 'X'.repeat(51),
-        optionValue: 'Black',
-      }),
-    });
-    expect(res.status).toBe(HttpStatus.BAD_REQUEST);
-  });
-
-  it('rejects an over-length option value', async () => {
-    const res = await fetch(base, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        optionName: 'Color',
-        optionValue: 'X'.repeat(101),
-      }),
-    });
-    expect(res.status).toBe(HttpStatus.BAD_REQUEST);
+    for (const request of requests) {
+      const res = await fetch(request.path, {
+        method: request.method,
+        ...(request.body === undefined
+          ? {}
+          : {
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify(request.body),
+            }),
+      });
+      expect(res.status).toBe(HttpStatus.NOT_FOUND);
+    }
   });
 });
