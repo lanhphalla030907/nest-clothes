@@ -9,11 +9,13 @@ import {
   ParseUUIDPipe,
   Patch,
   Post,
+  Query,
 } from '@nestjs/common';
 import { CreateProductDto } from './dto/create-product.dto.js';
 import { ProductResponseDto } from './dto/product-response.dto.js';
 import { UpdateProductDto } from './dto/update-product.dto.js';
 import { ProductsService } from './products.service.js';
+
 @Controller('products')
 export class ProductsController {
   constructor(private readonly productsService: ProductsService) {}
@@ -21,6 +23,18 @@ export class ProductsController {
   @Post()
   create(@Body() dto: CreateProductDto): Promise<ProductResponseDto> {
     return this.productsService.create(dto);
+  }
+
+  @Get('new-arrivals')
+  findNewArrivals(@Query('limit') limit?: string): Promise<ProductResponseDto[]> {
+    const n = limit ? parseInt(limit, 10) : 8;
+    return this.productsService.findNewArrivals(Number.isNaN(n) || n <= 0 ? 8 : Math.min(n, 50));
+  }
+
+  @Get('best-sellers')
+  findBestSellers(@Query('limit') limit?: string): Promise<ProductResponseDto[]> {
+    const n = limit ? parseInt(limit, 10) : 8;
+    return this.productsService.findBestSellers(Number.isNaN(n) || n <= 0 ? 8 : Math.min(n, 50));
   }
 
   @Get()

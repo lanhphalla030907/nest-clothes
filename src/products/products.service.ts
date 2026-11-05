@@ -149,6 +149,16 @@ export class ProductsService {
     return products.map((product) => ProductResponseDto.fromEntity(product));
   }
 
+  async findNewArrivals(limit = 8): Promise<ProductResponseDto[]> {
+    const products = await this.productsRepository.findNewArrivals(limit);
+    return products.map((product) => ProductResponseDto.fromEntity(product));
+  }
+
+  async findBestSellers(limit = 8): Promise<ProductResponseDto[]> {
+    const products = await this.productsRepository.findBestSellers(limit);
+    return products.map((product) => ProductResponseDto.fromEntity(product));
+  }
+
   async findOne(id: string): Promise<ProductResponseDto> {
     const product = await this.requireProduct(id);
 

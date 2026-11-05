@@ -140,6 +140,7 @@ export class ProductsRepository {
     });
   }
 
+
   /** Returns the product owning `id`, or `null` when no such product exists. */
   findById(id: string): Promise<Product | null> {
     return this.prisma.product.findUnique({ where: { id } });
@@ -186,6 +187,46 @@ export class ProductsRepository {
    * `order_items` point at its variants, all `ON DELETE RESTRICT`. The service turns
    * that refusal into a 409 rather than letting it surface as a 500.
    */
+  async findNewArrivals(limit = 8): Promise<Product[]> {
+    return this.prisma.product.findMany({
+      where: {
+        status: 'ACTIVE',
+        isActive: true,
+      },
+      orderBy: [{ createdAt: 'desc' }, { id: 'asc' }],
+      take: limit,
+    });
+  }
+
+  async findBestSellers(limit = 8): Promise<Product[]> {
+    const rows = await this.prisma.$queryRaw<Array<{ productId: string; unitsSold: bigint | number }>>`
+      WITH eligible_orders AS (
+        SELECT o."id" FROM "orders" o
+        WHERE o."status" <> 'CANCELLED'
+          AND (
+            (o."payment_method" <> 'COD' AND EXISTS (SELECT 1 FROM "payments" p WHERE p."order_id" = o."id" AND p."status" = 'PAID'))
+            OR
+            (o."payment_method" = 'COD'
+              AND EXISTS (SELECT 1 FROM "cod_collections" cc WHERE cc."order_id" = o."id")
+              AND EXISTS (SELECT 1 FROM "delivery_assignments" da WHERE da."order_id" = o."id" AND da."status" = 'DELIVERED' AND da."ended_at" IS NOT NULL)
+              AND NOT EXISTS (SELECT 1 FROM "delivery_assignments" da2 WHERE da2."order_id" = o."id" AND da2."status" IN ('PENDING_ASSIGNMENT','ASSIGNED','OUT_FOR_DELIVERY','FAILED_DELIVERY')))
+          )
+      )
+      SELECT pv."product_id" AS "productId", SUM(oi."quantity") AS "unitsSold"
+      FROM "order_items" oi
+      JOIN eligible_orders eo ON eo."id" = oi."order_id"
+      JOIN "product_variants" pv ON pv."id" = oi."variant_id"
+      GROUP BY pv."product_id"
+      ORDER BY SUM(oi."quantity") DESC, pv."product_id" ASC
+      LIMIT ${limit}
+    `;
+    const ids = rows.map((r) => r.productId);
+    if (ids.length === 0) return [];
+    const products = await this.prisma.product.findMany({ where: { id: { in: ids }, status: 'ACTIVE', isActive: true } });
+    const map = new Map(products.map((p) => [p.id, p]));
+    return rows.map((r) => map.get(r.productId)).filter(Boolean) as Product[];
+  }
+
   delete(id: string): Promise<Product> {
     return this.prisma.product.delete({ where: { id } });
   }

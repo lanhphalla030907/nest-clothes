@@ -22,8 +22,10 @@ import { VariantOptionsModule } from './variant-options/variant-options.module.j
 import { WishlistModule } from './wishlist/wishlist.module.js';
 import { OrderModule } from './orders/order.module.js';
 import { PaymentsModule } from './payments/payments.module.js';
+import { PostersModule } from './posters/posters.module.js';
 import { ReceiptModule } from './receipts/receipt.module.js';
 import { LocationsModule } from './locations/locations.module.js';
+import { CollectionsModule } from './collections/collections.module.js';
 import { ScheduleModule } from '@nestjs/schedule';
 
 @Module({
@@ -49,6 +51,7 @@ import { ScheduleModule } from '@nestjs/schedule';
     CategoriesModule,
     CodAreasModule,
     LocationsModule,
+    CollectionsModule,
     ProductsModule,
     ProductImagesModule,
     ProductVariantsModule,
@@ -56,6 +59,7 @@ import { ScheduleModule } from '@nestjs/schedule';
     ProductAttributesModule,
     InventoryModule,
     ShippingProvidersModule,
+    PostersModule,
     /**
      * CartModule comes last because it depends on UsersModule,
      * ProductVariantsModule and InventoryModule for their repositories.

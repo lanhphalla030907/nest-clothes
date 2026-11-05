@@ -34,6 +34,29 @@ export type User = Prisma.UserModel
  */
 export type Category = Prisma.CategoryModel
 /**
+ * Model Poster
+ * A homepage poster/banner managed by administrators.
+ * 
+ * Posters are standalone promotional assets rather than catalogue rows. The
+ * Cloudinary `publicId` is stored beside the delivery URL so replacing or
+ * deleting a poster can clean up the remote asset it owns.
+ */
+export type Poster = Prisma.PosterModel
+/**
+ * Model Collection
+ * An editorial grouping of products. Collections own their cover metadata but
+ * deliberately do not own products: the explicit join model lets a product
+ * appear in any number of collections without changing catalogue ownership.
+ */
+export type Collection = Prisma.CollectionModel
+/**
+ * Model CollectionProduct
+ * The product-to-collection association. This is explicit rather than
+ * Prisma's implicit many-to-many relation so it remains visible in migrations
+ * and keeps collection deletion from ever deleting catalogue records.
+ */
+export type CollectionProduct = Prisma.CollectionProductModel
+/**
  * Model Product
  * A sellable catalog item, owned by exactly one category.
  * 

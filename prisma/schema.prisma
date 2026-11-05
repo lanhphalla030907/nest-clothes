@@ -94,6 +94,60 @@ model Category {
   @@map("categories")
 }
 
+/// A homepage poster/banner managed by administrators.
+///
+/// Posters are standalone promotional assets rather than catalogue rows. The
+/// Cloudinary `publicId` is stored beside the delivery URL so replacing or
+/// deleting a poster can clean up the remote asset it owns.
+model Poster {
+  id           String   @id @default(uuid()) @db.Uuid
+  title        String?  @db.VarChar(255)
+  imageUrl     String   @map("image_url") @db.VarChar(2048)
+  publicId     String   @map("public_id") @db.VarChar(255)
+  isActive     Boolean  @default(true) @map("is_active")
+  displayOrder Int      @default(0) @map("display_order")
+  createdAt    DateTime @default(now()) @map("created_at") @db.Timestamptz
+  updatedAt    DateTime @updatedAt @map("updated_at") @db.Timestamptz
+
+  @@index([isActive, displayOrder])
+  @@map("posters")
+}
+
+/// An editorial grouping of products. Collections own their cover metadata but
+/// deliberately do not own products: the explicit join model lets a product
+/// appear in any number of collections without changing catalogue ownership.
+model Collection {
+  id           String              @id @default(uuid()) @db.Uuid
+  title        String              @db.VarChar(255)
+  slug         String              @unique @db.VarChar(280)
+  description  String?             @db.VarChar(1000)
+  coverImage   String              @map("cover_image") @db.VarChar(2048)
+  isActive     Boolean             @default(true) @map("is_active")
+  displayOrder Int                 @default(0) @map("display_order")
+  createdAt    DateTime            @default(now()) @map("created_at") @db.Timestamptz
+  updatedAt    DateTime            @updatedAt @map("updated_at") @db.Timestamptz
+
+  products CollectionProduct[]
+
+  @@index([isActive, displayOrder])
+  @@map("collections")
+}
+
+/// The product-to-collection association. This is explicit rather than
+/// Prisma's implicit many-to-many relation so it remains visible in migrations
+/// and keeps collection deletion from ever deleting catalogue records.
+model CollectionProduct {
+  collectionId String @map("collection_id") @db.Uuid
+  productId    String @map("product_id") @db.Uuid
+
+  collection Collection @relation(fields: [collectionId], references: [id], onDelete: Cascade, onUpdate: Cascade)
+  product    Product    @relation(fields: [productId], references: [id], onDelete: Cascade, onUpdate: Cascade)
+
+  @@id([collectionId, productId])
+  @@index([productId])
+  @@map("collection_products")
+}
+
 /// A sellable catalog item, owned by exactly one category.
 ///
 /// `base_price` is `Decimal(12,2)` so monetary values keep the two-decimal
@@ -139,6 +193,7 @@ model Product {
   options       ProductOption[]    @relation("ProductOptions")
   attributes    ProductAttribute[] @relation("ProductAttributes")
   wishlistItems WishlistItem[]     @relation("WishlistItemProduct")
+  collections   CollectionProduct[]
 
   @@index([categoryId])
   @@index([status])

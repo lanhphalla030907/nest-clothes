@@ -16,6 +16,7 @@ import { Roles } from '../../auth/decorators/roles.decorator.js';
 import { JwtAuthGuard } from '../../auth/guards/jwt-auth.guard.js';
 import { RolesGuard } from '../../auth/guards/roles.guard.js';
 import { Role } from '../../generated/prisma/enums.js';
+import { PrismaService } from '../../prisma/prisma.service.js';
 import { AdminCreateProductDto } from '../../products/dto/admin-create-product.dto.js';
 import { AdminUpdateProductDto } from '../../products/dto/admin-update-product.dto.js';
 import { ProductFilterQueryDto } from '../../products/dto/product-filter-query.dto.js';
@@ -59,7 +60,58 @@ import { ProductsService } from '../../products/products.service.js';
 @UseGuards(JwtAuthGuard, RolesGuard)
 @Roles(Role.ADMIN)
 export class AdminProductsController {
-  constructor(private readonly productsService: ProductsService) {}
+  constructor(
+    private readonly productsService: ProductsService,
+    private readonly prisma: PrismaService,
+  ) {}
+
+  @Get('best-sellers')
+  async getBestSellers(@Query('limit') limit?: string) {
+    const n = limit ? parseInt(limit, 10) : 10;
+    const take = Number.isNaN(n) || n <= 0 ? 10 : Math.min(n, 100);
+    const rows = await this.prisma.$queryRaw<
+      Array<{ productId: string; unitsSold: bigint | number; revenue: unknown }>
+    >`
+      WITH eligible_orders AS (
+        SELECT o."id" FROM "orders" o
+        WHERE o."status" <> 'CANCELLED'
+          AND (
+            (o."payment_method" <> 'COD' AND EXISTS (SELECT 1 FROM "payments" p WHERE p."order_id" = o."id" AND p."status" = 'PAID'))
+            OR
+            (o."payment_method" = 'COD'
+              AND EXISTS (SELECT 1 FROM "cod_collections" cc WHERE cc."order_id" = o."id")
+              AND EXISTS (SELECT 1 FROM "delivery_assignments" da WHERE da."order_id" = o."id" AND da."status" = 'DELIVERED' AND da."ended_at" IS NOT NULL)
+              AND NOT EXISTS (SELECT 1 FROM "delivery_assignments" da2 WHERE da2."order_id" = o."id" AND da2."status" IN ('PENDING_ASSIGNMENT','ASSIGNED','OUT_FOR_DELIVERY','FAILED_DELIVERY')))
+          )
+      )
+      SELECT pv."product_id" AS "productId", SUM(oi."quantity") AS "unitsSold", SUM(oi."line_total") AS "revenue"
+      FROM "order_items" oi
+      JOIN eligible_orders eo ON eo."id" = oi."order_id"
+      JOIN "product_variants" pv ON pv."id" = oi."variant_id"
+      GROUP BY pv."product_id"
+      ORDER BY SUM(oi."quantity") DESC, pv."product_id" ASC
+      LIMIT ${take}
+    `;
+    const ids = rows.map((r) => r.productId);
+    if (ids.length === 0) return [];
+    const products = await this.prisma.product.findMany({
+      where: { id: { in: ids } },
+      include: { images: { orderBy: { sortOrder: 'asc' } } },
+    });
+    const map = new Map(products.map((p) => [p.id, p]));
+    return rows.map((r, i) => {
+      const p = map.get(r.productId);
+      if (!p) return null;
+      return {
+        rank: i + 1,
+        productId: p.id,
+        name: p.name,
+        image: p.images?.[0]?.imageUrl ?? null,
+        unitsSold: Number(r.unitsSold),
+        revenue: r.revenue,
+      };
+    }).filter(Boolean);
+  }
 
   /**
    * Lists products, optionally narrowed by status, enablement, category or a search term.

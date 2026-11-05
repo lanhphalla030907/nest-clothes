@@ -1,10 +1,13 @@
 import { Module } from '@nestjs/common';
 import { JwtAuthModule } from '../auth/jwt/jwt-auth.module.js';
 import { CategoriesModule } from '../categories/categories.module.js';
+import { CollectionsModule } from '../collections/collections.module.js';
 import { CodAreasModule } from '../cod-areas/cod-areas.module.js';
 import { DeliveryModule } from '../delivery/delivery.module.js';
 import { InventoryModule } from '../inventory/inventory.module.js';
 import { OrderModule } from '../orders/order.module.js';
+import { PostersModule } from '../posters/posters.module.js';
+import { PrismaModule } from '../prisma/prisma.module.js';
 import { ProductImagesModule } from '../product-images/product-images.module.js';
 import { ProductsModule } from '../products/products.module.js';
 import { ProductVariantsModule } from '../product-variants/product-variants.module.js';
@@ -15,6 +18,7 @@ import { LocationsModule } from '../locations/locations.module.js';
 import { VariantOptionsModule } from '../variant-options/variant-options.module.js';
 import { AdminController } from './admin.controller.js';
 import { AdminCategoriesController } from './controllers/admin-categories.controller.js';
+import { AdminCollectionsController } from './controllers/admin-collections.controller.js';
 import { AdminCodAreasController } from './controllers/admin-cod-areas.controller.js';
 import { AdminCodCollectionsController } from './controllers/admin-cod-collections.controller.js';
 import { AdminCodReconciliationController } from './controllers/admin-cod-reconciliation.controller.js';
@@ -24,6 +28,7 @@ import {
   AdminInventoryController,
 } from './controllers/admin-inventory.controller.js';
 import { AdminOrdersController } from './controllers/admin-orders.controller.js';
+import { AdminPostersController } from './controllers/admin-posters.controller.js';
 import { AdminProductImagesController } from './controllers/admin-product-images.controller.js';
 import { AdminProductVariantsController } from './controllers/admin-product-variants.controller.js';
 import { AdminProductOptionsController } from './controllers/admin-product-options.controller.js';
@@ -84,15 +89,18 @@ import { AdminVariantOptionsController } from './controllers/admin-variant-optio
  */
 @Module({
   imports: [
+    PrismaModule,
     JwtAuthModule,
     UsersModule,
     CategoriesModule,
+    CollectionsModule,
     CodAreasModule,
     DeliveryModule,
     ProductsModule,
     ProductImagesModule,
     ProductVariantsModule,
     ProductOptionsModule,
+    PostersModule,
     VariantOptionsModule,
     InventoryModule,
     OrderModule,
@@ -102,6 +110,7 @@ import { AdminVariantOptionsController } from './controllers/admin-variant-optio
   controllers: [
     AdminController,
     AdminCategoriesController,
+    AdminCollectionsController,
     AdminCodAreasController,
     AdminCodCollectionsController,
     AdminCodReconciliationController,
@@ -114,6 +123,7 @@ import { AdminVariantOptionsController } from './controllers/admin-variant-optio
     AdminInventoryController,
     AdminBulkInventoryController,
     AdminOrdersController,
+    AdminPostersController,
     AdminShippingProvidersController,
   ],
 })

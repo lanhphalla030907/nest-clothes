@@ -10,6 +10,9 @@
  */
 export type * from './models/User.js'
 export type * from './models/Category.js'
+export type * from './models/Poster.js'
+export type * from './models/Collection.js'
+export type * from './models/CollectionProduct.js'
 export type * from './models/Product.js'
 export type * from './models/ProductImage.js'
 export type * from './models/ProductVariant.js'
