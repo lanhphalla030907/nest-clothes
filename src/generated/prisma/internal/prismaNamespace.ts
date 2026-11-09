@@ -405,6 +405,7 @@ export const ModelName = {
   Product: 'Product',
   ProductImage: 'ProductImage',
   ProductVariant: 'ProductVariant',
+  VariantCostHistory: 'VariantCostHistory',
   ProductOption: 'ProductOption',
   ProductOptionValue: 'ProductOptionValue',
   VariantOptionValue: 'VariantOptionValue',
@@ -426,7 +427,9 @@ export const ModelName = {
   Payment: 'Payment',
   CodCollection: 'CodCollection',
   CodReconciliationRun: 'CodReconciliationRun',
-  CodReconciliationRunItem: 'CodReconciliationRunItem'
+  CodReconciliationRunItem: 'CodReconciliationRunItem',
+  Promotion: 'Promotion',
+  PromotionUsage: 'PromotionUsage'
 } as const
 
 export type ModelName = (typeof ModelName)[keyof typeof ModelName]
@@ -442,7 +445,7 @@ export type TypeMap<ExtArgs extends runtime.Types.Extensions.InternalArgs = runt
     omit: GlobalOmitOptions
   }
   meta: {
-    modelProps: "user" | "category" | "poster" | "collection" | "collectionProduct" | "product" | "productImage" | "productVariant" | "productOption" | "productOptionValue" | "variantOptionValue" | "variantOption" | "productAttribute" | "inventory" | "cart" | "cartItem" | "wishlist" | "wishlistItem" | "address" | "administrativeLocation" | "shippingProvider" | "codArea" | "order" | "deliveryAssignment" | "checkoutQuote" | "orderItem" | "payment" | "codCollection" | "codReconciliationRun" | "codReconciliationRunItem"
+    modelProps: "user" | "category" | "poster" | "collection" | "collectionProduct" | "product" | "productImage" | "productVariant" | "variantCostHistory" | "productOption" | "productOptionValue" | "variantOptionValue" | "variantOption" | "productAttribute" | "inventory" | "cart" | "cartItem" | "wishlist" | "wishlistItem" | "address" | "administrativeLocation" | "shippingProvider" | "codArea" | "order" | "deliveryAssignment" | "checkoutQuote" | "orderItem" | "payment" | "codCollection" | "codReconciliationRun" | "codReconciliationRunItem" | "promotion" | "promotionUsage"
     txIsolationLevel: TransactionIsolationLevel
   }
   model: {
@@ -1035,6 +1038,80 @@ export type TypeMap<ExtArgs extends runtime.Types.Extensions.InternalArgs = runt
         count: {
           args: Prisma.ProductVariantCountArgs<ExtArgs>
           result: runtime.Types.Utils.Optional<Prisma.ProductVariantCountAggregateOutputType> | number
+        }
+      }
+    }
+    VariantCostHistory: {
+      payload: Prisma.$VariantCostHistoryPayload<ExtArgs>
+      fields: Prisma.VariantCostHistoryFieldRefs
+      operations: {
+        findUnique: {
+          args: Prisma.VariantCostHistoryFindUniqueArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$VariantCostHistoryPayload> | null
+        }
+        findUniqueOrThrow: {
+          args: Prisma.VariantCostHistoryFindUniqueOrThrowArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$VariantCostHistoryPayload>
+        }
+        findFirst: {
+          args: Prisma.VariantCostHistoryFindFirstArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$VariantCostHistoryPayload> | null
+        }
+        findFirstOrThrow: {
+          args: Prisma.VariantCostHistoryFindFirstOrThrowArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$VariantCostHistoryPayload>
+        }
+        findMany: {
+          args: Prisma.VariantCostHistoryFindManyArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$VariantCostHistoryPayload>[]
+        }
+        create: {
+          args: Prisma.VariantCostHistoryCreateArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$VariantCostHistoryPayload>
+        }
+        createMany: {
+          args: Prisma.VariantCostHistoryCreateManyArgs<ExtArgs>
+          result: BatchPayload
+        }
+        createManyAndReturn: {
+          args: Prisma.VariantCostHistoryCreateManyAndReturnArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$VariantCostHistoryPayload>[]
+        }
+        delete: {
+          args: Prisma.VariantCostHistoryDeleteArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$VariantCostHistoryPayload>
+        }
+        update: {
+          args: Prisma.VariantCostHistoryUpdateArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$VariantCostHistoryPayload>
+        }
+        deleteMany: {
+          args: Prisma.VariantCostHistoryDeleteManyArgs<ExtArgs>
+          result: BatchPayload
+        }
+        updateMany: {
+          args: Prisma.VariantCostHistoryUpdateManyArgs<ExtArgs>
+          result: BatchPayload
+        }
+        updateManyAndReturn: {
+          args: Prisma.VariantCostHistoryUpdateManyAndReturnArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$VariantCostHistoryPayload>[]
+        }
+        upsert: {
+          args: Prisma.VariantCostHistoryUpsertArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$VariantCostHistoryPayload>
+        }
+        aggregate: {
+          args: Prisma.VariantCostHistoryAggregateArgs<ExtArgs>
+          result: runtime.Types.Utils.Optional<Prisma.AggregateVariantCostHistory>
+        }
+        groupBy: {
+          args: Prisma.VariantCostHistoryGroupByArgs<ExtArgs>
+          result: runtime.Types.Utils.Optional<Prisma.VariantCostHistoryGroupByOutputType>[]
+        }
+        count: {
+          args: Prisma.VariantCostHistoryCountArgs<ExtArgs>
+          result: runtime.Types.Utils.Optional<Prisma.VariantCostHistoryCountAggregateOutputType> | number
         }
       }
     }
@@ -2666,6 +2743,154 @@ export type TypeMap<ExtArgs extends runtime.Types.Extensions.InternalArgs = runt
         }
       }
     }
+    Promotion: {
+      payload: Prisma.$PromotionPayload<ExtArgs>
+      fields: Prisma.PromotionFieldRefs
+      operations: {
+        findUnique: {
+          args: Prisma.PromotionFindUniqueArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$PromotionPayload> | null
+        }
+        findUniqueOrThrow: {
+          args: Prisma.PromotionFindUniqueOrThrowArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$PromotionPayload>
+        }
+        findFirst: {
+          args: Prisma.PromotionFindFirstArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$PromotionPayload> | null
+        }
+        findFirstOrThrow: {
+          args: Prisma.PromotionFindFirstOrThrowArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$PromotionPayload>
+        }
+        findMany: {
+          args: Prisma.PromotionFindManyArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$PromotionPayload>[]
+        }
+        create: {
+          args: Prisma.PromotionCreateArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$PromotionPayload>
+        }
+        createMany: {
+          args: Prisma.PromotionCreateManyArgs<ExtArgs>
+          result: BatchPayload
+        }
+        createManyAndReturn: {
+          args: Prisma.PromotionCreateManyAndReturnArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$PromotionPayload>[]
+        }
+        delete: {
+          args: Prisma.PromotionDeleteArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$PromotionPayload>
+        }
+        update: {
+          args: Prisma.PromotionUpdateArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$PromotionPayload>
+        }
+        deleteMany: {
+          args: Prisma.PromotionDeleteManyArgs<ExtArgs>
+          result: BatchPayload
+        }
+        updateMany: {
+          args: Prisma.PromotionUpdateManyArgs<ExtArgs>
+          result: BatchPayload
+        }
+        updateManyAndReturn: {
+          args: Prisma.PromotionUpdateManyAndReturnArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$PromotionPayload>[]
+        }
+        upsert: {
+          args: Prisma.PromotionUpsertArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$PromotionPayload>
+        }
+        aggregate: {
+          args: Prisma.PromotionAggregateArgs<ExtArgs>
+          result: runtime.Types.Utils.Optional<Prisma.AggregatePromotion>
+        }
+        groupBy: {
+          args: Prisma.PromotionGroupByArgs<ExtArgs>
+          result: runtime.Types.Utils.Optional<Prisma.PromotionGroupByOutputType>[]
+        }
+        count: {
+          args: Prisma.PromotionCountArgs<ExtArgs>
+          result: runtime.Types.Utils.Optional<Prisma.PromotionCountAggregateOutputType> | number
+        }
+      }
+    }
+    PromotionUsage: {
+      payload: Prisma.$PromotionUsagePayload<ExtArgs>
+      fields: Prisma.PromotionUsageFieldRefs
+      operations: {
+        findUnique: {
+          args: Prisma.PromotionUsageFindUniqueArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$PromotionUsagePayload> | null
+        }
+        findUniqueOrThrow: {
+          args: Prisma.PromotionUsageFindUniqueOrThrowArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$PromotionUsagePayload>
+        }
+        findFirst: {
+          args: Prisma.PromotionUsageFindFirstArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$PromotionUsagePayload> | null
+        }
+        findFirstOrThrow: {
+          args: Prisma.PromotionUsageFindFirstOrThrowArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$PromotionUsagePayload>
+        }
+        findMany: {
+          args: Prisma.PromotionUsageFindManyArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$PromotionUsagePayload>[]
+        }
+        create: {
+          args: Prisma.PromotionUsageCreateArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$PromotionUsagePayload>
+        }
+        createMany: {
+          args: Prisma.PromotionUsageCreateManyArgs<ExtArgs>
+          result: BatchPayload
+        }
+        createManyAndReturn: {
+          args: Prisma.PromotionUsageCreateManyAndReturnArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$PromotionUsagePayload>[]
+        }
+        delete: {
+          args: Prisma.PromotionUsageDeleteArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$PromotionUsagePayload>
+        }
+        update: {
+          args: Prisma.PromotionUsageUpdateArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$PromotionUsagePayload>
+        }
+        deleteMany: {
+          args: Prisma.PromotionUsageDeleteManyArgs<ExtArgs>
+          result: BatchPayload
+        }
+        updateMany: {
+          args: Prisma.PromotionUsageUpdateManyArgs<ExtArgs>
+          result: BatchPayload
+        }
+        updateManyAndReturn: {
+          args: Prisma.PromotionUsageUpdateManyAndReturnArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$PromotionUsagePayload>[]
+        }
+        upsert: {
+          args: Prisma.PromotionUsageUpsertArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$PromotionUsagePayload>
+        }
+        aggregate: {
+          args: Prisma.PromotionUsageAggregateArgs<ExtArgs>
+          result: runtime.Types.Utils.Optional<Prisma.AggregatePromotionUsage>
+        }
+        groupBy: {
+          args: Prisma.PromotionUsageGroupByArgs<ExtArgs>
+          result: runtime.Types.Utils.Optional<Prisma.PromotionUsageGroupByOutputType>[]
+        }
+        count: {
+          args: Prisma.PromotionUsageCountArgs<ExtArgs>
+          result: runtime.Types.Utils.Optional<Prisma.PromotionUsageCountAggregateOutputType> | number
+        }
+      }
+    }
   }
 } & {
   other: {
@@ -2814,6 +3039,9 @@ export const ProductVariantScalarFieldEnum = {
   productId: 'productId',
   sku: 'sku',
   price: 'price',
+  costPrice: 'costPrice',
+  costCurrency: 'costCurrency',
+  costEffectiveAt: 'costEffectiveAt',
   isActive: 'isActive',
   combinationKey: 'combinationKey',
   createdAt: 'createdAt',
@@ -2821,6 +3049,20 @@ export const ProductVariantScalarFieldEnum = {
 } as const
 
 export type ProductVariantScalarFieldEnum = (typeof ProductVariantScalarFieldEnum)[keyof typeof ProductVariantScalarFieldEnum]
+
+
+export const VariantCostHistoryScalarFieldEnum = {
+  id: 'id',
+  variantId: 'variantId',
+  cost: 'cost',
+  currency: 'currency',
+  effectiveFrom: 'effectiveFrom',
+  effectiveTo: 'effectiveTo',
+  createdById: 'createdById',
+  createdAt: 'createdAt'
+} as const
+
+export type VariantCostHistoryScalarFieldEnum = (typeof VariantCostHistoryScalarFieldEnum)[keyof typeof VariantCostHistoryScalarFieldEnum]
 
 
 export const ProductOptionScalarFieldEnum = {
@@ -3008,6 +3250,7 @@ export const OrderScalarFieldEnum = {
   subtotal: 'subtotal',
   shippingFee: 'shippingFee',
   discountAmount: 'discountAmount',
+  couponCode: 'couponCode',
   totalAmount: 'totalAmount',
   currency: 'currency',
   paymentMethod: 'paymentMethod',
@@ -3067,6 +3310,8 @@ export const CheckoutQuoteScalarFieldEnum = {
   subtotal: 'subtotal',
   shippingFee: 'shippingFee',
   discountAmount: 'discountAmount',
+  couponCode: 'couponCode',
+  appliedPromotions: 'appliedPromotions',
   totalAmount: 'totalAmount',
   currency: 'currency',
   expiresAt: 'expiresAt',
@@ -3090,6 +3335,10 @@ export const OrderItemScalarFieldEnum = {
   unitPrice: 'unitPrice',
   quantity: 'quantity',
   lineTotal: 'lineTotal',
+  unitCostSnapshot: 'unitCostSnapshot',
+  costCurrency: 'costCurrency',
+  costSource: 'costSource',
+  costCapturedAt: 'costCapturedAt',
   createdAt: 'createdAt'
 } as const
 
@@ -3179,6 +3428,49 @@ export const CodReconciliationRunItemScalarFieldEnum = {
 } as const
 
 export type CodReconciliationRunItemScalarFieldEnum = (typeof CodReconciliationRunItemScalarFieldEnum)[keyof typeof CodReconciliationRunItemScalarFieldEnum]
+
+
+export const PromotionScalarFieldEnum = {
+  id: 'id',
+  code: 'code',
+  name: 'name',
+  description: 'description',
+  kind: 'kind',
+  discountType: 'discountType',
+  percentOff: 'percentOff',
+  amountOff: 'amountOff',
+  minSubtotal: 'minSubtotal',
+  maxDiscount: 'maxDiscount',
+  startsAt: 'startsAt',
+  endsAt: 'endsAt',
+  isActive: 'isActive',
+  usageLimitTotal: 'usageLimitTotal',
+  usageLimitPerUser: 'usageLimitPerUser',
+  priority: 'priority',
+  archivedAt: 'archivedAt',
+  createdAt: 'createdAt',
+  updatedAt: 'updatedAt'
+} as const
+
+export type PromotionScalarFieldEnum = (typeof PromotionScalarFieldEnum)[keyof typeof PromotionScalarFieldEnum]
+
+
+export const PromotionUsageScalarFieldEnum = {
+  id: 'id',
+  promotionId: 'promotionId',
+  orderId: 'orderId',
+  userId: 'userId',
+  codeSnapshot: 'codeSnapshot',
+  nameSnapshot: 'nameSnapshot',
+  discountType: 'discountType',
+  percentOff: 'percentOff',
+  amountOff: 'amountOff',
+  discountAmount: 'discountAmount',
+  subtotalAtUse: 'subtotalAtUse',
+  createdAt: 'createdAt'
+} as const
+
+export type PromotionUsageScalarFieldEnum = (typeof PromotionUsageScalarFieldEnum)[keyof typeof PromotionUsageScalarFieldEnum]
 
 
 export const SortOrder = {
@@ -3512,6 +3804,7 @@ export type GlobalOmitConfig = {
   product?: Prisma.ProductOmit
   productImage?: Prisma.ProductImageOmit
   productVariant?: Prisma.ProductVariantOmit
+  variantCostHistory?: Prisma.VariantCostHistoryOmit
   productOption?: Prisma.ProductOptionOmit
   productOptionValue?: Prisma.ProductOptionValueOmit
   variantOptionValue?: Prisma.VariantOptionValueOmit
@@ -3534,6 +3827,8 @@ export type GlobalOmitConfig = {
   codCollection?: Prisma.CodCollectionOmit
   codReconciliationRun?: Prisma.CodReconciliationRunOmit
   codReconciliationRunItem?: Prisma.CodReconciliationRunItemOmit
+  promotion?: Prisma.PromotionOmit
+  promotionUsage?: Prisma.PromotionUsageOmit
 }
 
 /* Types for Logging */

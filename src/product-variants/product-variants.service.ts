@@ -11,7 +11,9 @@ import {
 } from '../generated/prisma/client.js';
 import { ProductsRepository } from '../products/repositories/products.repository.js';
 import { CreateProductVariantDto } from './dto/create-product-variant.dto.js';
+import { AdminProductVariantResponseDto } from './dto/admin-product-variant-response.dto.js';
 import { ProductVariantResponseDto } from './dto/product-variant-response.dto.js';
+import { UpdateVariantCostDto } from './dto/update-variant-cost.dto.js';
 import { UpdateProductVariantDto } from './dto/update-product-variant.dto.js';
 import {
   ProductVariantsRepository,
@@ -74,7 +76,7 @@ export class ProductVariantsService {
   async create(
     productId: string,
     dto: CreateProductVariantDto,
-  ): Promise<ProductVariantResponseDto> {
+  ): Promise<AdminProductVariantResponseDto> {
     await this.requireProduct(productId);
 
     const data: CreateProductVariantData = {
@@ -94,7 +96,7 @@ export class ProductVariantsService {
         throw new ConflictException(DEFAULT_VARIANT_EXISTS_MESSAGE);
       }
 
-      return ProductVariantResponseDto.fromEntity(variant);
+      return AdminProductVariantResponseDto.fromEntity(variant);
     } catch (error) {
       this.rethrowAsHttpError(error);
     }
@@ -113,6 +115,15 @@ export class ProductVariantsService {
     );
   }
 
+  async findAllAdminByProductId(
+    productId: string,
+  ): Promise<AdminProductVariantResponseDto[]> {
+    await this.requireProduct(productId);
+    const variants =
+      await this.productVariantsRepository.findAllByProductId(productId);
+    return variants.map(AdminProductVariantResponseDto.fromEntity);
+  }
+
   async findOne(
     productId: string,
     variantId: string,
@@ -122,11 +133,40 @@ export class ProductVariantsService {
     return ProductVariantResponseDto.fromEntity(variant);
   }
 
+  async findOneAdmin(
+    productId: string,
+    variantId: string,
+  ): Promise<AdminProductVariantResponseDto> {
+    const variant = await this.requireOwnedVariant(productId, variantId);
+    return AdminProductVariantResponseDto.fromEntity(variant);
+  }
+
+  async updateCost(
+    productId: string,
+    variantId: string,
+    dto: UpdateVariantCostDto,
+    changedById: string,
+  ): Promise<AdminProductVariantResponseDto> {
+    const variant = await this.productVariantsRepository.updateCostForProduct(
+      productId,
+      variantId,
+      {
+        costPrice: normalizeMoney(dto.costPrice),
+        costCurrency: dto.costCurrency.trim().toUpperCase(),
+        changedById,
+      },
+    );
+    if (variant === null) {
+      throw new NotFoundException(`Product variant ${variantId} does not exist`);
+    }
+    return AdminProductVariantResponseDto.fromEntity(variant);
+  }
+
   async update(
     productId: string,
     variantId: string,
     dto: UpdateProductVariantDto,
-  ): Promise<ProductVariantResponseDto> {
+  ): Promise<AdminProductVariantResponseDto> {
     const data = this.buildUpdateData(dto);
 
     if (dto.sku !== undefined) {
@@ -145,7 +185,7 @@ export class ProductVariantsService {
         );
       }
 
-      return ProductVariantResponseDto.fromEntity(variant);
+      return AdminProductVariantResponseDto.fromEntity(variant);
     } catch (error) {
       this.rethrowAsHttpError(error);
     }

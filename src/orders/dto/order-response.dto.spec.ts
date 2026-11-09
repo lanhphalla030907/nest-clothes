@@ -47,6 +47,7 @@ const buildOrder = (
     codAreaId: null,
     codAreaCode: null,
     codAreaName: null,
+    couponCode: null,
     shippingRecipientName: 'Ada Lovelace',
     shippingPhone: '+15555550100',
     shippingAddressLine1: '18 Mill Lane',
@@ -103,6 +104,7 @@ describe('order response DTOs', () => {
           'codAreaCode',
           'codAreaId',
           'codAreaName',
+          'couponCode',
           'status',
           'subtotal',
           'totalAmount',
@@ -110,6 +112,14 @@ describe('order response DTOs', () => {
           'userId',
         ].sort(),
       );
+    });
+
+    it('surfaces the coupon that actually discounted the order', () => {
+      const dto = OrderResponseDto.fromEntity(
+        buildOrder({ couponCode: 'SAVE10' }),
+      );
+
+      expect(dto.couponCode).toBe('SAVE10');
     });
 
     it('drops any extra column on the row, including a leaked password hash', () => {

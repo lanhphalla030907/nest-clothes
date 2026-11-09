@@ -16,6 +16,7 @@ import { ProductAttributesModule } from './product-attributes/product-attributes
 import { ProductImagesModule } from './product-images/product-images.module.js';
 import { ProductsModule } from './products/products.module.js';
 import { ProductVariantsModule } from './product-variants/product-variants.module.js';
+import { PromotionsModule } from './promotions/promotions.module.js';
 import { ShippingProvidersModule } from './shipping-providers/shipping-providers.module.js';
 import { UsersModule } from './users/users.module.js';
 import { VariantOptionsModule } from './variant-options/variant-options.module.js';
@@ -59,6 +60,7 @@ import { ScheduleModule } from '@nestjs/schedule';
     ProductAttributesModule,
     InventoryModule,
     ShippingProvidersModule,
+    PromotionsModule,
     PostersModule,
     /**
      * CartModule comes last because it depends on UsersModule,

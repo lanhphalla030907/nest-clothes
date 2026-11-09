@@ -35,6 +35,8 @@ import { AdminProductOptionsController } from './controllers/admin-product-optio
 import { AdminProductsController } from './controllers/admin-products.controller.js';
 import { AdminShippingProvidersController } from './controllers/admin-shipping-providers.controller.js';
 import { AdminVariantOptionsController } from './controllers/admin-variant-options.controller.js';
+import { PromotionsModule } from '../promotions/promotions.module.js';
+import { AdminPromotionsController } from './controllers/admin-promotions.controller.js';
 
 /**
  * Every route that requires `ADMIN`, and nothing else.
@@ -106,6 +108,7 @@ import { AdminVariantOptionsController } from './controllers/admin-variant-optio
     OrderModule,
     ShippingProvidersModule,
     LocationsModule,
+    PromotionsModule,
   ],
   controllers: [
     AdminController,
@@ -125,6 +128,7 @@ import { AdminVariantOptionsController } from './controllers/admin-variant-optio
     AdminOrdersController,
     AdminPostersController,
     AdminShippingProvidersController,
+    AdminPromotionsController,
   ],
 })
 export class AdminModule {}

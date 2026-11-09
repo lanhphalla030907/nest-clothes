@@ -53,6 +53,8 @@ export interface CreateOrderData {
   codAreaId?: string | null;
   codAreaCode?: string | null;
   codAreaName?: string | null;
+  /** The normalised coupon that actually discounted this order, if any. */
+  couponCode?: string | null;
   shippingRecipientName: string;
   shippingPhone: string;
   shippingAddressLine1: string;
@@ -83,6 +85,10 @@ export interface CreateOrderItemData {
   unitPrice: string;
   quantity: number;
   lineTotal: string;
+  unitCostSnapshot: string | null;
+  costCurrency: string | null;
+  costSource: 'VARIANT_AT_ORDER' | 'UNKNOWN';
+  costCapturedAt: Date | null;
 }
 
 /**
@@ -291,6 +297,10 @@ const ADMIN_ORDER_DETAIL_SELECT = {
       unitPrice: true,
       quantity: true,
       lineTotal: true,
+      unitCostSnapshot: true,
+      costCurrency: true,
+      costSource: true,
+      costCapturedAt: true,
       createdAt: true,
     },
   },
@@ -698,7 +708,8 @@ export class OrderRepository {
   /**
    * Reads a variant's identity and price for a checkout snapshot.
    *
-   * Deliberately narrow: `id`, `productId`, `sku`, `price` and `isActive` are the
+   * Deliberately narrow: `id`, `productId`, `sku`, `price`, internal cost snapshot
+   * fields and `isActive` are the
    * only columns a line needs in order to be written. Not selecting the whole row
    * is what keeps a future catalogue column — a cost price, an internal flag —
    * from ever reaching an order line by accident.
@@ -714,6 +725,8 @@ export class OrderRepository {
     productId: string;
     sku: string;
     price: Prisma.Decimal;
+    costPrice: Prisma.Decimal | null;
+    costCurrency: string | null;
     isActive: boolean;
   } | null> {
     return client.productVariant.findUnique({
@@ -723,6 +736,8 @@ export class OrderRepository {
         productId: true,
         sku: true,
         price: true,
+        costPrice: true,
+        costCurrency: true,
         isActive: true,
       },
     });

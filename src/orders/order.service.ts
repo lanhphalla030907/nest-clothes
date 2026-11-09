@@ -109,6 +109,8 @@ export interface PlaceOrderInput {
   codAreaId?: string | null;
   codAreaCode?: string | null;
   codAreaName?: string | null;
+  /** The normalised coupon that actually applied, supplied by checkout. */
+  couponCode?: string | null;
 }
 
 /**
@@ -130,6 +132,11 @@ export interface ResolvedOrderLine {
   unitPrice: Prisma.Decimal;
   quantity: number;
   lineTotal: Prisma.Decimal;
+  /** Internal cost snapshot, never exposed through customer order DTOs. */
+  unitCostSnapshot: Prisma.Decimal | null;
+  costCurrency: string | null;
+  costSource: 'VARIANT_AT_ORDER' | 'UNKNOWN';
+  costCapturedAt: Date | null;
 }
 
 /**
@@ -674,6 +681,7 @@ export class OrderService {
         codAreaId: input.codAreaId ?? null,
         codAreaCode: input.codAreaCode ?? null,
         codAreaName: input.codAreaName ?? null,
+        couponCode: input.couponCode ?? null,
         shippingRecipientName: input.shipping.recipientName,
         shippingPhone: input.shipping.phone,
         shippingAddressLine1: input.shipping.addressLine1,
@@ -752,6 +760,17 @@ export class OrderService {
         unitPrice,
         quantity: line.quantity,
         lineTotal: calculateLineTotal(unitPrice, line.quantity),
+        unitCostSnapshot: variant.costPrice ?? null,
+        costCurrency:
+          variant.costPrice == null ? null : (variant.costCurrency ?? null),
+        costSource:
+          variant.costPrice != null && variant.costCurrency != null
+            ? 'VARIANT_AT_ORDER'
+            : 'UNKNOWN',
+        costCapturedAt:
+          variant.costPrice != null && variant.costCurrency != null
+            ? new Date()
+            : null,
       });
     }
 
@@ -1076,5 +1095,12 @@ function toOrderItemCreateInput(line: ResolvedOrderLine) {
     unitPrice: line.unitPrice.toFixed(2),
     quantity: line.quantity,
     lineTotal: line.lineTotal.toFixed(2),
+    unitCostSnapshot:
+      line.unitCostSnapshot == null
+        ? null
+        : line.unitCostSnapshot.toFixed(2),
+    costCurrency: line.costCurrency ?? null,
+    costSource: line.costSource ?? 'UNKNOWN',
+    costCapturedAt: line.costCapturedAt ?? null,
   };
 }

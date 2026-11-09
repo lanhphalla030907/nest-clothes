@@ -1,5 +1,5 @@
 import { Injectable } from '@nestjs/common';
-import type { ProductVariant } from '../../generated/prisma/client.js';
+import { Prisma, type ProductVariant } from '../../generated/prisma/client.js';
 import { PrismaService } from '../../prisma/prisma.service.js';
 
 /**
@@ -29,6 +29,12 @@ export interface UpdateProductVariantData {
   sku?: string;
   price?: string;
   isActive?: boolean;
+}
+
+export interface UpdateVariantCostData {
+  costPrice: string;
+  costCurrency: string;
+  changedById: string;
 }
 
 /**
@@ -198,6 +204,54 @@ export class ProductVariantsRepository {
         data: { optionsRevision: { increment: 1 } },
       });
       return variant;
+    });
+  }
+
+  /**
+   * Changes the live internal cost and its immutable audit ledger in one
+   * transaction. Closing the old current row before inserting the replacement
+   * works with the partial unique index that permits one current row per variant.
+   */
+  updateCostForProduct(
+    productId: string,
+    variantId: string,
+    data: UpdateVariantCostData,
+  ): Promise<ProductVariant | null> {
+    return this.prisma.$transaction(async (tx) => {
+      const variant = await tx.productVariant.findFirst({
+        where: { id: variantId, productId },
+      });
+      if (variant === null) return null;
+
+      const nextCost = new Prisma.Decimal(data.costPrice);
+      const unchanged =
+        variant.costPrice !== null &&
+        variant.costPrice.equals(nextCost) &&
+        variant.costCurrency === data.costCurrency;
+      if (unchanged) return variant;
+
+      const effectiveAt = new Date();
+      await tx.variantCostHistory.updateMany({
+        where: { variantId, effectiveTo: null },
+        data: { effectiveTo: effectiveAt },
+      });
+      await tx.variantCostHistory.create({
+        data: {
+          variantId,
+          cost: nextCost,
+          currency: data.costCurrency,
+          effectiveFrom: effectiveAt,
+          createdById: data.changedById,
+        },
+      });
+      return tx.productVariant.update({
+        where: { id: variantId },
+        data: {
+          costPrice: nextCost,
+          costCurrency: data.costCurrency,
+          costEffectiveAt: effectiveAt,
+        },
+      });
     });
   }
 

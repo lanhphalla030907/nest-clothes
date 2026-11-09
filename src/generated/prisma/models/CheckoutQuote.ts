@@ -55,6 +55,7 @@ export type CheckoutQuoteMinAggregateOutputType = {
   subtotal: runtime.Decimal | null
   shippingFee: runtime.Decimal | null
   discountAmount: runtime.Decimal | null
+  couponCode: string | null
   totalAmount: runtime.Decimal | null
   currency: string | null
   expiresAt: Date | null
@@ -79,6 +80,7 @@ export type CheckoutQuoteMaxAggregateOutputType = {
   subtotal: runtime.Decimal | null
   shippingFee: runtime.Decimal | null
   discountAmount: runtime.Decimal | null
+  couponCode: string | null
   totalAmount: runtime.Decimal | null
   currency: string | null
   expiresAt: Date | null
@@ -105,6 +107,8 @@ export type CheckoutQuoteCountAggregateOutputType = {
   subtotal: number
   shippingFee: number
   discountAmount: number
+  couponCode: number
+  appliedPromotions: number
   totalAmount: number
   currency: number
   expiresAt: number
@@ -145,6 +149,7 @@ export type CheckoutQuoteMinAggregateInputType = {
   subtotal?: true
   shippingFee?: true
   discountAmount?: true
+  couponCode?: true
   totalAmount?: true
   currency?: true
   expiresAt?: true
@@ -169,6 +174,7 @@ export type CheckoutQuoteMaxAggregateInputType = {
   subtotal?: true
   shippingFee?: true
   discountAmount?: true
+  couponCode?: true
   totalAmount?: true
   currency?: true
   expiresAt?: true
@@ -195,6 +201,8 @@ export type CheckoutQuoteCountAggregateInputType = {
   subtotal?: true
   shippingFee?: true
   discountAmount?: true
+  couponCode?: true
+  appliedPromotions?: true
   totalAmount?: true
   currency?: true
   expiresAt?: true
@@ -308,6 +316,8 @@ export type CheckoutQuoteGroupByOutputType = {
   subtotal: runtime.Decimal
   shippingFee: runtime.Decimal
   discountAmount: runtime.Decimal
+  couponCode: string | null
+  appliedPromotions: runtime.JsonValue | null
   totalAmount: runtime.Decimal
   currency: string
   expiresAt: Date
@@ -357,6 +367,8 @@ export type CheckoutQuoteWhereInput = {
   subtotal?: Prisma.DecimalFilter<"CheckoutQuote"> | runtime.Decimal | runtime.DecimalJsLike | number | string
   shippingFee?: Prisma.DecimalFilter<"CheckoutQuote"> | runtime.Decimal | runtime.DecimalJsLike | number | string
   discountAmount?: Prisma.DecimalFilter<"CheckoutQuote"> | runtime.Decimal | runtime.DecimalJsLike | number | string
+  couponCode?: Prisma.StringNullableFilter<"CheckoutQuote"> | string | null
+  appliedPromotions?: Prisma.JsonNullableFilter<"CheckoutQuote">
   totalAmount?: Prisma.DecimalFilter<"CheckoutQuote"> | runtime.Decimal | runtime.DecimalJsLike | number | string
   currency?: Prisma.StringFilter<"CheckoutQuote"> | string
   expiresAt?: Prisma.DateTimeFilter<"CheckoutQuote"> | Date | string
@@ -385,6 +397,8 @@ export type CheckoutQuoteOrderByWithRelationInput = {
   subtotal?: Prisma.SortOrder
   shippingFee?: Prisma.SortOrder
   discountAmount?: Prisma.SortOrder
+  couponCode?: Prisma.SortOrderInput | Prisma.SortOrder
+  appliedPromotions?: Prisma.SortOrderInput | Prisma.SortOrder
   totalAmount?: Prisma.SortOrder
   currency?: Prisma.SortOrder
   expiresAt?: Prisma.SortOrder
@@ -418,6 +432,8 @@ export type CheckoutQuoteWhereUniqueInput = Prisma.AtLeast<{
   subtotal?: Prisma.DecimalFilter<"CheckoutQuote"> | runtime.Decimal | runtime.DecimalJsLike | number | string
   shippingFee?: Prisma.DecimalFilter<"CheckoutQuote"> | runtime.Decimal | runtime.DecimalJsLike | number | string
   discountAmount?: Prisma.DecimalFilter<"CheckoutQuote"> | runtime.Decimal | runtime.DecimalJsLike | number | string
+  couponCode?: Prisma.StringNullableFilter<"CheckoutQuote"> | string | null
+  appliedPromotions?: Prisma.JsonNullableFilter<"CheckoutQuote">
   totalAmount?: Prisma.DecimalFilter<"CheckoutQuote"> | runtime.Decimal | runtime.DecimalJsLike | number | string
   currency?: Prisma.StringFilter<"CheckoutQuote"> | string
   expiresAt?: Prisma.DateTimeFilter<"CheckoutQuote"> | Date | string
@@ -445,6 +461,8 @@ export type CheckoutQuoteOrderByWithAggregationInput = {
   subtotal?: Prisma.SortOrder
   shippingFee?: Prisma.SortOrder
   discountAmount?: Prisma.SortOrder
+  couponCode?: Prisma.SortOrderInput | Prisma.SortOrder
+  appliedPromotions?: Prisma.SortOrderInput | Prisma.SortOrder
   totalAmount?: Prisma.SortOrder
   currency?: Prisma.SortOrder
   expiresAt?: Prisma.SortOrder
@@ -479,6 +497,8 @@ export type CheckoutQuoteScalarWhereWithAggregatesInput = {
   subtotal?: Prisma.DecimalWithAggregatesFilter<"CheckoutQuote"> | runtime.Decimal | runtime.DecimalJsLike | number | string
   shippingFee?: Prisma.DecimalWithAggregatesFilter<"CheckoutQuote"> | runtime.Decimal | runtime.DecimalJsLike | number | string
   discountAmount?: Prisma.DecimalWithAggregatesFilter<"CheckoutQuote"> | runtime.Decimal | runtime.DecimalJsLike | number | string
+  couponCode?: Prisma.StringNullableWithAggregatesFilter<"CheckoutQuote"> | string | null
+  appliedPromotions?: Prisma.JsonNullableWithAggregatesFilter<"CheckoutQuote">
   totalAmount?: Prisma.DecimalWithAggregatesFilter<"CheckoutQuote"> | runtime.Decimal | runtime.DecimalJsLike | number | string
   currency?: Prisma.StringWithAggregatesFilter<"CheckoutQuote"> | string
   expiresAt?: Prisma.DateTimeWithAggregatesFilter<"CheckoutQuote"> | Date | string
@@ -504,6 +524,8 @@ export type CheckoutQuoteCreateInput = {
   subtotal: runtime.Decimal | runtime.DecimalJsLike | number | string
   shippingFee: runtime.Decimal | runtime.DecimalJsLike | number | string
   discountAmount?: runtime.Decimal | runtime.DecimalJsLike | number | string
+  couponCode?: string | null
+  appliedPromotions?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   totalAmount: runtime.Decimal | runtime.DecimalJsLike | number | string
   currency?: string
   expiresAt: Date | string
@@ -531,6 +553,8 @@ export type CheckoutQuoteUncheckedCreateInput = {
   subtotal: runtime.Decimal | runtime.DecimalJsLike | number | string
   shippingFee: runtime.Decimal | runtime.DecimalJsLike | number | string
   discountAmount?: runtime.Decimal | runtime.DecimalJsLike | number | string
+  couponCode?: string | null
+  appliedPromotions?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   totalAmount: runtime.Decimal | runtime.DecimalJsLike | number | string
   currency?: string
   expiresAt: Date | string
@@ -556,6 +580,8 @@ export type CheckoutQuoteUpdateInput = {
   subtotal?: Prisma.DecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string
   shippingFee?: Prisma.DecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string
   discountAmount?: Prisma.DecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string
+  couponCode?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  appliedPromotions?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   totalAmount?: Prisma.DecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string
   currency?: Prisma.StringFieldUpdateOperationsInput | string
   expiresAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
@@ -583,6 +609,8 @@ export type CheckoutQuoteUncheckedUpdateInput = {
   subtotal?: Prisma.DecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string
   shippingFee?: Prisma.DecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string
   discountAmount?: Prisma.DecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string
+  couponCode?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  appliedPromotions?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   totalAmount?: Prisma.DecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string
   currency?: Prisma.StringFieldUpdateOperationsInput | string
   expiresAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
@@ -609,6 +637,8 @@ export type CheckoutQuoteCreateManyInput = {
   subtotal: runtime.Decimal | runtime.DecimalJsLike | number | string
   shippingFee: runtime.Decimal | runtime.DecimalJsLike | number | string
   discountAmount?: runtime.Decimal | runtime.DecimalJsLike | number | string
+  couponCode?: string | null
+  appliedPromotions?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   totalAmount: runtime.Decimal | runtime.DecimalJsLike | number | string
   currency?: string
   expiresAt: Date | string
@@ -634,6 +664,8 @@ export type CheckoutQuoteUpdateManyMutationInput = {
   subtotal?: Prisma.DecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string
   shippingFee?: Prisma.DecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string
   discountAmount?: Prisma.DecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string
+  couponCode?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  appliedPromotions?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   totalAmount?: Prisma.DecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string
   currency?: Prisma.StringFieldUpdateOperationsInput | string
   expiresAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
@@ -659,6 +691,8 @@ export type CheckoutQuoteUncheckedUpdateManyInput = {
   subtotal?: Prisma.DecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string
   shippingFee?: Prisma.DecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string
   discountAmount?: Prisma.DecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string
+  couponCode?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  appliedPromotions?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   totalAmount?: Prisma.DecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string
   currency?: Prisma.StringFieldUpdateOperationsInput | string
   expiresAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
@@ -705,6 +739,8 @@ export type CheckoutQuoteCountOrderByAggregateInput = {
   subtotal?: Prisma.SortOrder
   shippingFee?: Prisma.SortOrder
   discountAmount?: Prisma.SortOrder
+  couponCode?: Prisma.SortOrder
+  appliedPromotions?: Prisma.SortOrder
   totalAmount?: Prisma.SortOrder
   currency?: Prisma.SortOrder
   expiresAt?: Prisma.SortOrder
@@ -736,6 +772,7 @@ export type CheckoutQuoteMaxOrderByAggregateInput = {
   subtotal?: Prisma.SortOrder
   shippingFee?: Prisma.SortOrder
   discountAmount?: Prisma.SortOrder
+  couponCode?: Prisma.SortOrder
   totalAmount?: Prisma.SortOrder
   currency?: Prisma.SortOrder
   expiresAt?: Prisma.SortOrder
@@ -760,6 +797,7 @@ export type CheckoutQuoteMinOrderByAggregateInput = {
   subtotal?: Prisma.SortOrder
   shippingFee?: Prisma.SortOrder
   discountAmount?: Prisma.SortOrder
+  couponCode?: Prisma.SortOrder
   totalAmount?: Prisma.SortOrder
   currency?: Prisma.SortOrder
   expiresAt?: Prisma.SortOrder
@@ -866,6 +904,8 @@ export type CheckoutQuoteCreateWithoutUserInput = {
   subtotal: runtime.Decimal | runtime.DecimalJsLike | number | string
   shippingFee: runtime.Decimal | runtime.DecimalJsLike | number | string
   discountAmount?: runtime.Decimal | runtime.DecimalJsLike | number | string
+  couponCode?: string | null
+  appliedPromotions?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   totalAmount: runtime.Decimal | runtime.DecimalJsLike | number | string
   currency?: string
   expiresAt: Date | string
@@ -891,6 +931,8 @@ export type CheckoutQuoteUncheckedCreateWithoutUserInput = {
   subtotal: runtime.Decimal | runtime.DecimalJsLike | number | string
   shippingFee: runtime.Decimal | runtime.DecimalJsLike | number | string
   discountAmount?: runtime.Decimal | runtime.DecimalJsLike | number | string
+  couponCode?: string | null
+  appliedPromotions?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   totalAmount: runtime.Decimal | runtime.DecimalJsLike | number | string
   currency?: string
   expiresAt: Date | string
@@ -946,6 +988,8 @@ export type CheckoutQuoteScalarWhereInput = {
   subtotal?: Prisma.DecimalFilter<"CheckoutQuote"> | runtime.Decimal | runtime.DecimalJsLike | number | string
   shippingFee?: Prisma.DecimalFilter<"CheckoutQuote"> | runtime.Decimal | runtime.DecimalJsLike | number | string
   discountAmount?: Prisma.DecimalFilter<"CheckoutQuote"> | runtime.Decimal | runtime.DecimalJsLike | number | string
+  couponCode?: Prisma.StringNullableFilter<"CheckoutQuote"> | string | null
+  appliedPromotions?: Prisma.JsonNullableFilter<"CheckoutQuote">
   totalAmount?: Prisma.DecimalFilter<"CheckoutQuote"> | runtime.Decimal | runtime.DecimalJsLike | number | string
   currency?: Prisma.StringFilter<"CheckoutQuote"> | string
   expiresAt?: Prisma.DateTimeFilter<"CheckoutQuote"> | Date | string
@@ -971,6 +1015,8 @@ export type CheckoutQuoteCreateWithoutOrderInput = {
   subtotal: runtime.Decimal | runtime.DecimalJsLike | number | string
   shippingFee: runtime.Decimal | runtime.DecimalJsLike | number | string
   discountAmount?: runtime.Decimal | runtime.DecimalJsLike | number | string
+  couponCode?: string | null
+  appliedPromotions?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   totalAmount: runtime.Decimal | runtime.DecimalJsLike | number | string
   currency?: string
   expiresAt: Date | string
@@ -997,6 +1043,8 @@ export type CheckoutQuoteUncheckedCreateWithoutOrderInput = {
   subtotal: runtime.Decimal | runtime.DecimalJsLike | number | string
   shippingFee: runtime.Decimal | runtime.DecimalJsLike | number | string
   discountAmount?: runtime.Decimal | runtime.DecimalJsLike | number | string
+  couponCode?: string | null
+  appliedPromotions?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   totalAmount: runtime.Decimal | runtime.DecimalJsLike | number | string
   currency?: string
   expiresAt: Date | string
@@ -1037,6 +1085,8 @@ export type CheckoutQuoteUpdateWithoutOrderInput = {
   subtotal?: Prisma.DecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string
   shippingFee?: Prisma.DecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string
   discountAmount?: Prisma.DecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string
+  couponCode?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  appliedPromotions?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   totalAmount?: Prisma.DecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string
   currency?: Prisma.StringFieldUpdateOperationsInput | string
   expiresAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
@@ -1063,6 +1113,8 @@ export type CheckoutQuoteUncheckedUpdateWithoutOrderInput = {
   subtotal?: Prisma.DecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string
   shippingFee?: Prisma.DecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string
   discountAmount?: Prisma.DecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string
+  couponCode?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  appliedPromotions?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   totalAmount?: Prisma.DecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string
   currency?: Prisma.StringFieldUpdateOperationsInput | string
   expiresAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
@@ -1087,6 +1139,8 @@ export type CheckoutQuoteCreateManyUserInput = {
   subtotal: runtime.Decimal | runtime.DecimalJsLike | number | string
   shippingFee: runtime.Decimal | runtime.DecimalJsLike | number | string
   discountAmount?: runtime.Decimal | runtime.DecimalJsLike | number | string
+  couponCode?: string | null
+  appliedPromotions?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   totalAmount: runtime.Decimal | runtime.DecimalJsLike | number | string
   currency?: string
   expiresAt: Date | string
@@ -1112,6 +1166,8 @@ export type CheckoutQuoteUpdateWithoutUserInput = {
   subtotal?: Prisma.DecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string
   shippingFee?: Prisma.DecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string
   discountAmount?: Prisma.DecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string
+  couponCode?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  appliedPromotions?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   totalAmount?: Prisma.DecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string
   currency?: Prisma.StringFieldUpdateOperationsInput | string
   expiresAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
@@ -1137,6 +1193,8 @@ export type CheckoutQuoteUncheckedUpdateWithoutUserInput = {
   subtotal?: Prisma.DecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string
   shippingFee?: Prisma.DecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string
   discountAmount?: Prisma.DecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string
+  couponCode?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  appliedPromotions?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   totalAmount?: Prisma.DecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string
   currency?: Prisma.StringFieldUpdateOperationsInput | string
   expiresAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
@@ -1162,6 +1220,8 @@ export type CheckoutQuoteUncheckedUpdateManyWithoutUserInput = {
   subtotal?: Prisma.DecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string
   shippingFee?: Prisma.DecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string
   discountAmount?: Prisma.DecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string
+  couponCode?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  appliedPromotions?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   totalAmount?: Prisma.DecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string
   currency?: Prisma.StringFieldUpdateOperationsInput | string
   expiresAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
@@ -1190,6 +1250,8 @@ export type CheckoutQuoteSelect<ExtArgs extends runtime.Types.Extensions.Interna
   subtotal?: boolean
   shippingFee?: boolean
   discountAmount?: boolean
+  couponCode?: boolean
+  appliedPromotions?: boolean
   totalAmount?: boolean
   currency?: boolean
   expiresAt?: boolean
@@ -1218,6 +1280,8 @@ export type CheckoutQuoteSelectCreateManyAndReturn<ExtArgs extends runtime.Types
   subtotal?: boolean
   shippingFee?: boolean
   discountAmount?: boolean
+  couponCode?: boolean
+  appliedPromotions?: boolean
   totalAmount?: boolean
   currency?: boolean
   expiresAt?: boolean
@@ -1246,6 +1310,8 @@ export type CheckoutQuoteSelectUpdateManyAndReturn<ExtArgs extends runtime.Types
   subtotal?: boolean
   shippingFee?: boolean
   discountAmount?: boolean
+  couponCode?: boolean
+  appliedPromotions?: boolean
   totalAmount?: boolean
   currency?: boolean
   expiresAt?: boolean
@@ -1274,6 +1340,8 @@ export type CheckoutQuoteSelectScalar = {
   subtotal?: boolean
   shippingFee?: boolean
   discountAmount?: boolean
+  couponCode?: boolean
+  appliedPromotions?: boolean
   totalAmount?: boolean
   currency?: boolean
   expiresAt?: boolean
@@ -1284,7 +1352,7 @@ export type CheckoutQuoteSelectScalar = {
   updatedAt?: boolean
 }
 
-export type CheckoutQuoteOmit<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetOmit<"id" | "userId" | "addressId" | "addressSnapshot" | "shippingProviderId" | "shippingProviderCode" | "shippingProviderName" | "codAreaId" | "codAreaCode" | "codAreaName" | "paymentMethod" | "cartSnapshot" | "subtotal" | "shippingFee" | "discountAmount" | "totalAmount" | "currency" | "expiresAt" | "consumedAt" | "idempotencyKey" | "orderId" | "createdAt" | "updatedAt", ExtArgs["result"]["checkoutQuote"]>
+export type CheckoutQuoteOmit<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetOmit<"id" | "userId" | "addressId" | "addressSnapshot" | "shippingProviderId" | "shippingProviderCode" | "shippingProviderName" | "codAreaId" | "codAreaCode" | "codAreaName" | "paymentMethod" | "cartSnapshot" | "subtotal" | "shippingFee" | "discountAmount" | "couponCode" | "appliedPromotions" | "totalAmount" | "currency" | "expiresAt" | "consumedAt" | "idempotencyKey" | "orderId" | "createdAt" | "updatedAt", ExtArgs["result"]["checkoutQuote"]>
 export type CheckoutQuoteInclude<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
   user?: boolean | Prisma.UserDefaultArgs<ExtArgs>
   order?: boolean | Prisma.CheckoutQuote$orderArgs<ExtArgs>
@@ -1320,6 +1388,16 @@ export type $CheckoutQuotePayload<ExtArgs extends runtime.Types.Extensions.Inter
     subtotal: runtime.Decimal
     shippingFee: runtime.Decimal
     discountAmount: runtime.Decimal
+    /**
+     * The coupon code as entered, normalised to uppercase. Null when no coupon was
+     * applied.
+     */
+    couponCode: string | null
+    /**
+     * The immutable evaluation snapshot: promotion id, code, name, discount type
+     * and computed discount amount for every promotion applied to this quote.
+     */
+    appliedPromotions: runtime.JsonValue | null
     totalAmount: runtime.Decimal
     currency: string
     expiresAt: Date
@@ -1768,6 +1846,8 @@ export interface CheckoutQuoteFieldRefs {
   readonly subtotal: Prisma.FieldRef<"CheckoutQuote", 'Decimal'>
   readonly shippingFee: Prisma.FieldRef<"CheckoutQuote", 'Decimal'>
   readonly discountAmount: Prisma.FieldRef<"CheckoutQuote", 'Decimal'>
+  readonly couponCode: Prisma.FieldRef<"CheckoutQuote", 'String'>
+  readonly appliedPromotions: Prisma.FieldRef<"CheckoutQuote", 'Json'>
   readonly totalAmount: Prisma.FieldRef<"CheckoutQuote", 'Decimal'>
   readonly currency: Prisma.FieldRef<"CheckoutQuote", 'String'>
   readonly expiresAt: Prisma.FieldRef<"CheckoutQuote", 'DateTime'>

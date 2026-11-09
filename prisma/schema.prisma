@@ -52,6 +52,8 @@ model User {
   wishlist       Wishlist?
   orders         Order[]
   checkoutQuotes CheckoutQuote[]
+  /// Every promotion this user has consumed, kept as financial history.
+  promotionUsages PromotionUsage[]
 
   /// Assignments where this user is the courier, and history is never overwritten.
   deliveryAssignments DeliveryAssignment[] @relation("DeliveryStaffAssignments")
@@ -59,6 +61,8 @@ model User {
   assignmentsMade     DeliveryAssignment[] @relation("AssignmentsMade")
   /// COD cash collections this user confirmed.
   codCollections      CodCollection[]
+  /// Cost changes are internal financial audit records authored by this user.
+  variantCostChanges  VariantCostHistory[] @relation("VariantCostChangedBy")
 
   @@index([status])
   @@index([role])
@@ -274,6 +278,11 @@ model ProductVariant {
   productId      String   @map("product_id") @db.Uuid
   sku            String   @unique @db.VarChar(100)
   price          Decimal  @db.Decimal(12, 2)
+  /// Internal purchase/landed cost. It is intentionally nullable: absence means
+  /// unknown, never zero. Public catalogue projections must not expose it.
+  costPrice      Decimal? @map("cost_price") @db.Decimal(12, 2)
+  costCurrency   String?  @map("cost_currency") @db.Char(3)
+  costEffectiveAt DateTime? @map("cost_effective_at") @db.Timestamptz
   isActive       Boolean  @default(true) @map("is_active")
   combinationKey String?  @map("combination_key") @db.VarChar(64)
   createdAt      DateTime @default(now()) @map("created_at") @db.Timestamptz
@@ -285,6 +294,7 @@ model ProductVariant {
   inventory           Inventory?           @relation("VariantInventory")
   cartItems           CartItem[]           @relation("CartItemVariant")
   orderItems          OrderItem[]          @relation("OrderItemVariant")
+  costHistory         VariantCostHistory[] @relation("VariantCostHistory")
 
   @@unique([id, productId])
   @@unique([productId, combinationKey])
@@ -294,6 +304,27 @@ model ProductVariant {
   // Serves filtering a catalogue by availability.
   @@index([isActive])
   @@map("product_variants")
+}
+
+/// Immutable audit ledger of each administratively recorded variant cost.
+/// The current row has `effective_to IS NULL`; a partial unique index in the
+/// migration ensures there can be at most one such row per variant.
+model VariantCostHistory {
+  id            String    @id @default(uuid()) @db.Uuid
+  variantId     String    @map("variant_id") @db.Uuid
+  cost          Decimal   @db.Decimal(12, 2)
+  currency      String    @db.Char(3)
+  effectiveFrom DateTime  @map("effective_from") @db.Timestamptz
+  effectiveTo   DateTime? @map("effective_to") @db.Timestamptz
+  createdById   String?   @map("created_by_id") @db.Uuid
+  createdAt     DateTime  @default(now()) @map("created_at") @db.Timestamptz
+
+  variant   ProductVariant @relation("VariantCostHistory", fields: [variantId], references: [id], onDelete: Restrict, onUpdate: Cascade)
+  createdBy User?          @relation("VariantCostChangedBy", fields: [createdById], references: [id], onDelete: SetNull, onUpdate: Cascade)
+
+  @@index([variantId, effectiveFrom(sort: Desc), id(sort: Desc)])
+  @@index([createdById])
+  @@map("variant_cost_history")
 }
 
 /// One product-level option axis, such as Color, Size or Material.
@@ -833,6 +864,9 @@ model Order {
   subtotal                 Decimal  @db.Decimal(12, 2)
   shippingFee              Decimal  @default(0) @map("shipping_fee") @db.Decimal(12, 2)
   discountAmount           Decimal  @default(0) @map("discount_amount") @db.Decimal(12, 2)
+  /// The coupon code as entered, normalised to uppercase. Null for automatic-only
+  /// discounts. The promotion usage ledger is the authoritative record.
+  couponCode               String?  @map("coupon_code") @db.VarChar(50)
   totalAmount              Decimal  @map("total_amount") @db.Decimal(12, 2)
   currency                 String   @default("USD") @db.Char(3)
   paymentMethod            String?  @map("payment_method") @db.VarChar(30)
@@ -866,6 +900,9 @@ model Order {
   deliveryAssignments DeliveryAssignment[]
   /// At most one row, enforced by the unique order id on `CodCollection`.
   codCollections      CodCollection[]
+  /// The immutable promotion snapshot for this order. Restrict deletes so the
+  /// financial record survives even if a promotion is archived.
+  promotionUsages     PromotionUsage[]
 
   // Serves `GET /orders` — "this user's orders, newest first" — and matches the
   // query's `ORDER BY` column for column, so the listing walks the index instead
@@ -964,6 +1001,12 @@ model CheckoutQuote {
   subtotal             Decimal   @db.Decimal(12, 2)
   shippingFee          Decimal   @map("shipping_fee") @db.Decimal(12, 2)
   discountAmount       Decimal   @default(0) @map("discount_amount") @db.Decimal(12, 2)
+  /// The coupon code as entered, normalised to uppercase. Null when no coupon was
+  /// applied.
+  couponCode           String?   @map("coupon_code") @db.VarChar(50)
+  /// The immutable evaluation snapshot: promotion id, code, name, discount type
+  /// and computed discount amount for every promotion applied to this quote.
+  appliedPromotions    Json?     @map("applied_promotions") @db.JsonB
   totalAmount          Decimal   @map("total_amount") @db.Decimal(12, 2)
   currency             String    @default("USD") @db.Char(3)
   expiresAt            DateTime  @map("expires_at") @db.Timestamptz
@@ -1042,6 +1085,12 @@ model OrderItem {
   unitPrice              Decimal  @map("unit_price") @db.Decimal(12, 2)
   quantity               Int
   lineTotal              Decimal  @map("line_total") @db.Decimal(12, 2)
+  /// Cost is frozen at sale time; null remains an explicit unknown for legacy
+  /// orders and variants without a recorded cost.
+  unitCostSnapshot       Decimal? @map("unit_cost_snapshot") @db.Decimal(12, 2)
+  costCurrency           String?  @map("cost_currency") @db.Char(3)
+  costSource             String?  @map("cost_source") @db.VarChar(30)
+  costCapturedAt         DateTime? @map("cost_captured_at") @db.Timestamptz
   createdAt              DateTime @default(now()) @map("created_at") @db.Timestamptz
 
   order   Order          @relation(fields: [orderId], references: [id], onDelete: Cascade, onUpdate: Cascade)
@@ -1262,4 +1311,158 @@ model CodReconciliationRunItem {
   @@index([runId, discrepancy])
   @@index([orderId])
   @@map("cod_reconciliation_run_items")
+}
+
+/// One discount rule: either a customer-entered **coupon** or an **automatic**
+/// promotion evaluated by checkout.
+///
+/// ## Why one table holds both kinds
+///
+/// A coupon and an automatic promotion differ only in *how they are selected* —
+/// the former by a code the customer types, the latter by the cart subtotal. The
+/// discount arithmetic, validity window, usage limits, pause state and admin
+/// surface are identical, so splitting them would duplicate every one of those
+/// rules. `kind` records the selection strategy; `code` is present only for a
+/// coupon and is `null` for an automatic promotion.
+///
+/// ## Coupon codes are normalised, not case-sensitive
+///
+/// `code` is stored uppercase. The migration enforces
+/// `code IS NULL OR code = upper(code)`, and a service must uppercase before it
+/// writes or looks up. The unique index is therefore case-insensitive in
+/// practice without requiring `citext` or a functional index.
+///
+/// ## `kind` and `discountType` are strings
+///
+/// They follow the project's existing `Order.status` / `Product.status`
+/// convention: a `VARCHAR` column plus an application-level value set, so adding
+/// a discount type later is a code change rather than an `ALTER TYPE`. The
+/// migration still restricts the values it knows about with `CHECK` constraints,
+/// so a bad row cannot be written by a caller that bypasses validation.
+///
+/// ## Pause and expiry are independent
+///
+/// `isActive` is the administrator's pause switch. `startsAt` and `endsAt` are the
+/// scheduled window. A promotion applies only when **both** say so: `isActive` is
+/// true, `startsAt` is null or in the past, and `endsAt` is null or in the
+/// future. Setting one does not change the other.
+///
+/// ## Archive, do not delete
+///
+/// A promotion referenced by an order is financial history. `archivedAt` marks it
+/// as retired without removing the row or its usage ledger; the service must
+/// exclude archived rows from evaluation. Deleting an unused promotion is a
+/// separate, deliberate decision for a later phase.
+///
+/// ## Money precision
+///
+/// `percentOff` is `Decimal(5,2)` so values such as `12.50` are exact.
+/// `amountOff`, `minSubtotal` and `maxDiscount` are `Decimal(12,2)`, matching
+/// every other monetary column in the schema. No float is ever used.
+model Promotion {
+  id                String    @id @default(uuid()) @db.Uuid
+  /// Null for an automatic promotion; unique uppercase code for a coupon.
+  code              String?   @unique @db.VarChar(50)
+  name              String    @db.VarChar(120)
+  description       String?   @db.VarChar(500)
+  /// `COUPON` or `AUTOMATIC`.
+  kind              String    @db.VarChar(20)
+  /// `PERCENTAGE`, `FIXED_AMOUNT` or `FREE_SHIPPING`.
+  discountType      String    @map("discount_type") @db.VarChar(20)
+  /// Set only for `PERCENTAGE`; a value in `(0, 100]`.
+  percentOff        Decimal?  @map("percent_off") @db.Decimal(5, 2)
+  /// Set only for `FIXED_AMOUNT`; a positive amount off the product subtotal.
+  amountOff         Decimal?  @map("amount_off") @db.Decimal(12, 2)
+  /// The product subtotal, before discounts and excluding shipping, that must be
+  /// reached before this promotion applies.
+  minSubtotal       Decimal   @default(0) @map("min_subtotal") @db.Decimal(12, 2)
+  /// Optional ceiling on a percentage or fixed discount.
+  maxDiscount       Decimal?  @map("max_discount") @db.Decimal(12, 2)
+  startsAt          DateTime? @map("starts_at") @db.Timestamptz
+  endsAt            DateTime? @map("ends_at") @db.Timestamptz
+  /// The administrator's pause switch, independent of the date window.
+  isActive          Boolean   @default(true) @map("is_active")
+  /// Global cap on how many orders may consume this promotion.
+  usageLimitTotal   Int?      @map("usage_limit_total")
+  /// Per-customer cap on how many orders may consume this promotion.
+  usageLimitPerUser Int?      @map("usage_limit_per_user")
+  /// Tie-breaker when two automatic promotions offer the same discount.
+  priority          Int       @default(0)
+  /// Retired promotions keep their row and usage history.
+  archivedAt        DateTime? @map("archived_at") @db.Timestamptz
+  createdAt         DateTime  @default(now()) @map("created_at") @db.Timestamptz
+  updatedAt         DateTime  @updatedAt @map("updated_at") @db.Timestamptz
+
+  usages PromotionUsage[]
+
+  // Serves the evaluator's "active promotions of one kind, inside a window" read.
+  @@index([kind, isActive, startsAt, endsAt])
+  // Serves the admin listing's archived/unarchived filter.
+  @@index([archivedAt])
+  @@map("promotions")
+}
+
+/// The immutable record that one order consumed one promotion.
+///
+/// This table is the **usage ledger**, and it deliberately duplicates the
+/// promotion's descriptive and monetary values at the moment of use. A later edit
+/// to a promotion — a renamed campaign, a changed percentage, an archived row —
+/// must not rewrite what a past order received. Historical orders therefore read
+/// their discount from here, not from {@link Promotion}.
+///
+/// ## One row per (promotion, order)
+///
+/// `@@unique([promotionId, orderId])` is the idempotency backstop: a replayed
+/// checkout that reaches the usage write twice cannot count the same promotion
+/// twice, even if the service's own guard were bypassed.
+///
+/// ## Counted at order creation
+///
+/// A row is written inside the checkout transaction, when the order is created.
+/// Cancelled orders do not automatically delete it: the promotion was consumed at
+/// the time of sale, and silently restoring it would let a customer cancel and
+/// reuse a limited offer. A later, explicit merchant-fault adjustment can add a
+/// compensating record; the ledger itself stays append-only.
+///
+/// ## Indexes
+///
+/// - `(user_id, promotion_id)` answers "how many times has this user consumed this
+///   promotion?", which is the per-user limit query.
+/// - `(promotion_id, created_at DESC, id DESC)` serves the admin usage history for
+///   one promotion, newest first with a deterministic tiebreak.
+/// - `(order_id)` serves "which promotions did this order use?" and the FK check.
+///   The unique index starts with `promotion_id`, so it cannot satisfy this lookup.
+///
+/// ## Delete behaviour
+///
+/// Every relation is `RESTRICT`: this row is financial evidence. A user, order or
+/// promotion cannot be deleted while a usage references it. That is consistent
+/// with the existing treatment of orders, payments and COD collections.
+model PromotionUsage {
+  id             String   @id @default(uuid()) @db.Uuid
+  promotionId    String   @map("promotion_id") @db.Uuid
+  orderId        String   @map("order_id") @db.Uuid
+  userId         String   @map("user_id") @db.Uuid
+  /// The coupon code at the time of use; null for an automatic promotion.
+  codeSnapshot   String?  @map("code_snapshot") @db.VarChar(50)
+  nameSnapshot   String   @map("name_snapshot") @db.VarChar(120)
+  /// The discount type at the time of use.
+  discountType   String   @map("discount_type") @db.VarChar(20)
+  percentOff     Decimal? @map("percent_off") @db.Decimal(5, 2)
+  amountOff      Decimal? @map("amount_off") @db.Decimal(12, 2)
+  /// The amount actually deducted from this order's total.
+  discountAmount Decimal  @map("discount_amount") @db.Decimal(12, 2)
+  /// The product subtotal the discount was evaluated against.
+  subtotalAtUse  Decimal  @map("subtotal_at_use") @db.Decimal(12, 2)
+  createdAt      DateTime @default(now()) @map("created_at") @db.Timestamptz
+
+  promotion Promotion @relation(fields: [promotionId], references: [id], onDelete: Restrict, onUpdate: Cascade)
+  order     Order     @relation(fields: [orderId], references: [id], onDelete: Restrict, onUpdate: Cascade)
+  user      User      @relation(fields: [userId], references: [id], onDelete: Restrict, onUpdate: Cascade)
+
+  @@unique([promotionId, orderId])
+  @@index([userId, promotionId])
+  @@index([promotionId, createdAt(sort: Desc), id(sort: Desc)])
+  @@index([orderId])
+  @@map("promotion_usages")
 }

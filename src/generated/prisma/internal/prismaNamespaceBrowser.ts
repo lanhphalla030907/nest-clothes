@@ -59,6 +59,7 @@ export const ModelName = {
   Product: 'Product',
   ProductImage: 'ProductImage',
   ProductVariant: 'ProductVariant',
+  VariantCostHistory: 'VariantCostHistory',
   ProductOption: 'ProductOption',
   ProductOptionValue: 'ProductOptionValue',
   VariantOptionValue: 'VariantOptionValue',
@@ -80,7 +81,9 @@ export const ModelName = {
   Payment: 'Payment',
   CodCollection: 'CodCollection',
   CodReconciliationRun: 'CodReconciliationRun',
-  CodReconciliationRunItem: 'CodReconciliationRunItem'
+  CodReconciliationRunItem: 'CodReconciliationRunItem',
+  Promotion: 'Promotion',
+  PromotionUsage: 'PromotionUsage'
 } as const
 
 export type ModelName = (typeof ModelName)[keyof typeof ModelName]
@@ -208,6 +211,9 @@ export const ProductVariantScalarFieldEnum = {
   productId: 'productId',
   sku: 'sku',
   price: 'price',
+  costPrice: 'costPrice',
+  costCurrency: 'costCurrency',
+  costEffectiveAt: 'costEffectiveAt',
   isActive: 'isActive',
   combinationKey: 'combinationKey',
   createdAt: 'createdAt',
@@ -215,6 +221,20 @@ export const ProductVariantScalarFieldEnum = {
 } as const
 
 export type ProductVariantScalarFieldEnum = (typeof ProductVariantScalarFieldEnum)[keyof typeof ProductVariantScalarFieldEnum]
+
+
+export const VariantCostHistoryScalarFieldEnum = {
+  id: 'id',
+  variantId: 'variantId',
+  cost: 'cost',
+  currency: 'currency',
+  effectiveFrom: 'effectiveFrom',
+  effectiveTo: 'effectiveTo',
+  createdById: 'createdById',
+  createdAt: 'createdAt'
+} as const
+
+export type VariantCostHistoryScalarFieldEnum = (typeof VariantCostHistoryScalarFieldEnum)[keyof typeof VariantCostHistoryScalarFieldEnum]
 
 
 export const ProductOptionScalarFieldEnum = {
@@ -402,6 +422,7 @@ export const OrderScalarFieldEnum = {
   subtotal: 'subtotal',
   shippingFee: 'shippingFee',
   discountAmount: 'discountAmount',
+  couponCode: 'couponCode',
   totalAmount: 'totalAmount',
   currency: 'currency',
   paymentMethod: 'paymentMethod',
@@ -461,6 +482,8 @@ export const CheckoutQuoteScalarFieldEnum = {
   subtotal: 'subtotal',
   shippingFee: 'shippingFee',
   discountAmount: 'discountAmount',
+  couponCode: 'couponCode',
+  appliedPromotions: 'appliedPromotions',
   totalAmount: 'totalAmount',
   currency: 'currency',
   expiresAt: 'expiresAt',
@@ -484,6 +507,10 @@ export const OrderItemScalarFieldEnum = {
   unitPrice: 'unitPrice',
   quantity: 'quantity',
   lineTotal: 'lineTotal',
+  unitCostSnapshot: 'unitCostSnapshot',
+  costCurrency: 'costCurrency',
+  costSource: 'costSource',
+  costCapturedAt: 'costCapturedAt',
   createdAt: 'createdAt'
 } as const
 
@@ -573,6 +600,49 @@ export const CodReconciliationRunItemScalarFieldEnum = {
 } as const
 
 export type CodReconciliationRunItemScalarFieldEnum = (typeof CodReconciliationRunItemScalarFieldEnum)[keyof typeof CodReconciliationRunItemScalarFieldEnum]
+
+
+export const PromotionScalarFieldEnum = {
+  id: 'id',
+  code: 'code',
+  name: 'name',
+  description: 'description',
+  kind: 'kind',
+  discountType: 'discountType',
+  percentOff: 'percentOff',
+  amountOff: 'amountOff',
+  minSubtotal: 'minSubtotal',
+  maxDiscount: 'maxDiscount',
+  startsAt: 'startsAt',
+  endsAt: 'endsAt',
+  isActive: 'isActive',
+  usageLimitTotal: 'usageLimitTotal',
+  usageLimitPerUser: 'usageLimitPerUser',
+  priority: 'priority',
+  archivedAt: 'archivedAt',
+  createdAt: 'createdAt',
+  updatedAt: 'updatedAt'
+} as const
+
+export type PromotionScalarFieldEnum = (typeof PromotionScalarFieldEnum)[keyof typeof PromotionScalarFieldEnum]
+
+
+export const PromotionUsageScalarFieldEnum = {
+  id: 'id',
+  promotionId: 'promotionId',
+  orderId: 'orderId',
+  userId: 'userId',
+  codeSnapshot: 'codeSnapshot',
+  nameSnapshot: 'nameSnapshot',
+  discountType: 'discountType',
+  percentOff: 'percentOff',
+  amountOff: 'amountOff',
+  discountAmount: 'discountAmount',
+  subtotalAtUse: 'subtotalAtUse',
+  createdAt: 'createdAt'
+} as const
+
+export type PromotionUsageScalarFieldEnum = (typeof PromotionUsageScalarFieldEnum)[keyof typeof PromotionUsageScalarFieldEnum]
 
 
 export const SortOrder = {

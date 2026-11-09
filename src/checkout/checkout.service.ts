@@ -28,10 +28,14 @@ import {
   OrderRepository,
   type OrderWithItems,
 } from '../orders/repositories/order.repository.js';
+import { sumLineTotals } from '../orders/utils/order-money.js';
+import { PROMOTION_MESSAGES } from '../promotions/constants/promotion-error-messages.js';
 import {
-  calculateOrderTotal,
-  sumLineTotals,
-} from '../orders/utils/order-money.js';
+  PromotionEvaluatorService,
+  type AppliedPromotionSnapshot,
+} from '../promotions/promotion-evaluator.service.js';
+import { PromotionsRepository } from '../promotions/repositories/promotions.repository.js';
+import { normalizePromotionCode } from '../promotions/utils/promotion-code.js';
 import { ShippingProvidersRepository } from '../shipping-providers/repositories/shipping-providers.repository.js';
 import { UsersRepository } from '../users/repositories/users.repository.js';
 import { CheckoutQuoteResponseDto } from './dto/checkout-quote-response.dto.js';
@@ -151,9 +155,11 @@ class CheckoutIdempotencyRaceError extends Error {
  * in is untouched, because it is part of the receipt.
  *
  * Quote-backed checkout snapshots an active provider's configured base fee and the
- * selected payment method; it does not collect COD, calculate tax or apply
- * discounts. The legacy address-only request remains compatible and still uses the
- * order defaults. Inventory reservation remains a hold, not a deduction.
+ * selected payment method, and evaluates coupons and automatic promotions inside
+ * the same Serializable transaction that writes the order and its usage ledger.
+ * It does not collect COD or calculate tax. The legacy address-only request remains
+ * compatible and still uses the order defaults. Inventory reservation remains a
+ * hold, not a deduction.
  */
 @Injectable()
 export class CheckoutService {
@@ -170,6 +176,8 @@ export class CheckoutService {
     private readonly codAreasRepository: CodAreasRepository,
     private readonly checkoutQuotesRepository: CheckoutQuotesRepository,
     private readonly locationsService: AdministrativeLocationsService,
+    private readonly promotionEvaluator: PromotionEvaluatorService,
+    private readonly promotionsRepository: PromotionsRepository,
   ) {}
 
   async createQuote(
@@ -229,15 +237,31 @@ export class CheckoutService {
           resolved.map((line) => line.lineTotal),
         );
         const shippingFee = new Prisma.Decimal(provider.baseFee);
-        const discountAmount = new Prisma.Decimal(0);
-        const totalAmount = calculateOrderTotal(
-          subtotal,
-          shippingFee,
-          discountAmount,
+        const requestedCouponCode = normalizePromotionCode(dto.couponCode);
+        const evaluation = await this.promotionEvaluator.evaluate(
+          {
+            userId,
+            subtotal,
+            shippingFee,
+            couponCode: requestedCouponCode,
+          },
+          tx,
         );
+
+        // A supplied code that did not produce a coupon is a rejected input, not
+        // a silently ignored one. The evaluator deliberately treats every reason
+        // (unknown, paused, archived, expired, exhausted, below minimum) the same
+        // so a customer cannot probe which rule failed.
+        if (requestedCouponCode !== null && evaluation.coupon === null) {
+          throw new BadRequestException(
+            PROMOTION_MESSAGES.COUPON_NOT_APPLICABLE,
+          );
+        }
+
         const expiresAt = new Date(Date.now() + QUOTE_LIFETIME_MS);
         const addressSnapshot = this.addressSnapshot(address);
         const cartSnapshot = this.cartSnapshot(resolved);
+        const couponCode = evaluation.coupon?.code ?? null;
 
         const quote = await this.checkoutQuotesRepository.create(
           {
@@ -252,10 +276,14 @@ export class CheckoutService {
             codAreaName: null,
             paymentMethod: dto.paymentMethod,
             cartSnapshot,
-            subtotal: subtotal.toFixed(2),
-            shippingFee: shippingFee.toFixed(2),
-            discountAmount: discountAmount.toFixed(2),
-            totalAmount: totalAmount.toFixed(2),
+            subtotal: evaluation.subtotal.toFixed(2),
+            shippingFee: evaluation.shippingFee.toFixed(2),
+            discountAmount: evaluation.discountAmount.toFixed(2),
+            totalAmount: evaluation.totalAmount.toFixed(2),
+            couponCode,
+            appliedPromotions: this.promotionSnapshotJson(
+              evaluation.appliedPromotions,
+            ),
             currency: 'USD',
             expiresAt,
           },
@@ -269,10 +297,14 @@ export class CheckoutService {
           provider,
           administrativeLocationPath,
           items: resolved,
-          subtotal,
-          shippingFee,
-          discountAmount,
-          totalAmount,
+          subtotal: evaluation.subtotal,
+          shippingFee: evaluation.shippingFee,
+          discountAmount: evaluation.discountAmount,
+          totalAmount: evaluation.totalAmount,
+          couponCode,
+          appliedCoupon: evaluation.coupon,
+          appliedAutomaticPromotion: evaluation.automatic,
+          appliedPromotions: evaluation.appliedPromotions,
           currency: quote.currency,
           expiresAt,
         });
@@ -568,14 +600,33 @@ export class CheckoutService {
     await this.requireAvailableStock(resolved, tx);
 
     const subtotal = sumLineTotals(resolved.map((line) => line.lineTotal));
-    const totalAmount = calculateOrderTotal(
-      subtotal,
-      quote.shippingFee,
-      quote.discountAmount,
+    const evaluation = await this.promotionEvaluator.evaluate(
+      {
+        userId,
+        subtotal,
+        shippingFee: quote.shippingFee,
+        couponCode: quote.couponCode,
+      },
+      tx,
     );
+
+    // The quote pinned a coupon at quote time. If it is no longer eligible —
+    // expired, paused, archived, or its usage limit was reached — the quote is
+    // not an offer the server can honour. A generic quote-expired response would
+    // hide a problem the customer can act on, so this case is named.
+    if (quote.couponCode !== null && evaluation.coupon === null) {
+      throw new ConflictException(PROMOTION_MESSAGES.COUPON_NO_LONGER_VALID);
+    }
+
+    // Recompute from the catalogue and current promotions, then compare the whole
+    // priced outcome with what the quote promised. This is the check that makes a
+    // tampered quote, a repriced cart, an ended automatic promotion or a newly
+    // exhausted usage limit fail rather than silently changing the order total.
     if (
-      !subtotal.equals(quote.subtotal) ||
-      !totalAmount.equals(quote.totalAmount) ||
+      !evaluation.subtotal.equals(quote.subtotal) ||
+      !evaluation.shippingFee.equals(quote.shippingFee) ||
+      !evaluation.discountAmount.equals(quote.discountAmount) ||
+      !evaluation.totalAmount.equals(quote.totalAmount) ||
       quote.currency !== 'USD'
     ) {
       throw new ConflictException(QUOTE_EXPIRED_MESSAGE);
@@ -587,8 +638,9 @@ export class CheckoutService {
       address,
       lines,
     );
-    input.shippingFee = quote.shippingFee.toFixed(2);
-    input.discountAmount = quote.discountAmount.toFixed(2);
+    input.shippingFee = evaluation.shippingFee.toFixed(2);
+    input.discountAmount = evaluation.discountAmount.toFixed(2);
+    input.couponCode = evaluation.coupon?.code ?? null;
     input.currency = quote.currency;
     input.paymentMethod = quote.paymentMethod;
     input.shippingProviderId = provider.id;
@@ -604,6 +656,18 @@ export class CheckoutService {
       orderNumber,
       tx,
     );
+
+    // Written inside the order's transaction, after the order row exists and
+    // before the cart or quote is touched. The ledger and the order commit or
+    // roll back together; usage is counted when the order is created, and a
+    // later cancellation deliberately does not restore it.
+    await this.recordPromotionUsages(
+      order.id,
+      userId,
+      evaluation.appliedPromotions,
+      tx,
+    );
+
     await this.cartRepository.deleteItemsByCart(cart.id, tx);
 
     const consumed = await this.checkoutQuotesRepository.consume(
@@ -728,6 +792,64 @@ export class CheckoutService {
       quantity: line.quantity,
       lineTotal: line.lineTotal.toFixed(2),
     }));
+  }
+
+  /**
+   * The exact JSON written to `checkout_quotes.applied_promotions`.
+   *
+   * The evaluator already produced fixed two-decimal strings; this maps the
+   * snapshot to plain JSON so no `Prisma.Decimal` can reach the JSONB column,
+   * where it would be serialised differently.
+   */
+  private promotionSnapshotJson(
+    snapshots: AppliedPromotionSnapshot[],
+  ): Prisma.InputJsonArray {
+    return snapshots.map((snapshot) => ({
+      promotionId: snapshot.promotionId,
+      code: snapshot.code,
+      name: snapshot.name,
+      discountType: snapshot.discountType,
+      percentOff: snapshot.percentOff,
+      amountOff: snapshot.amountOff,
+      discountAmount: snapshot.discountAmount,
+      subtotalAtUse: snapshot.subtotalAtUse,
+    }));
+  }
+
+  /**
+   * Writes one `PromotionUsage` row per promotion applied to this order.
+   *
+   * Runs on the checkout transaction, so the order, the ledger rows, the quote
+   * consumption and the cart clear all commit or roll back together. The
+   * evaluator has already re-checked both usage limits inside this same
+   * Serializable transaction, which is what makes two concurrent checkouts
+   * unable to both consume the final use.
+   */
+  private async recordPromotionUsages(
+    orderId: string,
+    userId: string,
+    snapshots: AppliedPromotionSnapshot[],
+    tx: CheckoutTransactionClient,
+  ): Promise<void> {
+    if (snapshots.length === 0) {
+      return;
+    }
+
+    await this.promotionsRepository.createUsages(
+      snapshots.map((snapshot) => ({
+        promotionId: snapshot.promotionId,
+        orderId,
+        userId,
+        codeSnapshot: snapshot.code,
+        nameSnapshot: snapshot.name,
+        discountType: snapshot.discountType,
+        percentOff: snapshot.percentOff,
+        amountOff: snapshot.amountOff,
+        discountAmount: snapshot.discountAmount,
+        subtotalAtUse: snapshot.subtotalAtUse,
+      })),
+      tx,
+    );
   }
 
   private jsonSnapshotsEqual(left: unknown, right: unknown): boolean {

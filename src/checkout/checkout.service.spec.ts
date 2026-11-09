@@ -16,6 +16,8 @@ import { OrderRepository } from '../orders/repositories/order.repository.js';
 import { ShippingProvidersRepository } from '../shipping-providers/repositories/shipping-providers.repository.js';
 import { UsersRepository } from '../users/repositories/users.repository.js';
 import { AdministrativeLocationsService } from '../locations/administrative-locations.service.js';
+import { PromotionEvaluatorService } from '../promotions/promotion-evaluator.service.js';
+import { PromotionsRepository } from '../promotions/repositories/promotions.repository.js';
 import { CheckoutService } from './checkout.service.js';
 import { CheckoutQuotesRepository } from './repositories/checkout-quotes.repository.js';
 
@@ -242,6 +244,14 @@ describe('CheckoutService', () => {
             assertCodEligible: vi.fn(),
             getPath: vi.fn().mockResolvedValue(null),
           },
+        },
+        {
+          provide: PromotionEvaluatorService,
+          useValue: { evaluate: vi.fn() },
+        },
+        {
+          provide: PromotionsRepository,
+          useValue: { createUsages: vi.fn() },
         },
       ],
     }).compile();

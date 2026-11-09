@@ -75,6 +75,8 @@ export interface ProductOptionsConfigurationResponse {
     id: string;
     sku: string;
     price: string;
+    costPrice: string | null;
+    costCurrency: string | null;
     isActive: boolean;
     optionValueIds: string[];
     options: Array<{ optionName: string; optionValue: string }>;
@@ -95,6 +97,8 @@ export interface ProductOptionsPreviewResponse {
     label: string;
     sku: string;
     price: string;
+    costPrice: string | null;
+    costCurrency: string | null;
     isActive: boolean;
     available: number | null;
   }>;
@@ -148,6 +152,8 @@ export class ProductOptionsService {
           label: combination.label,
           sku: variant?.sku ?? '',
           price: variant?.price.toFixed(2) ?? product.basePrice.toFixed(2),
+          costPrice: variant?.costPrice?.toFixed(2) ?? null,
+          costCurrency: variant?.costCurrency ?? null,
           isActive: variant?.isActive ?? true,
           available:
             variant?.inventory === null || variant?.inventory === undefined
@@ -693,6 +699,8 @@ export class ProductOptionsService {
         id: variant.id,
         sku: variant.sku,
         price: variant.price.toFixed(2),
+        costPrice: variant.costPrice?.toFixed(2) ?? null,
+        costCurrency: variant.costCurrency,
         isActive: variant.isActive,
         optionValueIds: variant.optionValueMappings.map(
           (mapping) => mapping.optionValueId,

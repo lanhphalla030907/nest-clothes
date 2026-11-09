@@ -12,12 +12,15 @@ import {
   UseGuards,
 } from '@nestjs/common';
 import { Roles } from '../../auth/decorators/roles.decorator.js';
+import { CurrentUser } from '../../auth/decorators/current-user.decorator.js';
+import type { AuthenticatedUser } from '../../auth/types/authenticated-user.js';
 import { JwtAuthGuard } from '../../auth/guards/jwt-auth.guard.js';
 import { RolesGuard } from '../../auth/guards/roles.guard.js';
 import { Role } from '../../generated/prisma/enums.js';
-import { ProductVariantResponseDto } from '../../product-variants/dto/product-variant-response.dto.js';
+import { AdminProductVariantResponseDto } from '../../product-variants/dto/admin-product-variant-response.dto.js';
 import { CreateProductVariantDto } from '../../product-variants/dto/create-product-variant.dto.js';
 import { UpdateProductVariantDto } from '../../product-variants/dto/update-product-variant.dto.js';
+import { UpdateVariantCostDto } from '../../product-variants/dto/update-variant-cost.dto.js';
 import { ProductVariantsService } from '../../product-variants/product-variants.service.js';
 
 /**
@@ -48,23 +51,23 @@ export class AdminProductVariantsController {
   @Get()
   findAll(
     @Param('productId', ParseUUIDPipe) productId: string,
-  ): Promise<ProductVariantResponseDto[]> {
-    return this.productVariantsService.findAllByProductId(productId);
+  ): Promise<AdminProductVariantResponseDto[]> {
+    return this.productVariantsService.findAllAdminByProductId(productId);
   }
 
   @Get(':variantId')
   findOne(
     @Param('productId', ParseUUIDPipe) productId: string,
     @Param('variantId', ParseUUIDPipe) variantId: string,
-  ): Promise<ProductVariantResponseDto> {
-    return this.productVariantsService.findOne(productId, variantId);
+  ): Promise<AdminProductVariantResponseDto> {
+    return this.productVariantsService.findOneAdmin(productId, variantId);
   }
 
   @Post()
   create(
     @Param('productId', ParseUUIDPipe) productId: string,
     @Body() dto: CreateProductVariantDto,
-  ): Promise<ProductVariantResponseDto> {
+  ): Promise<AdminProductVariantResponseDto> {
     return this.productVariantsService.create(productId, dto);
   }
 
@@ -74,8 +77,18 @@ export class AdminProductVariantsController {
     @Param('productId', ParseUUIDPipe) productId: string,
     @Param('variantId', ParseUUIDPipe) variantId: string,
     @Body() dto: UpdateProductVariantDto,
-  ): Promise<ProductVariantResponseDto> {
+  ): Promise<AdminProductVariantResponseDto> {
     return this.productVariantsService.update(productId, variantId, dto);
+  }
+
+  @Patch(':variantId/cost')
+  updateCost(
+    @Param('productId', ParseUUIDPipe) productId: string,
+    @Param('variantId', ParseUUIDPipe) variantId: string,
+    @Body() dto: UpdateVariantCostDto,
+    @CurrentUser() user: AuthenticatedUser,
+  ): Promise<AdminProductVariantResponseDto> {
+    return this.productVariantsService.updateCost(productId, variantId, dto, user.id);
   }
 
   /**

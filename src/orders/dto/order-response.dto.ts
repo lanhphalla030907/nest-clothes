@@ -74,6 +74,8 @@ export class OrderResponseDto {
   codAreaId: string | null;
   codAreaCode: string | null;
   codAreaName: string | null;
+  /** The normalised coupon that discounted this order, or null. */
+  couponCode: string | null;
   shippingRecipientName: string;
   shippingPhone: string;
   shippingAddressLine1: string;
@@ -111,6 +113,7 @@ export class OrderResponseDto {
     dto.codAreaId = order.codAreaId;
     dto.codAreaCode = order.codAreaCode;
     dto.codAreaName = order.codAreaName;
+    dto.couponCode = order.couponCode;
     dto.shippingRecipientName = order.shippingRecipientName;
     dto.shippingPhone = order.shippingPhone;
     dto.shippingAddressLine1 = order.shippingAddressLine1;

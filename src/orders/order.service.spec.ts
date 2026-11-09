@@ -1305,8 +1305,33 @@ describe('OrderService', () => {
           unitPrice: '129.00',
           quantity: 1,
           lineTotal: '129.00',
+          unitCostSnapshot: null,
+          costCurrency: null,
+          costSource: 'UNKNOWN',
+          costCapturedAt: null,
         },
       ]);
+    });
+
+    it('snapshots the current internal variant cost with the order line', async () => {
+      orderFindVariantForCheckout.mockResolvedValue({
+        id: VARIANT_ID,
+        productId: PRODUCT_ID,
+        sku: 'COAT-NAVY-M',
+        price: new Prisma.Decimal('129.00'),
+        costPrice: new Prisma.Decimal('44.25'),
+        costCurrency: 'USD',
+        isActive: true,
+      });
+
+      await service.placeOrder(buildInput());
+
+      expect(orderCreateOrder.mock.calls[0][0].items.create[0]).toMatchObject({
+        unitCostSnapshot: '44.25',
+        costCurrency: 'USD',
+        costSource: 'VARIANT_AT_ORDER',
+        costCapturedAt: expect.any(Date),
+      });
     });
 
     it('reads prices from the catalogue and never from the caller', async () => {

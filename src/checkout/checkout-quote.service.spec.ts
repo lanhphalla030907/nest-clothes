@@ -1,4 +1,8 @@
-import { ConflictException, NotFoundException } from '@nestjs/common';
+import {
+  BadRequestException,
+  ConflictException,
+  NotFoundException,
+} from '@nestjs/common';
 import { Prisma } from '../generated/prisma/client.js';
 import { CheckoutService } from './checkout.service.js';
 import { CheckoutQuotesRepository } from './repositories/checkout-quotes.repository.js';
@@ -11,6 +15,8 @@ import { UsersRepository } from '../users/repositories/users.repository.js';
 import { ShippingProvidersRepository } from '../shipping-providers/repositories/shipping-providers.repository.js';
 import { CodAreasRepository } from '../cod-areas/repositories/cod-areas.repository.js';
 import { AdministrativeLocationsService } from '../locations/administrative-locations.service.js';
+import { PromotionEvaluatorService } from '../promotions/promotion-evaluator.service.js';
+import { PromotionsRepository } from '../promotions/repositories/promotions.repository.js';
 
 const USER_ID = 'a1b2c3d4-e5f6-4f70-8a9b-0c1d2e3f4a5b';
 const ADDRESS_ID = 'b2c3d4e5-f6a7-4b8c-9d0e-1f2a3b4c5d6e';
@@ -118,6 +124,7 @@ const order = {
   codAreaId: null,
   codAreaCode: null,
   codAreaName: null,
+  couponCode: null,
   shippingRecipientName: address.recipientName,
   shippingPhone: address.phone,
   shippingAddressLine1: address.addressLine1,
@@ -155,6 +162,8 @@ const buildQuote = (overrides: Record<string, unknown> = {}) => ({
   shippingFee: new Prisma.Decimal('3.50'),
   discountAmount: new Prisma.Decimal(0),
   totalAmount: new Prisma.Decimal('28.50'),
+  couponCode: null,
+  appliedPromotions: [],
   currency: 'USD',
   expiresAt: new Date(Date.now() + 5 * 60 * 1000),
   consumedAt: null,
@@ -162,6 +171,29 @@ const buildQuote = (overrides: Record<string, unknown> = {}) => ({
   orderId: null,
   createdAt: new Date(),
   updatedAt: new Date(),
+  ...overrides,
+});
+
+const buildPromotionSnapshot = (overrides: Record<string, unknown> = {}) => ({
+  promotionId: 'f7a8b9c0-d1e2-4f34-8052-6d7e8f901234',
+  code: null,
+  name: 'Promotion',
+  discountType: 'PERCENTAGE',
+  percentOff: '10.00',
+  amountOff: null,
+  discountAmount: '2.50',
+  subtotalAtUse: '25.00',
+  ...overrides,
+});
+
+const buildEvaluation = (overrides: Record<string, unknown> = {}) => ({
+  subtotal: new Prisma.Decimal('25.00'),
+  shippingFee: new Prisma.Decimal('3.50'),
+  discountAmount: new Prisma.Decimal('2.50'),
+  totalAmount: new Prisma.Decimal('26.00'),
+  coupon: null,
+  automatic: null,
+  appliedPromotions: [],
   ...overrides,
 });
 
@@ -188,6 +220,8 @@ describe('Checkout quotes', () => {
     findAreaForCheckout: vi.fn(),
     assertCodEligible: vi.fn(),
     findUser: vi.fn(),
+    evaluatePromotions: vi.fn(),
+    createPromotionUsages: vi.fn(),
   };
   let service: CheckoutService;
 
@@ -223,6 +257,16 @@ describe('Checkout quotes', () => {
     mocks.findAreaForCheckout.mockResolvedValue(area);
     mocks.assertCodEligible.mockResolvedValue(address.administrativeLocationPath);
     mocks.findUser.mockResolvedValue({ id: USER_ID });
+    mocks.evaluatePromotions.mockResolvedValue({
+      subtotal: new Prisma.Decimal('25.00'),
+      shippingFee: new Prisma.Decimal('3.50'),
+      discountAmount: new Prisma.Decimal(0),
+      totalAmount: new Prisma.Decimal('28.50'),
+      coupon: null,
+      automatic: null,
+      appliedPromotions: [],
+    });
+    mocks.createPromotionUsages.mockResolvedValue({ count: 0 });
 
     service = new CheckoutService(
       {
@@ -262,6 +306,12 @@ describe('Checkout quotes', () => {
       {
         assertCodEligible: mocks.assertCodEligible,
       } as unknown as AdministrativeLocationsService,
+      {
+        evaluate: mocks.evaluatePromotions,
+      } as unknown as PromotionEvaluatorService,
+      {
+        createUsages: mocks.createPromotionUsages,
+      } as unknown as PromotionsRepository,
     );
   });
 
@@ -537,5 +587,375 @@ describe('Checkout quotes', () => {
 
     expect(result.orderNumber).toBe(order.orderNumber);
     expect(mocks.runInTransaction).not.toHaveBeenCalled();
+  });
+
+  describe('promotion integration', () => {
+    const automaticSnapshot = buildPromotionSnapshot({
+      promotionId: 'f8b9c0d1-e2f3-4056-8173-7e8f90123456',
+      code: null,
+      name: 'Automatic 10%',
+      discountAmount: '2.50',
+    });
+    const couponSnapshot = buildPromotionSnapshot({
+      promotionId: 'f9c0d1e2-f3a4-4067-8284-8f9012345678',
+      code: 'SAVE10',
+      name: 'Save 10',
+      discountAmount: '2.50',
+    });
+
+    it('applies the best automatic promotion without a coupon and persists its snapshot', async () => {
+      mocks.evaluatePromotions.mockResolvedValueOnce(
+        buildEvaluation({
+          automatic: automaticSnapshot,
+          appliedPromotions: [automaticSnapshot],
+          discountAmount: new Prisma.Decimal('2.50'),
+          totalAmount: new Prisma.Decimal('26.00'),
+        }),
+      );
+
+      const result = await service.createQuote(USER_ID, {
+        addressId: ADDRESS_ID,
+        shippingProviderId: PROVIDER_ID,
+        paymentMethod: 'ABA_PAYWAY',
+      });
+
+      expect(result.couponCode).toBeNull();
+      expect(result.appliedCoupon).toBeNull();
+      expect(result.appliedAutomaticPromotion).toEqual(automaticSnapshot);
+      expect(result.appliedPromotions).toEqual([automaticSnapshot]);
+      expect(result.discountAmount).toBe('2.50');
+      expect(result.totalAmount).toBe('26.00');
+      expect(mocks.evaluatePromotions).toHaveBeenCalledWith(
+        expect.objectContaining({ userId: USER_ID, couponCode: null }),
+        TX,
+      );
+      expect(mocks.createQuote).toHaveBeenCalledWith(
+        expect.objectContaining({
+          couponCode: null,
+          appliedPromotions: [automaticSnapshot],
+          discountAmount: '2.50',
+          totalAmount: '26.00',
+        }),
+        TX,
+      );
+    });
+
+    it('normalises a coupon and stacks it with the best automatic promotion', async () => {
+      mocks.evaluatePromotions.mockResolvedValueOnce(
+        buildEvaluation({
+          coupon: couponSnapshot,
+          automatic: automaticSnapshot,
+          appliedPromotions: [couponSnapshot, automaticSnapshot],
+          discountAmount: new Prisma.Decimal('5.00'),
+          totalAmount: new Prisma.Decimal('23.50'),
+        }),
+      );
+
+      const result = await service.createQuote(USER_ID, {
+        addressId: ADDRESS_ID,
+        shippingProviderId: PROVIDER_ID,
+        paymentMethod: 'ABA_PAYWAY',
+        couponCode: '  save10  ',
+      });
+
+      expect(mocks.evaluatePromotions).toHaveBeenCalledWith(
+        expect.objectContaining({ couponCode: 'SAVE10' }),
+        TX,
+      );
+      expect(result.couponCode).toBe('SAVE10');
+      expect(result.appliedCoupon).toEqual(couponSnapshot);
+      expect(result.appliedAutomaticPromotion).toEqual(automaticSnapshot);
+      expect(result.appliedPromotions).toEqual([
+        couponSnapshot,
+        automaticSnapshot,
+      ]);
+      expect(result.discountAmount).toBe('5.00');
+      expect(result.totalAmount).toBe('23.50');
+      expect(mocks.createQuote).toHaveBeenCalledWith(
+        expect.objectContaining({
+          couponCode: 'SAVE10',
+          appliedPromotions: [couponSnapshot, automaticSnapshot],
+          discountAmount: '5.00',
+          totalAmount: '23.50',
+        }),
+        TX,
+      );
+    });
+
+    it.each(['NOPE', 'EXPIRED', 'PAUSED', 'ARCHIVED', 'EXHAUSTED'])(
+      'rejects the %s coupon instead of silently ignoring it',
+      async (couponCode) => {
+        mocks.evaluatePromotions.mockResolvedValueOnce(
+          buildEvaluation({
+            discountAmount: new Prisma.Decimal(0),
+            totalAmount: new Prisma.Decimal('28.50'),
+          }),
+        );
+
+        const error = await service
+          .createQuote(USER_ID, {
+            addressId: ADDRESS_ID,
+            shippingProviderId: PROVIDER_ID,
+            paymentMethod: 'ABA_PAYWAY',
+            couponCode,
+          })
+          .catch((caught: unknown) => caught);
+
+        expect(error).toBeInstanceOf(BadRequestException);
+        expect((error as Error).message).toMatch(/coupon/i);
+        expect(mocks.createQuote).not.toHaveBeenCalled();
+      },
+    );
+
+    it('writes the authoritative coupon totals to the order and records its usage inside the transaction', async () => {
+      mocks.evaluatePromotions.mockResolvedValueOnce(
+        buildEvaluation({
+          coupon: couponSnapshot,
+          appliedPromotions: [couponSnapshot],
+          discountAmount: new Prisma.Decimal('2.50'),
+          totalAmount: new Prisma.Decimal('26.00'),
+        }),
+      );
+      mocks.findForOwner.mockResolvedValueOnce(
+        buildQuote({
+          couponCode: 'SAVE10',
+          discountAmount: new Prisma.Decimal('2.50'),
+          totalAmount: new Prisma.Decimal('26.00'),
+          appliedPromotions: [couponSnapshot],
+        }),
+      );
+      mocks.writeOrder.mockResolvedValueOnce({
+        ...order,
+        couponCode: 'SAVE10',
+        discountAmount: new Prisma.Decimal('2.50'),
+        totalAmount: new Prisma.Decimal('26.00'),
+      });
+
+      const result = await service.checkout(USER_ID, {
+        quoteId: QUOTE_ID,
+        idempotencyKey: IDEMPOTENCY_KEY,
+      });
+
+      expect(mocks.evaluatePromotions).toHaveBeenCalledWith(
+        expect.objectContaining({
+          userId: USER_ID,
+          couponCode: 'SAVE10',
+        }),
+        TX,
+      );
+      expect(mocks.writeOrder).toHaveBeenCalledWith(
+        expect.objectContaining({
+          couponCode: 'SAVE10',
+          discountAmount: '2.50',
+          shippingFee: '3.50',
+        }),
+        [resolvedLine],
+        'ORD-20261029-AAAAAA',
+        TX,
+      );
+      expect(mocks.createPromotionUsages).toHaveBeenCalledWith(
+        [
+          expect.objectContaining({
+            promotionId: couponSnapshot.promotionId,
+            orderId: order.id,
+            userId: USER_ID,
+            codeSnapshot: 'SAVE10',
+            nameSnapshot: couponSnapshot.name,
+            discountType: couponSnapshot.discountType,
+            discountAmount: '2.50',
+            subtotalAtUse: '25.00',
+          }),
+        ],
+        TX,
+      );
+      expect(result.couponCode).toBe('SAVE10');
+      expect(result.discountAmount).toBe('2.50');
+      expect(result.totalAmount).toBe('26.00');
+    });
+
+    it('records one usage row for each applied promotion', async () => {
+      mocks.evaluatePromotions.mockResolvedValueOnce(
+        buildEvaluation({
+          coupon: couponSnapshot,
+          automatic: automaticSnapshot,
+          appliedPromotions: [couponSnapshot, automaticSnapshot],
+          discountAmount: new Prisma.Decimal('5.00'),
+          totalAmount: new Prisma.Decimal('23.50'),
+        }),
+      );
+      mocks.findForOwner.mockResolvedValueOnce(
+        buildQuote({
+          couponCode: 'SAVE10',
+          discountAmount: new Prisma.Decimal('5.00'),
+          totalAmount: new Prisma.Decimal('23.50'),
+          appliedPromotions: [couponSnapshot, automaticSnapshot],
+        }),
+      );
+      mocks.writeOrder.mockResolvedValueOnce({
+        ...order,
+        couponCode: 'SAVE10',
+        discountAmount: new Prisma.Decimal('5.00'),
+        totalAmount: new Prisma.Decimal('23.50'),
+      });
+
+      await service.checkout(USER_ID, {
+        quoteId: QUOTE_ID,
+        idempotencyKey: IDEMPOTENCY_KEY,
+      });
+
+      expect(mocks.createPromotionUsages).toHaveBeenCalledWith(
+        expect.arrayContaining([
+          expect.objectContaining({
+            promotionId: couponSnapshot.promotionId,
+            codeSnapshot: 'SAVE10',
+          }),
+          expect.objectContaining({
+            promotionId: automaticSnapshot.promotionId,
+            codeSnapshot: null,
+          }),
+        ]),
+        TX,
+      );
+      expect(
+        (mocks.createPromotionUsages.mock.calls[0][0] as unknown[]).length,
+      ).toBe(2);
+    });
+
+    it('does not write a usage row when no promotion applied', async () => {
+      await service.checkout(USER_ID, {
+        quoteId: QUOTE_ID,
+        idempotencyKey: IDEMPOTENCY_KEY,
+      });
+
+      expect(mocks.createPromotionUsages).not.toHaveBeenCalled();
+    });
+
+    it('rejects checkout when a quoted coupon is no longer eligible', async () => {
+      mocks.findForOwner.mockResolvedValueOnce(
+        buildQuote({
+          couponCode: 'SAVE10',
+          discountAmount: new Prisma.Decimal('2.50'),
+          totalAmount: new Prisma.Decimal('26.00'),
+        }),
+      );
+
+      const error = await service
+        .checkout(USER_ID, {
+          quoteId: QUOTE_ID,
+          idempotencyKey: IDEMPOTENCY_KEY,
+        })
+        .catch((caught: unknown) => caught);
+
+      expect(error).toBeInstanceOf(ConflictException);
+      expect((error as Error).message).toMatch(/coupon/i);
+      expect(mocks.writeOrder).not.toHaveBeenCalled();
+      expect(mocks.createPromotionUsages).not.toHaveBeenCalled();
+      expect(mocks.consume).not.toHaveBeenCalled();
+    });
+
+    it('rejects a quote whose discount no longer matches the server calculation', async () => {
+      mocks.findForOwner.mockResolvedValueOnce(
+        buildQuote({
+          discountAmount: new Prisma.Decimal('10.00'),
+          totalAmount: new Prisma.Decimal('18.50'),
+        }),
+      );
+      mocks.evaluatePromotions.mockResolvedValueOnce(
+        buildEvaluation({
+          discountAmount: new Prisma.Decimal(0),
+          totalAmount: new Prisma.Decimal('28.50'),
+        }),
+      );
+
+      await expect(
+        service.checkout(USER_ID, {
+          quoteId: QUOTE_ID,
+          idempotencyKey: IDEMPOTENCY_KEY,
+        }),
+      ).rejects.toBeInstanceOf(ConflictException);
+
+      expect(mocks.writeOrder).not.toHaveBeenCalled();
+      expect(mocks.createPromotionUsages).not.toHaveBeenCalled();
+    });
+
+    it.each(['ABA_PAYWAY', 'COD'] as const)(
+      'preserves the authoritative total for %s checkout',
+      async (paymentMethod) => {
+        mocks.findForOwner.mockResolvedValueOnce(
+          buildQuote({
+            paymentMethod,
+            couponCode: 'SAVE10',
+            discountAmount: new Prisma.Decimal('2.50'),
+            totalAmount: new Prisma.Decimal('26.00'),
+          }),
+        );
+        mocks.evaluatePromotions.mockResolvedValueOnce(
+          buildEvaluation({
+            coupon: couponSnapshot,
+            appliedPromotions: [couponSnapshot],
+            discountAmount: new Prisma.Decimal('2.50'),
+            totalAmount: new Prisma.Decimal('26.00'),
+          }),
+        );
+        mocks.writeOrder.mockResolvedValueOnce({
+          ...order,
+          paymentMethod,
+          couponCode: 'SAVE10',
+          discountAmount: new Prisma.Decimal('2.50'),
+          totalAmount: new Prisma.Decimal('26.00'),
+        });
+
+        const result = await service.checkout(USER_ID, {
+          quoteId: QUOTE_ID,
+          idempotencyKey: IDEMPOTENCY_KEY,
+        });
+
+        expect(mocks.writeOrder).toHaveBeenCalledWith(
+          expect.objectContaining({
+            paymentMethod,
+            couponCode: 'SAVE10',
+            discountAmount: '2.50',
+          }),
+          [resolvedLine],
+          'ORD-20261029-AAAAAA',
+          TX,
+        );
+        expect(result.paymentMethod).toBe(paymentMethod);
+        expect(result.discountAmount).toBe('2.50');
+        expect(result.totalAmount).toBe('26.00');
+      },
+    );
+
+    it('leaves the cart and quote untouched when usage recording fails', async () => {
+      mocks.evaluatePromotions.mockResolvedValueOnce(
+        buildEvaluation({
+          coupon: couponSnapshot,
+          appliedPromotions: [couponSnapshot],
+          discountAmount: new Prisma.Decimal('2.50'),
+          totalAmount: new Prisma.Decimal('26.00'),
+        }),
+      );
+      mocks.findForOwner.mockResolvedValueOnce(
+        buildQuote({
+          couponCode: 'SAVE10',
+          discountAmount: new Prisma.Decimal('2.50'),
+          totalAmount: new Prisma.Decimal('26.00'),
+        }),
+      );
+      mocks.createPromotionUsages.mockRejectedValueOnce(
+        new Error('usage write failed'),
+      );
+
+      await expect(
+        service.checkout(USER_ID, {
+          quoteId: QUOTE_ID,
+          idempotencyKey: IDEMPOTENCY_KEY,
+        }),
+      ).rejects.toBeInstanceOf(BadRequestException);
+
+      expect(mocks.writeOrder).toHaveBeenCalled();
+      expect(mocks.deleteItemsByCart).not.toHaveBeenCalled();
+      expect(mocks.consume).not.toHaveBeenCalled();
+    });
   });
 });

@@ -1,5 +1,6 @@
 import { toMoneyString } from '../../common/utils/money.js';
 import type { AdministrativeLocationResponseDto } from '../../locations/dto/administrative-location-response.dto.js';
+import type { AppliedPromotionSnapshot } from '../../promotions/promotion-evaluator.service.js';
 import type { CheckoutPaymentMethod } from './create-checkout-quote.dto.js';
 
 export interface CheckoutQuoteItem {
@@ -28,6 +29,14 @@ export class CheckoutQuoteResponseDto {
   shippingFee: string;
   discountAmount: string;
   totalAmount: string;
+  /** The normalised code that actually applied, or null when none did. */
+  couponCode: string | null;
+  /** The coupon slot, after stacking and the non-negative-total cap. */
+  appliedCoupon: AppliedPromotionSnapshot | null;
+  /** The single best automatic promotion that applied, if any. */
+  appliedAutomaticPromotion: AppliedPromotionSnapshot | null;
+  /** The same promotions in application order: coupon first, automatic second. */
+  appliedPromotions: AppliedPromotionSnapshot[];
   currency: string;
   expiresAt: Date;
 
@@ -50,6 +59,10 @@ export class CheckoutQuoteResponseDto {
     shippingFee: { toString(): string };
     discountAmount: { toString(): string };
     totalAmount: { toString(): string };
+    couponCode: string | null;
+    appliedCoupon: AppliedPromotionSnapshot | null;
+    appliedAutomaticPromotion: AppliedPromotionSnapshot | null;
+    appliedPromotions: AppliedPromotionSnapshot[];
     currency: string;
     expiresAt: Date;
   }): CheckoutQuoteResponseDto {
@@ -77,6 +90,10 @@ export class CheckoutQuoteResponseDto {
     dto.shippingFee = toMoneyString(values.shippingFee);
     dto.discountAmount = toMoneyString(values.discountAmount);
     dto.totalAmount = toMoneyString(values.totalAmount);
+    dto.couponCode = values.couponCode;
+    dto.appliedCoupon = values.appliedCoupon;
+    dto.appliedAutomaticPromotion = values.appliedAutomaticPromotion;
+    dto.appliedPromotions = values.appliedPromotions;
     dto.currency = values.currency;
     dto.expiresAt = values.expiresAt;
     return dto;

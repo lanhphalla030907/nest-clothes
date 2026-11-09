@@ -8,6 +8,7 @@ import { CodAreasModule } from '../cod-areas/cod-areas.module.js';
 import { ShippingProvidersModule } from '../shipping-providers/shipping-providers.module.js';
 import { UsersModule } from '../users/users.module.js';
 import { LocationsModule } from '../locations/locations.module.js';
+import { PromotionsModule } from '../promotions/promotions.module.js';
 import { CheckoutController } from './checkout.controller.js';
 import { CheckoutService } from './checkout.service.js';
 import { CheckoutQuotesRepository } from './repositories/checkout-quotes.repository.js';
@@ -35,6 +36,9 @@ import { CheckoutQuotesRepository } from './repositories/checkout-quotes.reposit
  *   turned into an order.
  * - `UsersModule` → `UsersRepository`. Confirming the authenticated caller is a real
  *   user before an order is created against it.
+ * - `PromotionsModule` → `PromotionEvaluatorService` and `PromotionsRepository`.
+ *   Evaluating the coupon and automatic slots, and writing the usage ledger,
+ *   inside the checkout transaction so no promotion read or write escapes it.
  *
  * `CheckoutService` is not exported: nothing composes a checkout, and a second entry
  * point to it would be a second way to place an order outside the transaction this
@@ -54,6 +58,7 @@ import { CheckoutQuotesRepository } from './repositories/checkout-quotes.reposit
     ShippingProvidersModule,
     CodAreasModule,
     LocationsModule,
+    PromotionsModule,
   ],
   controllers: [CheckoutController],
   providers: [CheckoutService, CheckoutQuotesRepository],

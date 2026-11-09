@@ -4,6 +4,7 @@ import { Prisma } from '../generated/prisma/client.js';
 import { ProductsRepository } from '../products/repositories/products.repository.js';
 import { CreateProductVariantDto } from './dto/create-product-variant.dto.js';
 import { UpdateProductVariantDto } from './dto/update-product-variant.dto.js';
+import { UpdateVariantCostDto } from './dto/update-variant-cost.dto.js';
 import { ProductVariantsService } from './product-variants.service.js';
 import { ProductVariantsRepository } from './repositories/product-variants.repository.js';
 
@@ -75,6 +76,7 @@ describe('ProductVariantsService', () => {
   let variantRepoFindBySku: ReturnType<typeof vi.fn>;
   let variantRepoFindByIdAndProductId: ReturnType<typeof vi.fn>;
   let variantRepoUpdateForProduct: ReturnType<typeof vi.fn>;
+  let variantRepoUpdateCostForProduct: ReturnType<typeof vi.fn>;
   let variantRepoDelete: ReturnType<typeof vi.fn>;
   let productRepoFindById: ReturnType<typeof vi.fn>;
 
@@ -84,6 +86,7 @@ describe('ProductVariantsService', () => {
     variantRepoFindBySku = vi.fn();
     variantRepoFindByIdAndProductId = vi.fn();
     variantRepoUpdateForProduct = vi.fn();
+    variantRepoUpdateCostForProduct = vi.fn();
     variantRepoDelete = vi.fn();
     productRepoFindById = vi.fn();
 
@@ -98,6 +101,7 @@ describe('ProductVariantsService', () => {
             findBySku: variantRepoFindBySku,
             findByIdAndProductId: variantRepoFindByIdAndProductId,
             updateForProduct: variantRepoUpdateForProduct,
+            updateCostForProduct: variantRepoUpdateCostForProduct,
             delete: variantRepoDelete,
           },
         },
@@ -397,6 +401,53 @@ describe('ProductVariantsService', () => {
       expect(variantRepoUpdateForProduct.mock.calls[0][2]).not.toHaveProperty(
         'productId',
       );
+    });
+  });
+
+  describe('cost management', () => {
+    it('normalizes and records an admin cost update through the transactional repository', async () => {
+      variantRepoUpdateCostForProduct.mockResolvedValue(
+        buildVariant({
+          costPrice: new Prisma.Decimal('12.50'),
+          costCurrency: 'USD',
+          costEffectiveAt: new Date('2026-11-09T00:00:00.000Z'),
+        }),
+      );
+      const dto = Object.assign(new UpdateVariantCostDto(), {
+        costPrice: '12.5',
+        costCurrency: ' usd ',
+      });
+
+      const result = await service.updateCost(
+        PRODUCT_ID,
+        VARIANT_ID,
+        dto,
+        'a3b2c3d4-e5f6-4f70-8a9b-0c1d2e3f4a5b',
+      );
+
+      expect(variantRepoUpdateCostForProduct).toHaveBeenCalledWith(
+        PRODUCT_ID,
+        VARIANT_ID,
+        {
+          costPrice: '12.50',
+          costCurrency: 'USD',
+          changedById: 'a3b2c3d4-e5f6-4f70-8a9b-0c1d2e3f4a5b',
+        },
+      );
+      expect(result.costPrice).toBe('12.50');
+      expect(result.costCurrency).toBe('USD');
+    });
+
+    it('returns 404 when the addressed variant is absent or belongs to another product', async () => {
+      variantRepoUpdateCostForProduct.mockResolvedValue(null);
+      const dto = Object.assign(new UpdateVariantCostDto(), {
+        costPrice: '12.50',
+        costCurrency: 'USD',
+      });
+
+      await expect(
+        service.updateCost(PRODUCT_ID, VARIANT_ID, dto, PRODUCT_ID),
+      ).rejects.toBeInstanceOf(NotFoundException);
     });
   });
 

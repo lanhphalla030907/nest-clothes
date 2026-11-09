@@ -167,6 +167,13 @@ export type ProductImage = Prisma.ProductImageModel
  */
 export type ProductVariant = Prisma.ProductVariantModel
 /**
+ * Model VariantCostHistory
+ * Immutable audit ledger of each administratively recorded variant cost.
+ * The current row has `effective_to IS NULL`; a partial unique index in the
+ * migration ensures there can be at most one such row per variant.
+ */
+export type VariantCostHistory = Prisma.VariantCostHistoryModel
+/**
  * Model ProductOption
  * One product-level option axis, such as Color, Size or Material.
  * 
@@ -684,3 +691,93 @@ export type CodReconciliationRun = Prisma.CodReconciliationRunModel
  * Each row is written at run execution time and must never be modified.
  */
 export type CodReconciliationRunItem = Prisma.CodReconciliationRunItemModel
+/**
+ * Model Promotion
+ * One discount rule: either a customer-entered **coupon** or an **automatic**
+ * promotion evaluated by checkout.
+ * 
+ * ## Why one table holds both kinds
+ * 
+ * A coupon and an automatic promotion differ only in *how they are selected* —
+ * the former by a code the customer types, the latter by the cart subtotal. The
+ * discount arithmetic, validity window, usage limits, pause state and admin
+ * surface are identical, so splitting them would duplicate every one of those
+ * rules. `kind` records the selection strategy; `code` is present only for a
+ * coupon and is `null` for an automatic promotion.
+ * 
+ * ## Coupon codes are normalised, not case-sensitive
+ * 
+ * `code` is stored uppercase. The migration enforces
+ * `code IS NULL OR code = upper(code)`, and a service must uppercase before it
+ * writes or looks up. The unique index is therefore case-insensitive in
+ * practice without requiring `citext` or a functional index.
+ * 
+ * ## `kind` and `discountType` are strings
+ * 
+ * They follow the project's existing `Order.status` / `Product.status`
+ * convention: a `VARCHAR` column plus an application-level value set, so adding
+ * a discount type later is a code change rather than an `ALTER TYPE`. The
+ * migration still restricts the values it knows about with `CHECK` constraints,
+ * so a bad row cannot be written by a caller that bypasses validation.
+ * 
+ * ## Pause and expiry are independent
+ * 
+ * `isActive` is the administrator's pause switch. `startsAt` and `endsAt` are the
+ * scheduled window. A promotion applies only when **both** say so: `isActive` is
+ * true, `startsAt` is null or in the past, and `endsAt` is null or in the
+ * future. Setting one does not change the other.
+ * 
+ * ## Archive, do not delete
+ * 
+ * A promotion referenced by an order is financial history. `archivedAt` marks it
+ * as retired without removing the row or its usage ledger; the service must
+ * exclude archived rows from evaluation. Deleting an unused promotion is a
+ * separate, deliberate decision for a later phase.
+ * 
+ * ## Money precision
+ * 
+ * `percentOff` is `Decimal(5,2)` so values such as `12.50` are exact.
+ * `amountOff`, `minSubtotal` and `maxDiscount` are `Decimal(12,2)`, matching
+ * every other monetary column in the schema. No float is ever used.
+ */
+export type Promotion = Prisma.PromotionModel
+/**
+ * Model PromotionUsage
+ * The immutable record that one order consumed one promotion.
+ * 
+ * This table is the **usage ledger**, and it deliberately duplicates the
+ * promotion's descriptive and monetary values at the moment of use. A later edit
+ * to a promotion — a renamed campaign, a changed percentage, an archived row —
+ * must not rewrite what a past order received. Historical orders therefore read
+ * their discount from here, not from {@link Promotion}.
+ * 
+ * ## One row per (promotion, order)
+ * 
+ * `@@unique([promotionId, orderId])` is the idempotency backstop: a replayed
+ * checkout that reaches the usage write twice cannot count the same promotion
+ * twice, even if the service's own guard were bypassed.
+ * 
+ * ## Counted at order creation
+ * 
+ * A row is written inside the checkout transaction, when the order is created.
+ * Cancelled orders do not automatically delete it: the promotion was consumed at
+ * the time of sale, and silently restoring it would let a customer cancel and
+ * reuse a limited offer. A later, explicit merchant-fault adjustment can add a
+ * compensating record; the ledger itself stays append-only.
+ * 
+ * ## Indexes
+ * 
+ * - `(user_id, promotion_id)` answers "how many times has this user consumed this
+ * promotion?", which is the per-user limit query.
+ * - `(promotion_id, created_at DESC, id DESC)` serves the admin usage history for
+ * one promotion, newest first with a deterministic tiebreak.
+ * - `(order_id)` serves "which promotions did this order use?" and the FK check.
+ * The unique index starts with `promotion_id`, so it cannot satisfy this lookup.
+ * 
+ * ## Delete behaviour
+ * 
+ * Every relation is `RESTRICT`: this row is financial evidence. A user, order or
+ * promotion cannot be deleted while a usage references it. That is consistent
+ * with the existing treatment of orders, payments and COD collections.
+ */
+export type PromotionUsage = Prisma.PromotionUsageModel
