@@ -22,6 +22,7 @@
     "test:e2e": "vitest run --config ./vitest.config.e2e.ts",
     "test:db:setup": "node scripts/setup-test-db.mjs",
     "test:integration:delivery": "node scripts/setup-test-db.mjs && vitest run --config ./vitest.config.delivery-integration.ts",
+    "test:integration:finance": "node scripts/setup-test-db.mjs && vitest run --config ./vitest.config.finance-integration.ts",
     "postinstall": "prisma skills sync || exit 0"
   },
   "dependencies": {

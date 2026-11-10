@@ -2,7 +2,9 @@ import { Prisma } from '../../generated/prisma/client.js';
 import {
   calculateLineTotal,
   calculateOrderTotal,
+  classifyCostSnapshotCurrency,
   InvalidMoneyValueError,
+  isComparableCostSnapshotCurrency,
   sumLineTotals,
   toNonNegativeDecimal,
 } from './order-money.js';
@@ -232,8 +234,34 @@ describe('order money', () => {
     expect(lineTotal.toFixed(2)).toBe('59.97');
     expect(subtotal.toFixed(2)).toBe('59.97');
     expect(total.toFixed(2)).toBe('62.47');
-    expect(
-      total.equals(subtotal.plus('4.99').minus('2.49')),
-    ).toBe(true);
+    expect(total.equals(subtotal.plus('4.99').minus('2.49'))).toBe(true);
+  });
+
+  describe('cost snapshot currency policy (future finance)', () => {
+    it('treats a matching snapshot currency as comparable without conversion', () => {
+      const snapshot = { unitCostSnapshot: '12.50', costCurrency: 'USD', orderCurrency: 'usd' };
+      expect(classifyCostSnapshotCurrency(snapshot)).toBe('COMPARABLE');
+      expect(isComparableCostSnapshotCurrency(snapshot)).toBe(true);
+    });
+
+    it('excludes mismatched currency snapshots and never treats them as zero/converted', () => {
+      const snapshot = { unitCostSnapshot: '12.50', costCurrency: 'KHR', orderCurrency: 'USD' };
+      expect(classifyCostSnapshotCurrency(snapshot)).toBe('CURRENCY_MISMATCH');
+      expect(isComparableCostSnapshotCurrency(snapshot)).toBe(false);
+      expect(snapshot.unitCostSnapshot).toBe('12.50');
+      expect(snapshot.costCurrency).toBe('KHR');
+    });
+
+    it('keeps missing cost unknown and never treats it as zero', () => {
+      expect(
+        classifyCostSnapshotCurrency({ unitCostSnapshot: null, costCurrency: null, orderCurrency: 'USD' }),
+      ).toBe('MISSING_COST');
+      expect(
+        classifyCostSnapshotCurrency({ unitCostSnapshot: '12.50', costCurrency: null, orderCurrency: 'USD' }),
+      ).toBe('MISSING_COST');
+      expect(
+        isComparableCostSnapshotCurrency({ unitCostSnapshot: null, costCurrency: 'USD', orderCurrency: 'USD' }),
+      ).toBe(false);
+    });
   });
 });

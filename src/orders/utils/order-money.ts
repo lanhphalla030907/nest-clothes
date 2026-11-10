@@ -150,3 +150,49 @@ export function sumLineTotals(
  * cart figure are formatted by one implementation and cannot disagree.
  */
 export { toMoneyString } from '../../common/utils/money.js';
+
+/**
+ * Explicit Finance Phase 1 currency policy for future comparable-currency cost/profit work.
+ *
+ * - Never silently convert currencies.
+ * - Preserve valid original cost/currency snapshots as stored on order lines.
+ * - A cost snapshot is comparable only when it has a known amount, a known cost currency,
+ *   and that currency matches the order currency exactly (case-insensitive ISO code compare).
+ * - Mismatched-currency snapshots must be excluded from comparable-currency COGS/profit
+ *   calculations and reported as excluded; they must never be coerced, converted, or treated
+ *   as zero cost.
+ * - Missing/unknown cost snapshots must also never be treated as zero cost.
+ *
+ * This helper does not change checkout totals, selling prices, payment, or COD behavior.
+ * It is policy/documentation + a safe classification primitive for future finance modules.
+ */
+export type CostSnapshotCurrencyClassification =
+  | 'COMPARABLE'
+  | 'MISSING_COST'
+  | 'CURRENCY_MISMATCH';
+
+export interface CostSnapshotCurrencyPolicyInput {
+  unitCostSnapshot: unknown;
+  costCurrency: string | null | undefined;
+  orderCurrency: string | null | undefined;
+}
+
+export function classifyCostSnapshotCurrency(
+  input: CostSnapshotCurrencyPolicyInput,
+): CostSnapshotCurrencyClassification {
+  if (input.unitCostSnapshot == null || !input.costCurrency) {
+    return 'MISSING_COST';
+  }
+  if (!input.orderCurrency) {
+    return 'CURRENCY_MISMATCH';
+  }
+  return input.costCurrency.trim().toUpperCase() === input.orderCurrency.trim().toUpperCase()
+    ? 'COMPARABLE'
+    : 'CURRENCY_MISMATCH';
+}
+
+export function isComparableCostSnapshotCurrency(
+  input: CostSnapshotCurrencyPolicyInput,
+): boolean {
+  return classifyCostSnapshotCurrency(input) === 'COMPARABLE';
+}

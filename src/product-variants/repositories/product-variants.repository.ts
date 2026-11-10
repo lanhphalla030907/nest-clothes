@@ -37,6 +37,16 @@ export interface UpdateVariantCostData {
   changedById: string;
 }
 
+export interface BulkUpdateVariantCostData {
+  productId: string;
+  changedById: string;
+  variants: Array<{
+    variantId: string;
+    costPrice: string;
+    costCurrency: string;
+  }>;
+}
+
 /**
  * The only place in the product-variants feature that talks to the database.
  *
@@ -252,6 +262,68 @@ export class ProductVariantsRepository {
           costEffectiveAt: effectiveAt,
         },
       });
+    });
+  }
+
+  /**
+   * Applies one purchase cost to many variants of the same product in a single
+   * transaction. Each variant's cost history ledger is updated independently,
+   * so historical `OrderItem.unitCostSnapshot` rows are never touched and each
+   * variant keeps its own audit trail. Variants whose cost is unchanged are
+   * skipped without writing a new history row.
+   */
+  updateVariantCostsForProduct(
+    data: BulkUpdateVariantCostData,
+  ): Promise<ProductVariant[]> {
+    return this.prisma.$transaction(async (tx) => {
+      const variantIds = data.variants.map((entry) => entry.variantId);
+      const variants = await tx.productVariant.findMany({
+        where: { id: { in: variantIds }, productId: data.productId },
+      });
+
+      const byId = new Map(variants.map((variant) => [variant.id, variant]));
+      const effectiveAt = new Date();
+      const results: ProductVariant[] = [];
+
+      for (const entry of data.variants) {
+        const variant = byId.get(entry.variantId);
+        if (variant === undefined) continue;
+
+        const nextCost = new Prisma.Decimal(entry.costPrice);
+        const unchanged =
+          variant.costPrice !== null &&
+          variant.costPrice.equals(nextCost) &&
+          variant.costCurrency === entry.costCurrency;
+        if (unchanged) {
+          results.push(variant);
+          continue;
+        }
+
+        await tx.variantCostHistory.updateMany({
+          where: { variantId: entry.variantId, effectiveTo: null },
+          data: { effectiveTo: effectiveAt },
+        });
+        await tx.variantCostHistory.create({
+          data: {
+            variantId: entry.variantId,
+            cost: nextCost,
+            currency: entry.costCurrency,
+            effectiveFrom: effectiveAt,
+            createdById: data.changedById,
+          },
+        });
+        const updated = await tx.productVariant.update({
+          where: { id: entry.variantId },
+          data: {
+            costPrice: nextCost,
+            costCurrency: entry.costCurrency,
+            costEffectiveAt: effectiveAt,
+          },
+        });
+        results.push(updated);
+      }
+
+      return results;
     });
   }
 

@@ -37,6 +37,7 @@ import { AdminShippingProvidersController } from './controllers/admin-shipping-p
 import { AdminVariantOptionsController } from './controllers/admin-variant-options.controller.js';
 import { PromotionsModule } from '../promotions/promotions.module.js';
 import { AdminPromotionsController } from './controllers/admin-promotions.controller.js';
+import { FinanceModule } from '../finance/finance.module.js';
 
 /**
  * Every route that requires `ADMIN`, and nothing else.
@@ -109,6 +110,7 @@ import { AdminPromotionsController } from './controllers/admin-promotions.contro
     ShippingProvidersModule,
     LocationsModule,
     PromotionsModule,
+    FinanceModule,
   ],
   controllers: [
     AdminController,

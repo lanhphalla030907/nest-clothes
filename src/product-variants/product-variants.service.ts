@@ -15,6 +15,7 @@ import { AdminProductVariantResponseDto } from './dto/admin-product-variant-resp
 import { ProductVariantResponseDto } from './dto/product-variant-response.dto.js';
 import { UpdateVariantCostDto } from './dto/update-variant-cost.dto.js';
 import { UpdateProductVariantDto } from './dto/update-product-variant.dto.js';
+import { BulkUpdateVariantCostDto } from './dto/bulk-update-variant-cost.dto.js';
 import {
   ProductVariantsRepository,
   type CreateProductVariantData,
@@ -160,6 +161,28 @@ export class ProductVariantsService {
       throw new NotFoundException(`Product variant ${variantId} does not exist`);
     }
     return AdminProductVariantResponseDto.fromEntity(variant);
+  }
+
+  async updateVariantCosts(
+    productId: string,
+    dto: BulkUpdateVariantCostDto,
+    changedById: string,
+  ): Promise<AdminProductVariantResponseDto[]> {
+    await this.requireProduct(productId);
+
+    const variants = await this.productVariantsRepository.updateVariantCostsForProduct(
+      {
+        productId,
+        changedById,
+        variants: dto.variants.map((entry) => ({
+          variantId: entry.variantId,
+          costPrice: normalizeMoney(entry.costPrice),
+          costCurrency: entry.costCurrency.trim().toUpperCase(),
+        })),
+      },
+    );
+
+    return variants.map(AdminProductVariantResponseDto.fromEntity);
   }
 
   async update(

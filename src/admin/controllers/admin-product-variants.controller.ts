@@ -21,6 +21,7 @@ import { AdminProductVariantResponseDto } from '../../product-variants/dto/admin
 import { CreateProductVariantDto } from '../../product-variants/dto/create-product-variant.dto.js';
 import { UpdateProductVariantDto } from '../../product-variants/dto/update-product-variant.dto.js';
 import { UpdateVariantCostDto } from '../../product-variants/dto/update-variant-cost.dto.js';
+import { BulkUpdateVariantCostDto } from '../../product-variants/dto/bulk-update-variant-cost.dto.js';
 import { ProductVariantsService } from '../../product-variants/product-variants.service.js';
 
 /**
@@ -89,6 +90,20 @@ export class AdminProductVariantsController {
     @CurrentUser() user: AuthenticatedUser,
   ): Promise<AdminProductVariantResponseDto> {
     return this.productVariantsService.updateCost(productId, variantId, dto, user.id);
+  }
+
+  /**
+   * Applies one purchase cost to many variants of this product in a single
+   * request. Each variant's cost history ledger is updated independently, so
+   * historical `OrderItem.unitCostSnapshot` rows are never touched.
+   */
+  @Patch('cost/bulk')
+  updateVariantCosts(
+    @Param('productId', ParseUUIDPipe) productId: string,
+    @Body() dto: BulkUpdateVariantCostDto,
+    @CurrentUser() user: AuthenticatedUser,
+  ): Promise<AdminProductVariantResponseDto[]> {
+    return this.productVariantsService.updateVariantCosts(productId, dto, user.id);
   }
 
   /**
