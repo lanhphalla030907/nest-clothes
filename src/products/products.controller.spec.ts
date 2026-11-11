@@ -32,6 +32,8 @@ describe('ProductsController', () => {
   let service: {
     create: ReturnType<typeof vi.fn>;
     findAll: ReturnType<typeof vi.fn>;
+    findPublicProducts: ReturnType<typeof vi.fn>;
+    getFilterOptions: ReturnType<typeof vi.fn>;
     findOne: ReturnType<typeof vi.fn>;
     update: ReturnType<typeof vi.fn>;
     remove: ReturnType<typeof vi.fn>;
@@ -41,6 +43,8 @@ describe('ProductsController', () => {
     service = {
       create: vi.fn(),
       findAll: vi.fn(),
+      findPublicProducts: vi.fn(),
+      getFilterOptions: vi.fn(),
       findOne: vi.fn(),
       update: vi.fn(),
       remove: vi.fn(),
@@ -72,8 +76,23 @@ describe('ProductsController', () => {
   });
 
   it('GET → 200', () => {
-    service.findAll.mockReturnValue([buildResponse()]);
-    expect(controller.findAll()).toHaveLength(1);
+    service.findPublicProducts.mockReturnValue({
+      data: [buildResponse()],
+      total: 1,
+      page: 1,
+      limit: 12,
+      totalPages: 1,
+      filterOptions: { categories: [], priceRange: { min: 0, max: 100 }, sizes: [], colors: [] },
+    });
+    const result = controller.findAll({});
+    expect(result.data).toHaveLength(1);
+    expect(result.total).toBe(1);
+  });
+
+  it('GET /filters → 200', () => {
+    const filterOptions = { categories: [], priceRange: { min: 0, max: 100 }, sizes: [], colors: [] };
+    service.getFilterOptions.mockReturnValue(filterOptions);
+    expect(controller.getFilterOptions()).toBe(filterOptions);
   });
 
   it('GET /:id', () => {
@@ -99,6 +118,8 @@ describe('ProductsController (HTTP)', () => {
   let service: {
     create: ReturnType<typeof vi.fn>;
     findAll: ReturnType<typeof vi.fn>;
+    findPublicProducts: ReturnType<typeof vi.fn>;
+    getFilterOptions: ReturnType<typeof vi.fn>;
     findOne: ReturnType<typeof vi.fn>;
     update: ReturnType<typeof vi.fn>;
     remove: ReturnType<typeof vi.fn>;
@@ -108,6 +129,8 @@ describe('ProductsController (HTTP)', () => {
     service = {
       create: vi.fn(),
       findAll: vi.fn(),
+      findPublicProducts: vi.fn(),
+      getFilterOptions: vi.fn(),
       findOne: vi.fn(),
       update: vi.fn(),
       remove: vi.fn(),
@@ -145,8 +168,36 @@ describe('ProductsController (HTTP)', () => {
   });
 
   it('GET /products 200', async () => {
-    service.findAll.mockResolvedValue([]);
+    service.findPublicProducts.mockResolvedValue({
+      data: [],
+      total: 0,
+      page: 1,
+      limit: 12,
+      totalPages: 0,
+      filterOptions: { categories: [], priceRange: { min: 0, max: 0 }, sizes: [], colors: [] },
+    });
     const res = await fetch(`${await app.getUrl()}/products`);
+    expect(res.status).toBe(HttpStatus.OK);
+  });
+
+  it('GET /products with invalid minPrice > maxPrice returns 400', async () => {
+    const res = await fetch(`${await app.getUrl()}/products?minPrice=50&maxPrice=20`);
+    expect(res.status).toBe(HttpStatus.BAD_REQUEST);
+  });
+
+  it('GET /products with invalid sortBy returns 400', async () => {
+    const res = await fetch(`${await app.getUrl()}/products?sortBy=invalid_sort`);
+    expect(res.status).toBe(HttpStatus.BAD_REQUEST);
+  });
+
+  it('GET /products/filters 200', async () => {
+    service.getFilterOptions.mockResolvedValue({
+      categories: [],
+      priceRange: { min: 10, max: 200 },
+      sizes: ['S', 'M'],
+      colors: ['Black'],
+    });
+    const res = await fetch(`${await app.getUrl()}/products/filters`);
     expect(res.status).toBe(HttpStatus.OK);
   });
 

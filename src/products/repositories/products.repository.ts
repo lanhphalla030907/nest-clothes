@@ -1,6 +1,8 @@
 import { Injectable } from '@nestjs/common';
 import { Prisma, type Product } from '../../generated/prisma/client.js';
 import { PrismaService } from '../../prisma/prisma.service.js';
+import { PublicProductQueryDto } from '../dto/public-product-query.dto.js';
+import { ProductFilterOptionsDto } from '../dto/public-product-list-response.dto.js';
 
 /**
  * The exact columns `ProductsRepository.create` is allowed to write.
@@ -230,4 +232,312 @@ export class ProductsRepository {
   delete(id: string): Promise<Product> {
     return this.prisma.product.delete({ where: { id } });
   }
+
+  async findPublicProducts(query: PublicProductQueryDto = {}): Promise<{
+    products: Product[];
+    total: number;
+    page: number;
+    limit: number;
+    totalPages: number;
+    filterOptions: ProductFilterOptionsDto;
+  }> {
+    const page = query.page && query.page > 0 ? query.page : 1;
+    const limit = query.limit && query.limit > 0 ? Math.min(query.limit, 100) : 12;
+    const offset = (page - 1) * limit;
+
+    const conditions: Prisma.Sql[] = [
+      Prisma.sql`p."status" = 'ACTIVE'`,
+      Prisma.sql`p."is_active" = true`,
+      Prisma.sql`c."is_active" = true`,
+    ];
+
+    if (query.category) {
+      conditions.push(
+        Prisma.sql`(c."slug" = ${query.category} OR c."id"::text = ${query.category})`,
+      );
+    }
+
+    if (query.search) {
+      const pattern = `%${query.search}%`;
+      conditions.push(
+        Prisma.sql`(p."name" ILIKE ${pattern} OR COALESCE(p."description", '') ILIKE ${pattern} OR p."slug" ILIKE ${pattern})`,
+      );
+    }
+
+    if (query.minPrice !== undefined) {
+      conditions.push(Prisma.sql`pep.effective_price >= ${query.minPrice}`);
+    }
+
+    if (query.maxPrice !== undefined) {
+      conditions.push(Prisma.sql`pep.effective_price <= ${query.maxPrice}`);
+    }
+
+    const hasVariantFilter = Boolean(query.size || query.color || query.inStock !== undefined);
+
+    if (hasVariantFilter) {
+      if (!query.size && !query.color && query.inStock === false) {
+        conditions.push(
+          Prisma.sql`NOT EXISTS (
+            SELECT 1 FROM "product_variants" pv
+            JOIN "inventory" inv ON inv."variant_id" = pv."id"
+            WHERE pv."product_id" = p."id"
+              AND pv."is_active" = true
+              AND (inv."quantity" - inv."reserved_quantity") > 0
+          )`,
+        );
+      } else {
+        const variantSubConditions: Prisma.Sql[] = [
+          Prisma.sql`pv."product_id" = p."id"`,
+          Prisma.sql`pv."is_active" = true`,
+        ];
+
+        if (query.size) {
+          variantSubConditions.push(
+            Prisma.sql`EXISTS (
+              SELECT 1 FROM "variant_options" vo
+              WHERE vo."variant_id" = pv."id"
+                AND LOWER(vo."option_name") = 'size'
+                AND LOWER(vo."option_value") = LOWER(${query.size})
+            )`,
+          );
+        }
+
+        if (query.color) {
+          variantSubConditions.push(
+            Prisma.sql`EXISTS (
+              SELECT 1 FROM "variant_options" vo
+              WHERE vo."variant_id" = pv."id"
+                AND LOWER(vo."option_name") IN ('color', 'colour')
+                AND LOWER(vo."option_value") = LOWER(${query.color})
+            )`,
+          );
+        }
+
+        if (query.inStock !== undefined) {
+          if (query.inStock === true) {
+            variantSubConditions.push(
+              Prisma.sql`EXISTS (
+                SELECT 1 FROM "inventory" inv
+                WHERE inv."variant_id" = pv."id"
+                  AND (inv."quantity" - inv."reserved_quantity") > 0
+              )`,
+            );
+          } else {
+            variantSubConditions.push(
+              Prisma.sql`(
+                NOT EXISTS (SELECT 1 FROM "inventory" inv WHERE inv."variant_id" = pv."id")
+                OR EXISTS (
+                  SELECT 1 FROM "inventory" inv
+                  WHERE inv."variant_id" = pv."id"
+                    AND (inv."quantity" - inv."reserved_quantity") <= 0
+                )
+              )`,
+            );
+          }
+        }
+
+        conditions.push(
+          Prisma.sql`EXISTS (
+            SELECT 1 FROM "product_variants" pv
+            WHERE ${Prisma.join(variantSubConditions, ' AND ')}
+          )`,
+        );
+      }
+    }
+
+    let orderByClause: Prisma.Sql;
+    switch (query.sortBy) {
+      case 'price_asc':
+        orderByClause = Prisma.sql`pep.effective_price ASC, p."id" ASC`;
+        break;
+      case 'price_desc':
+        orderByClause = Prisma.sql`pep.effective_price DESC, p."id" ASC`;
+        break;
+      case 'best_selling':
+        orderByClause = Prisma.sql`COALESCE(sales.units_sold, 0) DESC, p."created_at" DESC, p."id" ASC`;
+        break;
+      case 'newest':
+      default:
+        orderByClause = Prisma.sql`p."created_at" DESC, p."id" ASC`;
+        break;
+    }
+
+    const whereSql = Prisma.join(conditions, ' AND ');
+
+    const countRows = await this.prisma.$queryRaw<Array<{ count: number | bigint }>>`
+      WITH product_effective_prices AS (
+        SELECT
+          p."id" AS product_id,
+          COALESCE(
+            (
+              SELECT MIN(pv."price")
+              FROM "product_variants" pv
+              JOIN "inventory" inv ON inv."variant_id" = pv."id"
+              WHERE pv."product_id" = p."id"
+                AND pv."is_active" = true
+                AND (inv."quantity" - inv."reserved_quantity") > 0
+            ),
+            p."base_price"
+          ) AS effective_price
+        FROM "products" p
+        WHERE p."status" = 'ACTIVE' AND p."is_active" = true
+      )
+      SELECT COUNT(DISTINCT p."id")::int AS count
+      FROM "products" p
+      JOIN "categories" c ON c."id" = p."category_id"
+      JOIN product_effective_prices pep ON pep.product_id = p."id"
+      WHERE ${whereSql}
+    `;
+
+    const total = Number(countRows[0]?.count ?? 0);
+    const totalPages = limit > 0 ? Math.ceil(total / limit) : 0;
+
+    const filterOptionsPromise = this.getFilterOptions();
+
+    if (total === 0) {
+      const filterOptions = await filterOptionsPromise;
+      return {
+        products: [],
+        total: 0,
+        page,
+        limit,
+        totalPages: 0,
+        filterOptions,
+      };
+    }
+
+    const idRows = await this.prisma.$queryRaw<Array<{ id: string }>>`
+      WITH product_effective_prices AS (
+        SELECT
+          p."id" AS product_id,
+          COALESCE(
+            (
+              SELECT MIN(pv."price")
+              FROM "product_variants" pv
+              JOIN "inventory" inv ON inv."variant_id" = pv."id"
+              WHERE pv."product_id" = p."id"
+                AND pv."is_active" = true
+                AND (inv."quantity" - inv."reserved_quantity") > 0
+            ),
+            p."base_price"
+          ) AS effective_price
+        FROM "products" p
+        WHERE p."status" = 'ACTIVE' AND p."is_active" = true
+      ),
+      sales AS (
+        SELECT pv."product_id", SUM(oi."quantity")::int AS units_sold
+        FROM "order_items" oi
+        JOIN "orders" o ON o."id" = oi."order_id"
+        JOIN "product_variants" pv ON pv."id" = oi."variant_id"
+        WHERE o."status" = 'DELIVERED'
+        GROUP BY pv."product_id"
+      )
+      SELECT p."id"
+      FROM "products" p
+      JOIN "categories" c ON c."id" = p."category_id"
+      JOIN product_effective_prices pep ON pep.product_id = p."id"
+      LEFT JOIN sales ON sales.product_id = p."id"
+      WHERE ${whereSql}
+      ORDER BY ${orderByClause}
+      LIMIT ${limit} OFFSET ${offset}
+    `;
+
+    const ids = idRows.map((r) => r.id);
+    const products = await this.prisma.product.findMany({
+      where: { id: { in: ids } },
+    });
+    const productMap = new Map(products.map((p) => [p.id, p]));
+    const sortedProducts = ids.map((id) => productMap.get(id)).filter((p): p is Product => Boolean(p));
+
+    const filterOptions = await filterOptionsPromise;
+
+    return {
+      products: sortedProducts,
+      total,
+      page,
+      limit,
+      totalPages,
+      filterOptions,
+    };
+  }
+
+  async getFilterOptions(): Promise<ProductFilterOptionsDto> {
+    const [categories, priceRange, sizes, colors] = await Promise.all([
+      this.prisma.$queryRaw<Array<{ id: string; name: string; slug: string; count: number | bigint }>>`
+        SELECT c."id", c."name", c."slug", COUNT(p."id")::int AS count
+        FROM "categories" c
+        JOIN "products" p ON p."category_id" = c."id"
+        WHERE c."is_active" = true
+          AND p."status" = 'ACTIVE'
+          AND p."is_active" = true
+        GROUP BY c."id", c."name", c."slug"
+        HAVING COUNT(p."id") > 0
+        ORDER BY c."name" ASC
+      `,
+      this.prisma.$queryRaw<Array<{ min_price: number | null; max_price: number | null }>>`
+        WITH product_effective_prices AS (
+          SELECT
+            p."id",
+            COALESCE(
+              (
+                SELECT MIN(pv."price")
+                FROM "product_variants" pv
+                JOIN "inventory" inv ON inv."variant_id" = pv."id"
+                WHERE pv."product_id" = p."id"
+                  AND pv."is_active" = true
+                  AND (inv."quantity" - inv."reserved_quantity") > 0
+              ),
+              p."base_price"
+            ) AS effective_price
+          FROM "products" p
+          JOIN "categories" c ON c."id" = p."category_id" AND c."is_active" = true
+          WHERE p."status" = 'ACTIVE' AND p."is_active" = true
+        )
+        SELECT
+          COALESCE(MIN(effective_price), 0)::float AS min_price,
+          COALESCE(MAX(effective_price), 0)::float AS max_price
+        FROM product_effective_prices
+      `,
+      this.prisma.$queryRaw<Array<{ size: string }>>`
+        SELECT DISTINCT vo."option_value" AS size
+        FROM "variant_options" vo
+        JOIN "product_variants" pv ON pv."id" = vo."variant_id"
+        JOIN "products" p ON p."id" = pv."product_id"
+        JOIN "categories" c ON c."id" = p."category_id" AND c."is_active" = true
+        WHERE LOWER(vo."option_name") = 'size'
+          AND pv."is_active" = true
+          AND p."status" = 'ACTIVE'
+          AND p."is_active" = true
+        ORDER BY vo."option_value" ASC
+      `,
+      this.prisma.$queryRaw<Array<{ color: string }>>`
+        SELECT DISTINCT vo."option_value" AS color
+        FROM "variant_options" vo
+        JOIN "product_variants" pv ON pv."id" = vo."variant_id"
+        JOIN "products" p ON p."id" = pv."product_id"
+        JOIN "categories" c ON c."id" = p."category_id" AND c."is_active" = true
+        WHERE LOWER(vo."option_name") IN ('color', 'colour')
+          AND pv."is_active" = true
+          AND p."status" = 'ACTIVE'
+          AND p."is_active" = true
+        ORDER BY vo."option_value" ASC
+      `,
+    ]);
+
+    return {
+      categories: categories.map((c) => ({
+        id: c.id,
+        name: c.name,
+        slug: c.slug,
+        count: Number(c.count),
+      })),
+      priceRange: {
+        min: Number(priceRange[0]?.min_price ?? 0),
+        max: Number(priceRange[0]?.max_price ?? 0),
+      },
+      sizes: sizes.map((s) => s.size).filter(Boolean),
+      colors: colors.map((c) => c.color).filter(Boolean),
+    };
+  }
 }
+

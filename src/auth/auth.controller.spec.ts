@@ -46,10 +46,22 @@ const buildLoginResponse = (): LoginResponseDto =>
 
 describe('AuthController', () => {
   let controller: AuthController;
-  let authService: { login: ReturnType<typeof vi.fn>; currentUser: ReturnType<typeof vi.fn> };
+  let authService: {
+    login: ReturnType<typeof vi.fn>;
+    currentUser: ReturnType<typeof vi.fn>;
+    googleLogin: ReturnType<typeof vi.fn>;
+    linkGoogle: ReturnType<typeof vi.fn>;
+    getLinkedIdentities: ReturnType<typeof vi.fn>;
+  };
 
   beforeEach(async () => {
-    authService = { login: vi.fn(), currentUser: vi.fn() };
+    authService = {
+      login: vi.fn(),
+      currentUser: vi.fn(),
+      googleLogin: vi.fn(),
+      linkGoogle: vi.fn(),
+      getLinkedIdentities: vi.fn(),
+    };
     const identities = new TestIdentityRegistry();
 
     const module: TestingModule = await Test.createTestingModule({
@@ -320,6 +332,6 @@ describe('AuthController (HTTP)', () => {
       .filter((name) => name !== 'constructor')
       .map((name) => Reflect.getMetadata('path', prototype[name]) as string);
 
-    expect(paths).toEqual(['login', 'me']);
+    expect(paths).toEqual(['login', 'google', 'google/link', 'identities', 'me']);
   });
 });

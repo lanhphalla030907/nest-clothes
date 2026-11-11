@@ -63,10 +63,56 @@ model User {
   codCollections      CodCollection[]
   /// Cost changes are internal financial audit records authored by this user.
   variantCostChanges  VariantCostHistory[] @relation("VariantCostChangedBy")
+  /// Linked external federated identities (e.g. Google OAuth/OIDC).
+  identities          UserIdentity[]
+  feedback            Feedback[]
 
   @@index([status])
   @@index([role])
   @@map("users")
+}
+
+/// Feedback about the store and its services, owned by one customer.
+///
+/// Feedback is general: it is not tied to a product or an order, carries no
+/// star rating, and has no approval or reply workflow beyond publishing and
+/// unpublishing. Only `PUBLISHED` rows reach the public website.
+model Feedback {
+  id          String   @id @default(uuid()) @db.Uuid
+  customerId  String   @map("customer_id") @db.Uuid
+  title       String   @db.VarChar(200)
+  message     String   @db.Text
+  status      String   @db.VarChar(20) @default("UNPUBLISHED") @map("status")
+  createdAt   DateTime @default(now()) @map("created_at") @db.Timestamptz
+  updatedAt   DateTime @updatedAt @map("updated_at") @db.Timestamptz
+
+  customer User @relation(fields: [customerId], references: [id], onDelete: Cascade, onUpdate: Cascade)
+
+  // Serves "this customer's feedback, newest first".
+  @@index([customerId, createdAt(sort: Desc), id(sort: Desc)])
+  // Serves the public listing "published feedback, newest first" and the
+  // admin status filter that shares that ordering.
+  @@index([status, createdAt(sort: Desc), id(sort: Desc)])
+  @@map("feedbacks")
+}
+
+/// A federated identity linked to a user account (e.g. Google OAuth/OIDC).
+///
+/// Ties an external provider and subject identifier (`sub`) to exactly one user account.
+/// The `(provider, providerSubject)` unique constraint guarantees no identity is linked to
+/// multiple users and prevents account takeover races.
+model UserIdentity {
+  id              String   @id @default(uuid()) @db.Uuid
+  userId          String   @map("user_id") @db.Uuid
+  provider        String   @db.VarChar(50)
+  providerSubject String   @map("provider_subject") @db.VarChar(255)
+  createdAt       DateTime @default(now()) @map("created_at") @db.Timestamptz
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade, onUpdate: Cascade)
+
+  @@unique([provider, providerSubject])
+  @@index([userId])
+  @@map("user_identities")
 }
 
 /// A catalog category. Categories form a tree through the `parent`/`children`

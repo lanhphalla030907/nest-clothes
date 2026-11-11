@@ -18,6 +18,11 @@ import {
 } from './constants/product-status.constants.js';
 import { CreateProductDto } from './dto/create-product.dto.js';
 import { ProductResponseDto } from './dto/product-response.dto.js';
+import { PublicProductQueryDto } from './dto/public-product-query.dto.js';
+import {
+  PublicProductListResponseDto,
+  type ProductFilterOptionsDto,
+} from './dto/public-product-list-response.dto.js';
 import { UpdateProductDto } from './dto/update-product.dto.js';
 import {
   ProductsRepository,
@@ -133,6 +138,24 @@ export class ProductsService {
     const products = await this.productsRepository.findAll();
 
     return products.map((product) => ProductResponseDto.fromEntity(product));
+  }
+
+  async findPublicProducts(
+    query: PublicProductQueryDto = {},
+  ): Promise<PublicProductListResponseDto> {
+    const result = await this.productsRepository.findPublicProducts(query);
+    const dto = new PublicProductListResponseDto();
+    dto.data = result.products.map((product) => ProductResponseDto.fromEntity(product));
+    dto.total = result.total;
+    dto.page = result.page;
+    dto.limit = result.limit;
+    dto.totalPages = result.totalPages;
+    dto.filterOptions = result.filterOptions;
+    return dto;
+  }
+
+  async getFilterOptions(): Promise<ProductFilterOptionsDto> {
+    return this.productsRepository.getFilterOptions();
   }
 
   /**

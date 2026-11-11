@@ -248,6 +248,8 @@ export type UserWhereInput = {
   assignmentsMade?: Prisma.DeliveryAssignmentListRelationFilter
   codCollections?: Prisma.CodCollectionListRelationFilter
   variantCostChanges?: Prisma.VariantCostHistoryListRelationFilter
+  identities?: Prisma.UserIdentityListRelationFilter
+  feedback?: Prisma.FeedbackListRelationFilter
 }
 
 export type UserOrderByWithRelationInput = {
@@ -273,6 +275,8 @@ export type UserOrderByWithRelationInput = {
   assignmentsMade?: Prisma.DeliveryAssignmentOrderByRelationAggregateInput
   codCollections?: Prisma.CodCollectionOrderByRelationAggregateInput
   variantCostChanges?: Prisma.VariantCostHistoryOrderByRelationAggregateInput
+  identities?: Prisma.UserIdentityOrderByRelationAggregateInput
+  feedback?: Prisma.FeedbackOrderByRelationAggregateInput
 }
 
 export type UserWhereUniqueInput = Prisma.AtLeast<{
@@ -301,6 +305,8 @@ export type UserWhereUniqueInput = Prisma.AtLeast<{
   assignmentsMade?: Prisma.DeliveryAssignmentListRelationFilter
   codCollections?: Prisma.CodCollectionListRelationFilter
   variantCostChanges?: Prisma.VariantCostHistoryListRelationFilter
+  identities?: Prisma.UserIdentityListRelationFilter
+  feedback?: Prisma.FeedbackListRelationFilter
 }, "id" | "email">
 
 export type UserOrderByWithAggregationInput = {
@@ -362,6 +368,8 @@ export type UserCreateInput = {
   assignmentsMade?: Prisma.DeliveryAssignmentCreateNestedManyWithoutAssignedByInput
   codCollections?: Prisma.CodCollectionCreateNestedManyWithoutCollectedByInput
   variantCostChanges?: Prisma.VariantCostHistoryCreateNestedManyWithoutCreatedByInput
+  identities?: Prisma.UserIdentityCreateNestedManyWithoutUserInput
+  feedback?: Prisma.FeedbackCreateNestedManyWithoutCustomerInput
 }
 
 export type UserUncheckedCreateInput = {
@@ -387,6 +395,8 @@ export type UserUncheckedCreateInput = {
   assignmentsMade?: Prisma.DeliveryAssignmentUncheckedCreateNestedManyWithoutAssignedByInput
   codCollections?: Prisma.CodCollectionUncheckedCreateNestedManyWithoutCollectedByInput
   variantCostChanges?: Prisma.VariantCostHistoryUncheckedCreateNestedManyWithoutCreatedByInput
+  identities?: Prisma.UserIdentityUncheckedCreateNestedManyWithoutUserInput
+  feedback?: Prisma.FeedbackUncheckedCreateNestedManyWithoutCustomerInput
 }
 
 export type UserUpdateInput = {
@@ -412,6 +422,8 @@ export type UserUpdateInput = {
   assignmentsMade?: Prisma.DeliveryAssignmentUpdateManyWithoutAssignedByNestedInput
   codCollections?: Prisma.CodCollectionUpdateManyWithoutCollectedByNestedInput
   variantCostChanges?: Prisma.VariantCostHistoryUpdateManyWithoutCreatedByNestedInput
+  identities?: Prisma.UserIdentityUpdateManyWithoutUserNestedInput
+  feedback?: Prisma.FeedbackUpdateManyWithoutCustomerNestedInput
 }
 
 export type UserUncheckedUpdateInput = {
@@ -437,6 +449,8 @@ export type UserUncheckedUpdateInput = {
   assignmentsMade?: Prisma.DeliveryAssignmentUncheckedUpdateManyWithoutAssignedByNestedInput
   codCollections?: Prisma.CodCollectionUncheckedUpdateManyWithoutCollectedByNestedInput
   variantCostChanges?: Prisma.VariantCostHistoryUncheckedUpdateManyWithoutCreatedByNestedInput
+  identities?: Prisma.UserIdentityUncheckedUpdateManyWithoutUserNestedInput
+  feedback?: Prisma.FeedbackUncheckedUpdateManyWithoutCustomerNestedInput
 }
 
 export type UserCreateManyInput = {
@@ -529,14 +543,14 @@ export type UserMinOrderByAggregateInput = {
   updatedAt?: Prisma.SortOrder
 }
 
-export type UserNullableScalarRelationFilter = {
-  is?: Prisma.UserWhereInput | null
-  isNot?: Prisma.UserWhereInput | null
-}
-
 export type UserScalarRelationFilter = {
   is?: Prisma.UserWhereInput
   isNot?: Prisma.UserWhereInput
+}
+
+export type UserNullableScalarRelationFilter = {
+  is?: Prisma.UserWhereInput | null
+  isNot?: Prisma.UserWhereInput | null
 }
 
 export type StringFieldUpdateOperationsInput = {
@@ -557,6 +571,34 @@ export type NullableDateTimeFieldUpdateOperationsInput = {
 
 export type DateTimeFieldUpdateOperationsInput = {
   set?: Date | string
+}
+
+export type UserCreateNestedOneWithoutFeedbackInput = {
+  create?: Prisma.XOR<Prisma.UserCreateWithoutFeedbackInput, Prisma.UserUncheckedCreateWithoutFeedbackInput>
+  connectOrCreate?: Prisma.UserCreateOrConnectWithoutFeedbackInput
+  connect?: Prisma.UserWhereUniqueInput
+}
+
+export type UserUpdateOneRequiredWithoutFeedbackNestedInput = {
+  create?: Prisma.XOR<Prisma.UserCreateWithoutFeedbackInput, Prisma.UserUncheckedCreateWithoutFeedbackInput>
+  connectOrCreate?: Prisma.UserCreateOrConnectWithoutFeedbackInput
+  upsert?: Prisma.UserUpsertWithoutFeedbackInput
+  connect?: Prisma.UserWhereUniqueInput
+  update?: Prisma.XOR<Prisma.XOR<Prisma.UserUpdateToOneWithWhereWithoutFeedbackInput, Prisma.UserUpdateWithoutFeedbackInput>, Prisma.UserUncheckedUpdateWithoutFeedbackInput>
+}
+
+export type UserCreateNestedOneWithoutIdentitiesInput = {
+  create?: Prisma.XOR<Prisma.UserCreateWithoutIdentitiesInput, Prisma.UserUncheckedCreateWithoutIdentitiesInput>
+  connectOrCreate?: Prisma.UserCreateOrConnectWithoutIdentitiesInput
+  connect?: Prisma.UserWhereUniqueInput
+}
+
+export type UserUpdateOneRequiredWithoutIdentitiesNestedInput = {
+  create?: Prisma.XOR<Prisma.UserCreateWithoutIdentitiesInput, Prisma.UserUncheckedCreateWithoutIdentitiesInput>
+  connectOrCreate?: Prisma.UserCreateOrConnectWithoutIdentitiesInput
+  upsert?: Prisma.UserUpsertWithoutIdentitiesInput
+  connect?: Prisma.UserWhereUniqueInput
+  update?: Prisma.XOR<Prisma.XOR<Prisma.UserUpdateToOneWithWhereWithoutIdentitiesInput, Prisma.UserUpdateWithoutIdentitiesInput>, Prisma.UserUncheckedUpdateWithoutIdentitiesInput>
 }
 
 export type UserCreateNestedOneWithoutVariantCostChangesInput = {
@@ -701,6 +743,246 @@ export type UserUpdateOneRequiredWithoutPromotionUsagesNestedInput = {
   update?: Prisma.XOR<Prisma.XOR<Prisma.UserUpdateToOneWithWhereWithoutPromotionUsagesInput, Prisma.UserUpdateWithoutPromotionUsagesInput>, Prisma.UserUncheckedUpdateWithoutPromotionUsagesInput>
 }
 
+export type UserCreateWithoutFeedbackInput = {
+  id?: string
+  firstName: string
+  lastName: string
+  email: string
+  passwordHash: string
+  phone?: string | null
+  status: string
+  role?: $Enums.Role
+  emailVerifiedAt?: Date | string | null
+  lastLoginAt?: Date | string | null
+  createdAt?: Date | string
+  updatedAt?: Date | string
+  addresses?: Prisma.AddressCreateNestedManyWithoutUserInput
+  cart?: Prisma.CartCreateNestedOneWithoutUserInput
+  wishlist?: Prisma.WishlistCreateNestedOneWithoutUserInput
+  orders?: Prisma.OrderCreateNestedManyWithoutUserInput
+  checkoutQuotes?: Prisma.CheckoutQuoteCreateNestedManyWithoutUserInput
+  promotionUsages?: Prisma.PromotionUsageCreateNestedManyWithoutUserInput
+  deliveryAssignments?: Prisma.DeliveryAssignmentCreateNestedManyWithoutDeliveryStaffInput
+  assignmentsMade?: Prisma.DeliveryAssignmentCreateNestedManyWithoutAssignedByInput
+  codCollections?: Prisma.CodCollectionCreateNestedManyWithoutCollectedByInput
+  variantCostChanges?: Prisma.VariantCostHistoryCreateNestedManyWithoutCreatedByInput
+  identities?: Prisma.UserIdentityCreateNestedManyWithoutUserInput
+}
+
+export type UserUncheckedCreateWithoutFeedbackInput = {
+  id?: string
+  firstName: string
+  lastName: string
+  email: string
+  passwordHash: string
+  phone?: string | null
+  status: string
+  role?: $Enums.Role
+  emailVerifiedAt?: Date | string | null
+  lastLoginAt?: Date | string | null
+  createdAt?: Date | string
+  updatedAt?: Date | string
+  addresses?: Prisma.AddressUncheckedCreateNestedManyWithoutUserInput
+  cart?: Prisma.CartUncheckedCreateNestedOneWithoutUserInput
+  wishlist?: Prisma.WishlistUncheckedCreateNestedOneWithoutUserInput
+  orders?: Prisma.OrderUncheckedCreateNestedManyWithoutUserInput
+  checkoutQuotes?: Prisma.CheckoutQuoteUncheckedCreateNestedManyWithoutUserInput
+  promotionUsages?: Prisma.PromotionUsageUncheckedCreateNestedManyWithoutUserInput
+  deliveryAssignments?: Prisma.DeliveryAssignmentUncheckedCreateNestedManyWithoutDeliveryStaffInput
+  assignmentsMade?: Prisma.DeliveryAssignmentUncheckedCreateNestedManyWithoutAssignedByInput
+  codCollections?: Prisma.CodCollectionUncheckedCreateNestedManyWithoutCollectedByInput
+  variantCostChanges?: Prisma.VariantCostHistoryUncheckedCreateNestedManyWithoutCreatedByInput
+  identities?: Prisma.UserIdentityUncheckedCreateNestedManyWithoutUserInput
+}
+
+export type UserCreateOrConnectWithoutFeedbackInput = {
+  where: Prisma.UserWhereUniqueInput
+  create: Prisma.XOR<Prisma.UserCreateWithoutFeedbackInput, Prisma.UserUncheckedCreateWithoutFeedbackInput>
+}
+
+export type UserUpsertWithoutFeedbackInput = {
+  update: Prisma.XOR<Prisma.UserUpdateWithoutFeedbackInput, Prisma.UserUncheckedUpdateWithoutFeedbackInput>
+  create: Prisma.XOR<Prisma.UserCreateWithoutFeedbackInput, Prisma.UserUncheckedCreateWithoutFeedbackInput>
+  where?: Prisma.UserWhereInput
+}
+
+export type UserUpdateToOneWithWhereWithoutFeedbackInput = {
+  where?: Prisma.UserWhereInput
+  data: Prisma.XOR<Prisma.UserUpdateWithoutFeedbackInput, Prisma.UserUncheckedUpdateWithoutFeedbackInput>
+}
+
+export type UserUpdateWithoutFeedbackInput = {
+  id?: Prisma.StringFieldUpdateOperationsInput | string
+  firstName?: Prisma.StringFieldUpdateOperationsInput | string
+  lastName?: Prisma.StringFieldUpdateOperationsInput | string
+  email?: Prisma.StringFieldUpdateOperationsInput | string
+  passwordHash?: Prisma.StringFieldUpdateOperationsInput | string
+  phone?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  status?: Prisma.StringFieldUpdateOperationsInput | string
+  role?: Prisma.EnumRoleFieldUpdateOperationsInput | $Enums.Role
+  emailVerifiedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  lastLoginAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  addresses?: Prisma.AddressUpdateManyWithoutUserNestedInput
+  cart?: Prisma.CartUpdateOneWithoutUserNestedInput
+  wishlist?: Prisma.WishlistUpdateOneWithoutUserNestedInput
+  orders?: Prisma.OrderUpdateManyWithoutUserNestedInput
+  checkoutQuotes?: Prisma.CheckoutQuoteUpdateManyWithoutUserNestedInput
+  promotionUsages?: Prisma.PromotionUsageUpdateManyWithoutUserNestedInput
+  deliveryAssignments?: Prisma.DeliveryAssignmentUpdateManyWithoutDeliveryStaffNestedInput
+  assignmentsMade?: Prisma.DeliveryAssignmentUpdateManyWithoutAssignedByNestedInput
+  codCollections?: Prisma.CodCollectionUpdateManyWithoutCollectedByNestedInput
+  variantCostChanges?: Prisma.VariantCostHistoryUpdateManyWithoutCreatedByNestedInput
+  identities?: Prisma.UserIdentityUpdateManyWithoutUserNestedInput
+}
+
+export type UserUncheckedUpdateWithoutFeedbackInput = {
+  id?: Prisma.StringFieldUpdateOperationsInput | string
+  firstName?: Prisma.StringFieldUpdateOperationsInput | string
+  lastName?: Prisma.StringFieldUpdateOperationsInput | string
+  email?: Prisma.StringFieldUpdateOperationsInput | string
+  passwordHash?: Prisma.StringFieldUpdateOperationsInput | string
+  phone?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  status?: Prisma.StringFieldUpdateOperationsInput | string
+  role?: Prisma.EnumRoleFieldUpdateOperationsInput | $Enums.Role
+  emailVerifiedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  lastLoginAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  addresses?: Prisma.AddressUncheckedUpdateManyWithoutUserNestedInput
+  cart?: Prisma.CartUncheckedUpdateOneWithoutUserNestedInput
+  wishlist?: Prisma.WishlistUncheckedUpdateOneWithoutUserNestedInput
+  orders?: Prisma.OrderUncheckedUpdateManyWithoutUserNestedInput
+  checkoutQuotes?: Prisma.CheckoutQuoteUncheckedUpdateManyWithoutUserNestedInput
+  promotionUsages?: Prisma.PromotionUsageUncheckedUpdateManyWithoutUserNestedInput
+  deliveryAssignments?: Prisma.DeliveryAssignmentUncheckedUpdateManyWithoutDeliveryStaffNestedInput
+  assignmentsMade?: Prisma.DeliveryAssignmentUncheckedUpdateManyWithoutAssignedByNestedInput
+  codCollections?: Prisma.CodCollectionUncheckedUpdateManyWithoutCollectedByNestedInput
+  variantCostChanges?: Prisma.VariantCostHistoryUncheckedUpdateManyWithoutCreatedByNestedInput
+  identities?: Prisma.UserIdentityUncheckedUpdateManyWithoutUserNestedInput
+}
+
+export type UserCreateWithoutIdentitiesInput = {
+  id?: string
+  firstName: string
+  lastName: string
+  email: string
+  passwordHash: string
+  phone?: string | null
+  status: string
+  role?: $Enums.Role
+  emailVerifiedAt?: Date | string | null
+  lastLoginAt?: Date | string | null
+  createdAt?: Date | string
+  updatedAt?: Date | string
+  addresses?: Prisma.AddressCreateNestedManyWithoutUserInput
+  cart?: Prisma.CartCreateNestedOneWithoutUserInput
+  wishlist?: Prisma.WishlistCreateNestedOneWithoutUserInput
+  orders?: Prisma.OrderCreateNestedManyWithoutUserInput
+  checkoutQuotes?: Prisma.CheckoutQuoteCreateNestedManyWithoutUserInput
+  promotionUsages?: Prisma.PromotionUsageCreateNestedManyWithoutUserInput
+  deliveryAssignments?: Prisma.DeliveryAssignmentCreateNestedManyWithoutDeliveryStaffInput
+  assignmentsMade?: Prisma.DeliveryAssignmentCreateNestedManyWithoutAssignedByInput
+  codCollections?: Prisma.CodCollectionCreateNestedManyWithoutCollectedByInput
+  variantCostChanges?: Prisma.VariantCostHistoryCreateNestedManyWithoutCreatedByInput
+  feedback?: Prisma.FeedbackCreateNestedManyWithoutCustomerInput
+}
+
+export type UserUncheckedCreateWithoutIdentitiesInput = {
+  id?: string
+  firstName: string
+  lastName: string
+  email: string
+  passwordHash: string
+  phone?: string | null
+  status: string
+  role?: $Enums.Role
+  emailVerifiedAt?: Date | string | null
+  lastLoginAt?: Date | string | null
+  createdAt?: Date | string
+  updatedAt?: Date | string
+  addresses?: Prisma.AddressUncheckedCreateNestedManyWithoutUserInput
+  cart?: Prisma.CartUncheckedCreateNestedOneWithoutUserInput
+  wishlist?: Prisma.WishlistUncheckedCreateNestedOneWithoutUserInput
+  orders?: Prisma.OrderUncheckedCreateNestedManyWithoutUserInput
+  checkoutQuotes?: Prisma.CheckoutQuoteUncheckedCreateNestedManyWithoutUserInput
+  promotionUsages?: Prisma.PromotionUsageUncheckedCreateNestedManyWithoutUserInput
+  deliveryAssignments?: Prisma.DeliveryAssignmentUncheckedCreateNestedManyWithoutDeliveryStaffInput
+  assignmentsMade?: Prisma.DeliveryAssignmentUncheckedCreateNestedManyWithoutAssignedByInput
+  codCollections?: Prisma.CodCollectionUncheckedCreateNestedManyWithoutCollectedByInput
+  variantCostChanges?: Prisma.VariantCostHistoryUncheckedCreateNestedManyWithoutCreatedByInput
+  feedback?: Prisma.FeedbackUncheckedCreateNestedManyWithoutCustomerInput
+}
+
+export type UserCreateOrConnectWithoutIdentitiesInput = {
+  where: Prisma.UserWhereUniqueInput
+  create: Prisma.XOR<Prisma.UserCreateWithoutIdentitiesInput, Prisma.UserUncheckedCreateWithoutIdentitiesInput>
+}
+
+export type UserUpsertWithoutIdentitiesInput = {
+  update: Prisma.XOR<Prisma.UserUpdateWithoutIdentitiesInput, Prisma.UserUncheckedUpdateWithoutIdentitiesInput>
+  create: Prisma.XOR<Prisma.UserCreateWithoutIdentitiesInput, Prisma.UserUncheckedCreateWithoutIdentitiesInput>
+  where?: Prisma.UserWhereInput
+}
+
+export type UserUpdateToOneWithWhereWithoutIdentitiesInput = {
+  where?: Prisma.UserWhereInput
+  data: Prisma.XOR<Prisma.UserUpdateWithoutIdentitiesInput, Prisma.UserUncheckedUpdateWithoutIdentitiesInput>
+}
+
+export type UserUpdateWithoutIdentitiesInput = {
+  id?: Prisma.StringFieldUpdateOperationsInput | string
+  firstName?: Prisma.StringFieldUpdateOperationsInput | string
+  lastName?: Prisma.StringFieldUpdateOperationsInput | string
+  email?: Prisma.StringFieldUpdateOperationsInput | string
+  passwordHash?: Prisma.StringFieldUpdateOperationsInput | string
+  phone?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  status?: Prisma.StringFieldUpdateOperationsInput | string
+  role?: Prisma.EnumRoleFieldUpdateOperationsInput | $Enums.Role
+  emailVerifiedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  lastLoginAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  addresses?: Prisma.AddressUpdateManyWithoutUserNestedInput
+  cart?: Prisma.CartUpdateOneWithoutUserNestedInput
+  wishlist?: Prisma.WishlistUpdateOneWithoutUserNestedInput
+  orders?: Prisma.OrderUpdateManyWithoutUserNestedInput
+  checkoutQuotes?: Prisma.CheckoutQuoteUpdateManyWithoutUserNestedInput
+  promotionUsages?: Prisma.PromotionUsageUpdateManyWithoutUserNestedInput
+  deliveryAssignments?: Prisma.DeliveryAssignmentUpdateManyWithoutDeliveryStaffNestedInput
+  assignmentsMade?: Prisma.DeliveryAssignmentUpdateManyWithoutAssignedByNestedInput
+  codCollections?: Prisma.CodCollectionUpdateManyWithoutCollectedByNestedInput
+  variantCostChanges?: Prisma.VariantCostHistoryUpdateManyWithoutCreatedByNestedInput
+  feedback?: Prisma.FeedbackUpdateManyWithoutCustomerNestedInput
+}
+
+export type UserUncheckedUpdateWithoutIdentitiesInput = {
+  id?: Prisma.StringFieldUpdateOperationsInput | string
+  firstName?: Prisma.StringFieldUpdateOperationsInput | string
+  lastName?: Prisma.StringFieldUpdateOperationsInput | string
+  email?: Prisma.StringFieldUpdateOperationsInput | string
+  passwordHash?: Prisma.StringFieldUpdateOperationsInput | string
+  phone?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  status?: Prisma.StringFieldUpdateOperationsInput | string
+  role?: Prisma.EnumRoleFieldUpdateOperationsInput | $Enums.Role
+  emailVerifiedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  lastLoginAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  addresses?: Prisma.AddressUncheckedUpdateManyWithoutUserNestedInput
+  cart?: Prisma.CartUncheckedUpdateOneWithoutUserNestedInput
+  wishlist?: Prisma.WishlistUncheckedUpdateOneWithoutUserNestedInput
+  orders?: Prisma.OrderUncheckedUpdateManyWithoutUserNestedInput
+  checkoutQuotes?: Prisma.CheckoutQuoteUncheckedUpdateManyWithoutUserNestedInput
+  promotionUsages?: Prisma.PromotionUsageUncheckedUpdateManyWithoutUserNestedInput
+  deliveryAssignments?: Prisma.DeliveryAssignmentUncheckedUpdateManyWithoutDeliveryStaffNestedInput
+  assignmentsMade?: Prisma.DeliveryAssignmentUncheckedUpdateManyWithoutAssignedByNestedInput
+  codCollections?: Prisma.CodCollectionUncheckedUpdateManyWithoutCollectedByNestedInput
+  variantCostChanges?: Prisma.VariantCostHistoryUncheckedUpdateManyWithoutCreatedByNestedInput
+  feedback?: Prisma.FeedbackUncheckedUpdateManyWithoutCustomerNestedInput
+}
+
 export type UserCreateWithoutVariantCostChangesInput = {
   id?: string
   firstName: string
@@ -723,6 +1005,8 @@ export type UserCreateWithoutVariantCostChangesInput = {
   deliveryAssignments?: Prisma.DeliveryAssignmentCreateNestedManyWithoutDeliveryStaffInput
   assignmentsMade?: Prisma.DeliveryAssignmentCreateNestedManyWithoutAssignedByInput
   codCollections?: Prisma.CodCollectionCreateNestedManyWithoutCollectedByInput
+  identities?: Prisma.UserIdentityCreateNestedManyWithoutUserInput
+  feedback?: Prisma.FeedbackCreateNestedManyWithoutCustomerInput
 }
 
 export type UserUncheckedCreateWithoutVariantCostChangesInput = {
@@ -747,6 +1031,8 @@ export type UserUncheckedCreateWithoutVariantCostChangesInput = {
   deliveryAssignments?: Prisma.DeliveryAssignmentUncheckedCreateNestedManyWithoutDeliveryStaffInput
   assignmentsMade?: Prisma.DeliveryAssignmentUncheckedCreateNestedManyWithoutAssignedByInput
   codCollections?: Prisma.CodCollectionUncheckedCreateNestedManyWithoutCollectedByInput
+  identities?: Prisma.UserIdentityUncheckedCreateNestedManyWithoutUserInput
+  feedback?: Prisma.FeedbackUncheckedCreateNestedManyWithoutCustomerInput
 }
 
 export type UserCreateOrConnectWithoutVariantCostChangesInput = {
@@ -787,6 +1073,8 @@ export type UserUpdateWithoutVariantCostChangesInput = {
   deliveryAssignments?: Prisma.DeliveryAssignmentUpdateManyWithoutDeliveryStaffNestedInput
   assignmentsMade?: Prisma.DeliveryAssignmentUpdateManyWithoutAssignedByNestedInput
   codCollections?: Prisma.CodCollectionUpdateManyWithoutCollectedByNestedInput
+  identities?: Prisma.UserIdentityUpdateManyWithoutUserNestedInput
+  feedback?: Prisma.FeedbackUpdateManyWithoutCustomerNestedInput
 }
 
 export type UserUncheckedUpdateWithoutVariantCostChangesInput = {
@@ -811,6 +1099,8 @@ export type UserUncheckedUpdateWithoutVariantCostChangesInput = {
   deliveryAssignments?: Prisma.DeliveryAssignmentUncheckedUpdateManyWithoutDeliveryStaffNestedInput
   assignmentsMade?: Prisma.DeliveryAssignmentUncheckedUpdateManyWithoutAssignedByNestedInput
   codCollections?: Prisma.CodCollectionUncheckedUpdateManyWithoutCollectedByNestedInput
+  identities?: Prisma.UserIdentityUncheckedUpdateManyWithoutUserNestedInput
+  feedback?: Prisma.FeedbackUncheckedUpdateManyWithoutCustomerNestedInput
 }
 
 export type UserCreateWithoutCartInput = {
@@ -835,6 +1125,8 @@ export type UserCreateWithoutCartInput = {
   assignmentsMade?: Prisma.DeliveryAssignmentCreateNestedManyWithoutAssignedByInput
   codCollections?: Prisma.CodCollectionCreateNestedManyWithoutCollectedByInput
   variantCostChanges?: Prisma.VariantCostHistoryCreateNestedManyWithoutCreatedByInput
+  identities?: Prisma.UserIdentityCreateNestedManyWithoutUserInput
+  feedback?: Prisma.FeedbackCreateNestedManyWithoutCustomerInput
 }
 
 export type UserUncheckedCreateWithoutCartInput = {
@@ -859,6 +1151,8 @@ export type UserUncheckedCreateWithoutCartInput = {
   assignmentsMade?: Prisma.DeliveryAssignmentUncheckedCreateNestedManyWithoutAssignedByInput
   codCollections?: Prisma.CodCollectionUncheckedCreateNestedManyWithoutCollectedByInput
   variantCostChanges?: Prisma.VariantCostHistoryUncheckedCreateNestedManyWithoutCreatedByInput
+  identities?: Prisma.UserIdentityUncheckedCreateNestedManyWithoutUserInput
+  feedback?: Prisma.FeedbackUncheckedCreateNestedManyWithoutCustomerInput
 }
 
 export type UserCreateOrConnectWithoutCartInput = {
@@ -899,6 +1193,8 @@ export type UserUpdateWithoutCartInput = {
   assignmentsMade?: Prisma.DeliveryAssignmentUpdateManyWithoutAssignedByNestedInput
   codCollections?: Prisma.CodCollectionUpdateManyWithoutCollectedByNestedInput
   variantCostChanges?: Prisma.VariantCostHistoryUpdateManyWithoutCreatedByNestedInput
+  identities?: Prisma.UserIdentityUpdateManyWithoutUserNestedInput
+  feedback?: Prisma.FeedbackUpdateManyWithoutCustomerNestedInput
 }
 
 export type UserUncheckedUpdateWithoutCartInput = {
@@ -923,6 +1219,8 @@ export type UserUncheckedUpdateWithoutCartInput = {
   assignmentsMade?: Prisma.DeliveryAssignmentUncheckedUpdateManyWithoutAssignedByNestedInput
   codCollections?: Prisma.CodCollectionUncheckedUpdateManyWithoutCollectedByNestedInput
   variantCostChanges?: Prisma.VariantCostHistoryUncheckedUpdateManyWithoutCreatedByNestedInput
+  identities?: Prisma.UserIdentityUncheckedUpdateManyWithoutUserNestedInput
+  feedback?: Prisma.FeedbackUncheckedUpdateManyWithoutCustomerNestedInput
 }
 
 export type UserCreateWithoutWishlistInput = {
@@ -947,6 +1245,8 @@ export type UserCreateWithoutWishlistInput = {
   assignmentsMade?: Prisma.DeliveryAssignmentCreateNestedManyWithoutAssignedByInput
   codCollections?: Prisma.CodCollectionCreateNestedManyWithoutCollectedByInput
   variantCostChanges?: Prisma.VariantCostHistoryCreateNestedManyWithoutCreatedByInput
+  identities?: Prisma.UserIdentityCreateNestedManyWithoutUserInput
+  feedback?: Prisma.FeedbackCreateNestedManyWithoutCustomerInput
 }
 
 export type UserUncheckedCreateWithoutWishlistInput = {
@@ -971,6 +1271,8 @@ export type UserUncheckedCreateWithoutWishlistInput = {
   assignmentsMade?: Prisma.DeliveryAssignmentUncheckedCreateNestedManyWithoutAssignedByInput
   codCollections?: Prisma.CodCollectionUncheckedCreateNestedManyWithoutCollectedByInput
   variantCostChanges?: Prisma.VariantCostHistoryUncheckedCreateNestedManyWithoutCreatedByInput
+  identities?: Prisma.UserIdentityUncheckedCreateNestedManyWithoutUserInput
+  feedback?: Prisma.FeedbackUncheckedCreateNestedManyWithoutCustomerInput
 }
 
 export type UserCreateOrConnectWithoutWishlistInput = {
@@ -1011,6 +1313,8 @@ export type UserUpdateWithoutWishlistInput = {
   assignmentsMade?: Prisma.DeliveryAssignmentUpdateManyWithoutAssignedByNestedInput
   codCollections?: Prisma.CodCollectionUpdateManyWithoutCollectedByNestedInput
   variantCostChanges?: Prisma.VariantCostHistoryUpdateManyWithoutCreatedByNestedInput
+  identities?: Prisma.UserIdentityUpdateManyWithoutUserNestedInput
+  feedback?: Prisma.FeedbackUpdateManyWithoutCustomerNestedInput
 }
 
 export type UserUncheckedUpdateWithoutWishlistInput = {
@@ -1035,6 +1339,8 @@ export type UserUncheckedUpdateWithoutWishlistInput = {
   assignmentsMade?: Prisma.DeliveryAssignmentUncheckedUpdateManyWithoutAssignedByNestedInput
   codCollections?: Prisma.CodCollectionUncheckedUpdateManyWithoutCollectedByNestedInput
   variantCostChanges?: Prisma.VariantCostHistoryUncheckedUpdateManyWithoutCreatedByNestedInput
+  identities?: Prisma.UserIdentityUncheckedUpdateManyWithoutUserNestedInput
+  feedback?: Prisma.FeedbackUncheckedUpdateManyWithoutCustomerNestedInput
 }
 
 export type UserCreateWithoutAddressesInput = {
@@ -1059,6 +1365,8 @@ export type UserCreateWithoutAddressesInput = {
   assignmentsMade?: Prisma.DeliveryAssignmentCreateNestedManyWithoutAssignedByInput
   codCollections?: Prisma.CodCollectionCreateNestedManyWithoutCollectedByInput
   variantCostChanges?: Prisma.VariantCostHistoryCreateNestedManyWithoutCreatedByInput
+  identities?: Prisma.UserIdentityCreateNestedManyWithoutUserInput
+  feedback?: Prisma.FeedbackCreateNestedManyWithoutCustomerInput
 }
 
 export type UserUncheckedCreateWithoutAddressesInput = {
@@ -1083,6 +1391,8 @@ export type UserUncheckedCreateWithoutAddressesInput = {
   assignmentsMade?: Prisma.DeliveryAssignmentUncheckedCreateNestedManyWithoutAssignedByInput
   codCollections?: Prisma.CodCollectionUncheckedCreateNestedManyWithoutCollectedByInput
   variantCostChanges?: Prisma.VariantCostHistoryUncheckedCreateNestedManyWithoutCreatedByInput
+  identities?: Prisma.UserIdentityUncheckedCreateNestedManyWithoutUserInput
+  feedback?: Prisma.FeedbackUncheckedCreateNestedManyWithoutCustomerInput
 }
 
 export type UserCreateOrConnectWithoutAddressesInput = {
@@ -1123,6 +1433,8 @@ export type UserUpdateWithoutAddressesInput = {
   assignmentsMade?: Prisma.DeliveryAssignmentUpdateManyWithoutAssignedByNestedInput
   codCollections?: Prisma.CodCollectionUpdateManyWithoutCollectedByNestedInput
   variantCostChanges?: Prisma.VariantCostHistoryUpdateManyWithoutCreatedByNestedInput
+  identities?: Prisma.UserIdentityUpdateManyWithoutUserNestedInput
+  feedback?: Prisma.FeedbackUpdateManyWithoutCustomerNestedInput
 }
 
 export type UserUncheckedUpdateWithoutAddressesInput = {
@@ -1147,6 +1459,8 @@ export type UserUncheckedUpdateWithoutAddressesInput = {
   assignmentsMade?: Prisma.DeliveryAssignmentUncheckedUpdateManyWithoutAssignedByNestedInput
   codCollections?: Prisma.CodCollectionUncheckedUpdateManyWithoutCollectedByNestedInput
   variantCostChanges?: Prisma.VariantCostHistoryUncheckedUpdateManyWithoutCreatedByNestedInput
+  identities?: Prisma.UserIdentityUncheckedUpdateManyWithoutUserNestedInput
+  feedback?: Prisma.FeedbackUncheckedUpdateManyWithoutCustomerNestedInput
 }
 
 export type UserCreateWithoutOrdersInput = {
@@ -1171,6 +1485,8 @@ export type UserCreateWithoutOrdersInput = {
   assignmentsMade?: Prisma.DeliveryAssignmentCreateNestedManyWithoutAssignedByInput
   codCollections?: Prisma.CodCollectionCreateNestedManyWithoutCollectedByInput
   variantCostChanges?: Prisma.VariantCostHistoryCreateNestedManyWithoutCreatedByInput
+  identities?: Prisma.UserIdentityCreateNestedManyWithoutUserInput
+  feedback?: Prisma.FeedbackCreateNestedManyWithoutCustomerInput
 }
 
 export type UserUncheckedCreateWithoutOrdersInput = {
@@ -1195,6 +1511,8 @@ export type UserUncheckedCreateWithoutOrdersInput = {
   assignmentsMade?: Prisma.DeliveryAssignmentUncheckedCreateNestedManyWithoutAssignedByInput
   codCollections?: Prisma.CodCollectionUncheckedCreateNestedManyWithoutCollectedByInput
   variantCostChanges?: Prisma.VariantCostHistoryUncheckedCreateNestedManyWithoutCreatedByInput
+  identities?: Prisma.UserIdentityUncheckedCreateNestedManyWithoutUserInput
+  feedback?: Prisma.FeedbackUncheckedCreateNestedManyWithoutCustomerInput
 }
 
 export type UserCreateOrConnectWithoutOrdersInput = {
@@ -1235,6 +1553,8 @@ export type UserUpdateWithoutOrdersInput = {
   assignmentsMade?: Prisma.DeliveryAssignmentUpdateManyWithoutAssignedByNestedInput
   codCollections?: Prisma.CodCollectionUpdateManyWithoutCollectedByNestedInput
   variantCostChanges?: Prisma.VariantCostHistoryUpdateManyWithoutCreatedByNestedInput
+  identities?: Prisma.UserIdentityUpdateManyWithoutUserNestedInput
+  feedback?: Prisma.FeedbackUpdateManyWithoutCustomerNestedInput
 }
 
 export type UserUncheckedUpdateWithoutOrdersInput = {
@@ -1259,6 +1579,8 @@ export type UserUncheckedUpdateWithoutOrdersInput = {
   assignmentsMade?: Prisma.DeliveryAssignmentUncheckedUpdateManyWithoutAssignedByNestedInput
   codCollections?: Prisma.CodCollectionUncheckedUpdateManyWithoutCollectedByNestedInput
   variantCostChanges?: Prisma.VariantCostHistoryUncheckedUpdateManyWithoutCreatedByNestedInput
+  identities?: Prisma.UserIdentityUncheckedUpdateManyWithoutUserNestedInput
+  feedback?: Prisma.FeedbackUncheckedUpdateManyWithoutCustomerNestedInput
 }
 
 export type UserCreateWithoutDeliveryAssignmentsInput = {
@@ -1283,6 +1605,8 @@ export type UserCreateWithoutDeliveryAssignmentsInput = {
   assignmentsMade?: Prisma.DeliveryAssignmentCreateNestedManyWithoutAssignedByInput
   codCollections?: Prisma.CodCollectionCreateNestedManyWithoutCollectedByInput
   variantCostChanges?: Prisma.VariantCostHistoryCreateNestedManyWithoutCreatedByInput
+  identities?: Prisma.UserIdentityCreateNestedManyWithoutUserInput
+  feedback?: Prisma.FeedbackCreateNestedManyWithoutCustomerInput
 }
 
 export type UserUncheckedCreateWithoutDeliveryAssignmentsInput = {
@@ -1307,6 +1631,8 @@ export type UserUncheckedCreateWithoutDeliveryAssignmentsInput = {
   assignmentsMade?: Prisma.DeliveryAssignmentUncheckedCreateNestedManyWithoutAssignedByInput
   codCollections?: Prisma.CodCollectionUncheckedCreateNestedManyWithoutCollectedByInput
   variantCostChanges?: Prisma.VariantCostHistoryUncheckedCreateNestedManyWithoutCreatedByInput
+  identities?: Prisma.UserIdentityUncheckedCreateNestedManyWithoutUserInput
+  feedback?: Prisma.FeedbackUncheckedCreateNestedManyWithoutCustomerInput
 }
 
 export type UserCreateOrConnectWithoutDeliveryAssignmentsInput = {
@@ -1336,6 +1662,8 @@ export type UserCreateWithoutAssignmentsMadeInput = {
   deliveryAssignments?: Prisma.DeliveryAssignmentCreateNestedManyWithoutDeliveryStaffInput
   codCollections?: Prisma.CodCollectionCreateNestedManyWithoutCollectedByInput
   variantCostChanges?: Prisma.VariantCostHistoryCreateNestedManyWithoutCreatedByInput
+  identities?: Prisma.UserIdentityCreateNestedManyWithoutUserInput
+  feedback?: Prisma.FeedbackCreateNestedManyWithoutCustomerInput
 }
 
 export type UserUncheckedCreateWithoutAssignmentsMadeInput = {
@@ -1360,6 +1688,8 @@ export type UserUncheckedCreateWithoutAssignmentsMadeInput = {
   deliveryAssignments?: Prisma.DeliveryAssignmentUncheckedCreateNestedManyWithoutDeliveryStaffInput
   codCollections?: Prisma.CodCollectionUncheckedCreateNestedManyWithoutCollectedByInput
   variantCostChanges?: Prisma.VariantCostHistoryUncheckedCreateNestedManyWithoutCreatedByInput
+  identities?: Prisma.UserIdentityUncheckedCreateNestedManyWithoutUserInput
+  feedback?: Prisma.FeedbackUncheckedCreateNestedManyWithoutCustomerInput
 }
 
 export type UserCreateOrConnectWithoutAssignmentsMadeInput = {
@@ -1400,6 +1730,8 @@ export type UserUpdateWithoutDeliveryAssignmentsInput = {
   assignmentsMade?: Prisma.DeliveryAssignmentUpdateManyWithoutAssignedByNestedInput
   codCollections?: Prisma.CodCollectionUpdateManyWithoutCollectedByNestedInput
   variantCostChanges?: Prisma.VariantCostHistoryUpdateManyWithoutCreatedByNestedInput
+  identities?: Prisma.UserIdentityUpdateManyWithoutUserNestedInput
+  feedback?: Prisma.FeedbackUpdateManyWithoutCustomerNestedInput
 }
 
 export type UserUncheckedUpdateWithoutDeliveryAssignmentsInput = {
@@ -1424,6 +1756,8 @@ export type UserUncheckedUpdateWithoutDeliveryAssignmentsInput = {
   assignmentsMade?: Prisma.DeliveryAssignmentUncheckedUpdateManyWithoutAssignedByNestedInput
   codCollections?: Prisma.CodCollectionUncheckedUpdateManyWithoutCollectedByNestedInput
   variantCostChanges?: Prisma.VariantCostHistoryUncheckedUpdateManyWithoutCreatedByNestedInput
+  identities?: Prisma.UserIdentityUncheckedUpdateManyWithoutUserNestedInput
+  feedback?: Prisma.FeedbackUncheckedUpdateManyWithoutCustomerNestedInput
 }
 
 export type UserUpsertWithoutAssignmentsMadeInput = {
@@ -1459,6 +1793,8 @@ export type UserUpdateWithoutAssignmentsMadeInput = {
   deliveryAssignments?: Prisma.DeliveryAssignmentUpdateManyWithoutDeliveryStaffNestedInput
   codCollections?: Prisma.CodCollectionUpdateManyWithoutCollectedByNestedInput
   variantCostChanges?: Prisma.VariantCostHistoryUpdateManyWithoutCreatedByNestedInput
+  identities?: Prisma.UserIdentityUpdateManyWithoutUserNestedInput
+  feedback?: Prisma.FeedbackUpdateManyWithoutCustomerNestedInput
 }
 
 export type UserUncheckedUpdateWithoutAssignmentsMadeInput = {
@@ -1483,6 +1819,8 @@ export type UserUncheckedUpdateWithoutAssignmentsMadeInput = {
   deliveryAssignments?: Prisma.DeliveryAssignmentUncheckedUpdateManyWithoutDeliveryStaffNestedInput
   codCollections?: Prisma.CodCollectionUncheckedUpdateManyWithoutCollectedByNestedInput
   variantCostChanges?: Prisma.VariantCostHistoryUncheckedUpdateManyWithoutCreatedByNestedInput
+  identities?: Prisma.UserIdentityUncheckedUpdateManyWithoutUserNestedInput
+  feedback?: Prisma.FeedbackUncheckedUpdateManyWithoutCustomerNestedInput
 }
 
 export type UserCreateWithoutCheckoutQuotesInput = {
@@ -1507,6 +1845,8 @@ export type UserCreateWithoutCheckoutQuotesInput = {
   assignmentsMade?: Prisma.DeliveryAssignmentCreateNestedManyWithoutAssignedByInput
   codCollections?: Prisma.CodCollectionCreateNestedManyWithoutCollectedByInput
   variantCostChanges?: Prisma.VariantCostHistoryCreateNestedManyWithoutCreatedByInput
+  identities?: Prisma.UserIdentityCreateNestedManyWithoutUserInput
+  feedback?: Prisma.FeedbackCreateNestedManyWithoutCustomerInput
 }
 
 export type UserUncheckedCreateWithoutCheckoutQuotesInput = {
@@ -1531,6 +1871,8 @@ export type UserUncheckedCreateWithoutCheckoutQuotesInput = {
   assignmentsMade?: Prisma.DeliveryAssignmentUncheckedCreateNestedManyWithoutAssignedByInput
   codCollections?: Prisma.CodCollectionUncheckedCreateNestedManyWithoutCollectedByInput
   variantCostChanges?: Prisma.VariantCostHistoryUncheckedCreateNestedManyWithoutCreatedByInput
+  identities?: Prisma.UserIdentityUncheckedCreateNestedManyWithoutUserInput
+  feedback?: Prisma.FeedbackUncheckedCreateNestedManyWithoutCustomerInput
 }
 
 export type UserCreateOrConnectWithoutCheckoutQuotesInput = {
@@ -1571,6 +1913,8 @@ export type UserUpdateWithoutCheckoutQuotesInput = {
   assignmentsMade?: Prisma.DeliveryAssignmentUpdateManyWithoutAssignedByNestedInput
   codCollections?: Prisma.CodCollectionUpdateManyWithoutCollectedByNestedInput
   variantCostChanges?: Prisma.VariantCostHistoryUpdateManyWithoutCreatedByNestedInput
+  identities?: Prisma.UserIdentityUpdateManyWithoutUserNestedInput
+  feedback?: Prisma.FeedbackUpdateManyWithoutCustomerNestedInput
 }
 
 export type UserUncheckedUpdateWithoutCheckoutQuotesInput = {
@@ -1595,6 +1939,8 @@ export type UserUncheckedUpdateWithoutCheckoutQuotesInput = {
   assignmentsMade?: Prisma.DeliveryAssignmentUncheckedUpdateManyWithoutAssignedByNestedInput
   codCollections?: Prisma.CodCollectionUncheckedUpdateManyWithoutCollectedByNestedInput
   variantCostChanges?: Prisma.VariantCostHistoryUncheckedUpdateManyWithoutCreatedByNestedInput
+  identities?: Prisma.UserIdentityUncheckedUpdateManyWithoutUserNestedInput
+  feedback?: Prisma.FeedbackUncheckedUpdateManyWithoutCustomerNestedInput
 }
 
 export type UserCreateWithoutCodCollectionsInput = {
@@ -1619,6 +1965,8 @@ export type UserCreateWithoutCodCollectionsInput = {
   deliveryAssignments?: Prisma.DeliveryAssignmentCreateNestedManyWithoutDeliveryStaffInput
   assignmentsMade?: Prisma.DeliveryAssignmentCreateNestedManyWithoutAssignedByInput
   variantCostChanges?: Prisma.VariantCostHistoryCreateNestedManyWithoutCreatedByInput
+  identities?: Prisma.UserIdentityCreateNestedManyWithoutUserInput
+  feedback?: Prisma.FeedbackCreateNestedManyWithoutCustomerInput
 }
 
 export type UserUncheckedCreateWithoutCodCollectionsInput = {
@@ -1643,6 +1991,8 @@ export type UserUncheckedCreateWithoutCodCollectionsInput = {
   deliveryAssignments?: Prisma.DeliveryAssignmentUncheckedCreateNestedManyWithoutDeliveryStaffInput
   assignmentsMade?: Prisma.DeliveryAssignmentUncheckedCreateNestedManyWithoutAssignedByInput
   variantCostChanges?: Prisma.VariantCostHistoryUncheckedCreateNestedManyWithoutCreatedByInput
+  identities?: Prisma.UserIdentityUncheckedCreateNestedManyWithoutUserInput
+  feedback?: Prisma.FeedbackUncheckedCreateNestedManyWithoutCustomerInput
 }
 
 export type UserCreateOrConnectWithoutCodCollectionsInput = {
@@ -1683,6 +2033,8 @@ export type UserUpdateWithoutCodCollectionsInput = {
   deliveryAssignments?: Prisma.DeliveryAssignmentUpdateManyWithoutDeliveryStaffNestedInput
   assignmentsMade?: Prisma.DeliveryAssignmentUpdateManyWithoutAssignedByNestedInput
   variantCostChanges?: Prisma.VariantCostHistoryUpdateManyWithoutCreatedByNestedInput
+  identities?: Prisma.UserIdentityUpdateManyWithoutUserNestedInput
+  feedback?: Prisma.FeedbackUpdateManyWithoutCustomerNestedInput
 }
 
 export type UserUncheckedUpdateWithoutCodCollectionsInput = {
@@ -1707,6 +2059,8 @@ export type UserUncheckedUpdateWithoutCodCollectionsInput = {
   deliveryAssignments?: Prisma.DeliveryAssignmentUncheckedUpdateManyWithoutDeliveryStaffNestedInput
   assignmentsMade?: Prisma.DeliveryAssignmentUncheckedUpdateManyWithoutAssignedByNestedInput
   variantCostChanges?: Prisma.VariantCostHistoryUncheckedUpdateManyWithoutCreatedByNestedInput
+  identities?: Prisma.UserIdentityUncheckedUpdateManyWithoutUserNestedInput
+  feedback?: Prisma.FeedbackUncheckedUpdateManyWithoutCustomerNestedInput
 }
 
 export type UserCreateWithoutPromotionUsagesInput = {
@@ -1731,6 +2085,8 @@ export type UserCreateWithoutPromotionUsagesInput = {
   assignmentsMade?: Prisma.DeliveryAssignmentCreateNestedManyWithoutAssignedByInput
   codCollections?: Prisma.CodCollectionCreateNestedManyWithoutCollectedByInput
   variantCostChanges?: Prisma.VariantCostHistoryCreateNestedManyWithoutCreatedByInput
+  identities?: Prisma.UserIdentityCreateNestedManyWithoutUserInput
+  feedback?: Prisma.FeedbackCreateNestedManyWithoutCustomerInput
 }
 
 export type UserUncheckedCreateWithoutPromotionUsagesInput = {
@@ -1755,6 +2111,8 @@ export type UserUncheckedCreateWithoutPromotionUsagesInput = {
   assignmentsMade?: Prisma.DeliveryAssignmentUncheckedCreateNestedManyWithoutAssignedByInput
   codCollections?: Prisma.CodCollectionUncheckedCreateNestedManyWithoutCollectedByInput
   variantCostChanges?: Prisma.VariantCostHistoryUncheckedCreateNestedManyWithoutCreatedByInput
+  identities?: Prisma.UserIdentityUncheckedCreateNestedManyWithoutUserInput
+  feedback?: Prisma.FeedbackUncheckedCreateNestedManyWithoutCustomerInput
 }
 
 export type UserCreateOrConnectWithoutPromotionUsagesInput = {
@@ -1795,6 +2153,8 @@ export type UserUpdateWithoutPromotionUsagesInput = {
   assignmentsMade?: Prisma.DeliveryAssignmentUpdateManyWithoutAssignedByNestedInput
   codCollections?: Prisma.CodCollectionUpdateManyWithoutCollectedByNestedInput
   variantCostChanges?: Prisma.VariantCostHistoryUpdateManyWithoutCreatedByNestedInput
+  identities?: Prisma.UserIdentityUpdateManyWithoutUserNestedInput
+  feedback?: Prisma.FeedbackUpdateManyWithoutCustomerNestedInput
 }
 
 export type UserUncheckedUpdateWithoutPromotionUsagesInput = {
@@ -1819,6 +2179,8 @@ export type UserUncheckedUpdateWithoutPromotionUsagesInput = {
   assignmentsMade?: Prisma.DeliveryAssignmentUncheckedUpdateManyWithoutAssignedByNestedInput
   codCollections?: Prisma.CodCollectionUncheckedUpdateManyWithoutCollectedByNestedInput
   variantCostChanges?: Prisma.VariantCostHistoryUncheckedUpdateManyWithoutCreatedByNestedInput
+  identities?: Prisma.UserIdentityUncheckedUpdateManyWithoutUserNestedInput
+  feedback?: Prisma.FeedbackUncheckedUpdateManyWithoutCustomerNestedInput
 }
 
 
@@ -1835,6 +2197,8 @@ export type UserCountOutputType = {
   assignmentsMade: number
   codCollections: number
   variantCostChanges: number
+  identities: number
+  feedback: number
 }
 
 export type UserCountOutputTypeSelect<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
@@ -1846,6 +2210,8 @@ export type UserCountOutputTypeSelect<ExtArgs extends runtime.Types.Extensions.I
   assignmentsMade?: boolean | UserCountOutputTypeCountAssignmentsMadeArgs
   codCollections?: boolean | UserCountOutputTypeCountCodCollectionsArgs
   variantCostChanges?: boolean | UserCountOutputTypeCountVariantCostChangesArgs
+  identities?: boolean | UserCountOutputTypeCountIdentitiesArgs
+  feedback?: boolean | UserCountOutputTypeCountFeedbackArgs
 }
 
 /**
@@ -1914,6 +2280,20 @@ export type UserCountOutputTypeCountVariantCostChangesArgs<ExtArgs extends runti
   where?: Prisma.VariantCostHistoryWhereInput
 }
 
+/**
+ * UserCountOutputType without action
+ */
+export type UserCountOutputTypeCountIdentitiesArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
+  where?: Prisma.UserIdentityWhereInput
+}
+
+/**
+ * UserCountOutputType without action
+ */
+export type UserCountOutputTypeCountFeedbackArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
+  where?: Prisma.FeedbackWhereInput
+}
+
 
 export type UserSelect<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetSelect<{
   id?: boolean
@@ -1938,6 +2318,8 @@ export type UserSelect<ExtArgs extends runtime.Types.Extensions.InternalArgs = r
   assignmentsMade?: boolean | Prisma.User$assignmentsMadeArgs<ExtArgs>
   codCollections?: boolean | Prisma.User$codCollectionsArgs<ExtArgs>
   variantCostChanges?: boolean | Prisma.User$variantCostChangesArgs<ExtArgs>
+  identities?: boolean | Prisma.User$identitiesArgs<ExtArgs>
+  feedback?: boolean | Prisma.User$feedbackArgs<ExtArgs>
   _count?: boolean | Prisma.UserCountOutputTypeDefaultArgs<ExtArgs>
 }, ExtArgs["result"]["user"]>
 
@@ -1998,6 +2380,8 @@ export type UserInclude<ExtArgs extends runtime.Types.Extensions.InternalArgs = 
   assignmentsMade?: boolean | Prisma.User$assignmentsMadeArgs<ExtArgs>
   codCollections?: boolean | Prisma.User$codCollectionsArgs<ExtArgs>
   variantCostChanges?: boolean | Prisma.User$variantCostChangesArgs<ExtArgs>
+  identities?: boolean | Prisma.User$identitiesArgs<ExtArgs>
+  feedback?: boolean | Prisma.User$feedbackArgs<ExtArgs>
   _count?: boolean | Prisma.UserCountOutputTypeDefaultArgs<ExtArgs>
 }
 export type UserIncludeCreateManyAndReturn<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {}
@@ -2031,6 +2415,11 @@ export type $UserPayload<ExtArgs extends runtime.Types.Extensions.InternalArgs =
      * Cost changes are internal financial audit records authored by this user.
      */
     variantCostChanges: Prisma.$VariantCostHistoryPayload<ExtArgs>[]
+    /**
+     * Linked external federated identities (e.g. Google OAuth/OIDC).
+     */
+    identities: Prisma.$UserIdentityPayload<ExtArgs>[]
+    feedback: Prisma.$FeedbackPayload<ExtArgs>[]
   }
   scalars: runtime.Types.Extensions.GetPayloadResult<{
     id: string
@@ -2449,6 +2838,8 @@ export interface Prisma__UserClient<T, Null = never, ExtArgs extends runtime.Typ
   assignmentsMade<T extends Prisma.User$assignmentsMadeArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.User$assignmentsMadeArgs<ExtArgs>>): Prisma.PrismaPromise<runtime.Types.Result.GetResult<Prisma.$DeliveryAssignmentPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
   codCollections<T extends Prisma.User$codCollectionsArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.User$codCollectionsArgs<ExtArgs>>): Prisma.PrismaPromise<runtime.Types.Result.GetResult<Prisma.$CodCollectionPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
   variantCostChanges<T extends Prisma.User$variantCostChangesArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.User$variantCostChangesArgs<ExtArgs>>): Prisma.PrismaPromise<runtime.Types.Result.GetResult<Prisma.$VariantCostHistoryPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
+  identities<T extends Prisma.User$identitiesArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.User$identitiesArgs<ExtArgs>>): Prisma.PrismaPromise<runtime.Types.Result.GetResult<Prisma.$UserIdentityPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
+  feedback<T extends Prisma.User$feedbackArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.User$feedbackArgs<ExtArgs>>): Prisma.PrismaPromise<runtime.Types.Result.GetResult<Prisma.$FeedbackPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
   /**
    * Attaches callbacks for the resolution and/or rejection of the Promise.
    * @param onfulfilled The callback to execute when the Promise is resolved.
@@ -3110,6 +3501,54 @@ export type User$variantCostChangesArgs<ExtArgs extends runtime.Types.Extensions
   take?: number
   skip?: number
   distinct?: Prisma.VariantCostHistoryScalarFieldEnum | Prisma.VariantCostHistoryScalarFieldEnum[]
+}
+
+/**
+ * User.identities
+ */
+export type User$identitiesArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
+  /**
+   * Select specific fields to fetch from the UserIdentity
+   */
+  select?: Prisma.UserIdentitySelect<ExtArgs> | null
+  /**
+   * Omit specific fields from the UserIdentity
+   */
+  omit?: Prisma.UserIdentityOmit<ExtArgs> | null
+  /**
+   * Choose, which related nodes to fetch as well
+   */
+  include?: Prisma.UserIdentityInclude<ExtArgs> | null
+  where?: Prisma.UserIdentityWhereInput
+  orderBy?: Prisma.UserIdentityOrderByWithRelationInput | Prisma.UserIdentityOrderByWithRelationInput[]
+  cursor?: Prisma.UserIdentityWhereUniqueInput
+  take?: number
+  skip?: number
+  distinct?: Prisma.UserIdentityScalarFieldEnum | Prisma.UserIdentityScalarFieldEnum[]
+}
+
+/**
+ * User.feedback
+ */
+export type User$feedbackArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
+  /**
+   * Select specific fields to fetch from the Feedback
+   */
+  select?: Prisma.FeedbackSelect<ExtArgs> | null
+  /**
+   * Omit specific fields from the Feedback
+   */
+  omit?: Prisma.FeedbackOmit<ExtArgs> | null
+  /**
+   * Choose, which related nodes to fetch as well
+   */
+  include?: Prisma.FeedbackInclude<ExtArgs> | null
+  where?: Prisma.FeedbackWhereInput
+  orderBy?: Prisma.FeedbackOrderByWithRelationInput | Prisma.FeedbackOrderByWithRelationInput[]
+  cursor?: Prisma.FeedbackWhereUniqueInput
+  take?: number
+  skip?: number
+  distinct?: Prisma.FeedbackScalarFieldEnum | Prisma.FeedbackScalarFieldEnum[]
 }
 
 /**

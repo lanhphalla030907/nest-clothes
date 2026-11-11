@@ -78,6 +78,8 @@ describe('ProductsService', () => {
   let productRepoUpdate: ReturnType<typeof vi.fn>;
   let productRepoUpdateLifecycle: ReturnType<typeof vi.fn>;
   let productRepoDelete: ReturnType<typeof vi.fn>;
+  let productRepoFindPublicProducts: ReturnType<typeof vi.fn>;
+  let productRepoGetFilterOptions: ReturnType<typeof vi.fn>;
   let categoryRepoFindById: ReturnType<typeof vi.fn>;
 
   beforeEach(async () => {
@@ -86,6 +88,8 @@ describe('ProductsService', () => {
     productRepoFindById = vi.fn();
     productRepoFindBySlug = vi.fn();
     productRepoFindMany = vi.fn();
+    productRepoFindPublicProducts = vi.fn();
+    productRepoGetFilterOptions = vi.fn();
     productRepoUpdate = vi.fn();
     productRepoUpdateLifecycle = vi.fn();
     productRepoDelete = vi.fn();
@@ -102,6 +106,8 @@ describe('ProductsService', () => {
             findById: productRepoFindById,
             findBySlug: productRepoFindBySlug,
             findMany: productRepoFindMany,
+            findPublicProducts: productRepoFindPublicProducts,
+            getFilterOptions: productRepoGetFilterOptions,
             update: productRepoUpdate,
             updateLifecycle: productRepoUpdateLifecycle,
             delete: productRepoDelete,
@@ -546,6 +552,46 @@ describe('ProductsService', () => {
 
       expect(result.id).toBe('p-1');
       expect(productRepoFindById).toHaveBeenCalledTimes(1);
+    });
+  });
+
+  describe('findPublicProducts', () => {
+    it('maps repository entities into PublicProductListResponseDto', async () => {
+      const sampleProduct = buildProduct({ basePrice: '45.00' });
+      productRepoFindPublicProducts.mockResolvedValue({
+        products: [sampleProduct],
+        total: 1,
+        page: 1,
+        limit: 12,
+        totalPages: 1,
+        filterOptions: {
+          categories: [{ id: 'c-1', name: 'Men', slug: 'men', count: 1 }],
+          priceRange: { min: 45, max: 45 },
+          sizes: ['M'],
+          colors: ['Black'],
+        },
+      });
+
+      const res = await service.findPublicProducts({ page: 1, limit: 12 });
+
+      expect(res.data).toHaveLength(1);
+      expect(res.data[0].id).toBe('p-1');
+      expect(res.data[0].basePrice).toBe('45.00');
+      expect(res.total).toBe(1);
+      expect(res.filterOptions.categories).toHaveLength(1);
+    });
+
+    it('delegates getFilterOptions directly to repository', async () => {
+      const options = {
+        categories: [],
+        priceRange: { min: 10, max: 100 },
+        sizes: ['S', 'M'],
+        colors: ['White'],
+      };
+      productRepoGetFilterOptions.mockResolvedValue(options);
+
+      const res = await service.getFilterOptions();
+      expect(res).toBe(options);
     });
   });
 });

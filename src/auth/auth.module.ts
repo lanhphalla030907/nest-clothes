@@ -2,6 +2,8 @@ import { Module } from '@nestjs/common';
 import { UsersModule } from '../users/users.module.js';
 import { AuthController } from './auth.controller.js';
 import { AuthService } from './auth.service.js';
+import { GoogleAuthService } from './google/google-auth.service.js';
+import { AuthRateLimiterGuard } from './guards/auth-rate-limiter.guard.js';
 import { JwtAuthModule } from './jwt/jwt-auth.module.js';
 import { PasswordModule } from './password/password.module.js';
 
@@ -23,6 +25,6 @@ import { PasswordModule } from './password/password.module.js';
 @Module({
   imports: [PasswordModule, JwtAuthModule, UsersModule],
   controllers: [AuthController],
-  providers: [AuthService],
+  providers: [AuthService, GoogleAuthService, AuthRateLimiterGuard],
 })
 export class AuthModule {}

@@ -19,8 +19,11 @@ export class UsersRepository {
   constructor(private readonly prisma: PrismaService) {}
 
   /** Returns the user owning `email`, or `null` when no such user exists. */
-  findByEmail(email: string): Promise<User | null> {
-    return this.prisma.user.findUnique({ where: { email } });
+  findByEmail(
+    email: string,
+    client: Prisma.TransactionClient | PrismaService = this.prisma,
+  ): Promise<User | null> {
+    return client.user.findUnique({ where: { email } });
   }
 
   /**
@@ -30,23 +33,47 @@ export class UsersRepository {
    * (currently the cart) and therefore have to confirm the owner is real before
    * writing anything on their behalf.
    */
-  findById(id: string): Promise<User | null> {
-    return this.prisma.user.findUnique({ where: { id } });
+  findById(
+    id: string,
+    client: Prisma.TransactionClient | PrismaService = this.prisma,
+  ): Promise<User | null> {
+    return client.user.findUnique({ where: { id } });
   }
 
   /** Persists a new user and returns the stored entity. */
-  create(data: Prisma.UserCreateInput): Promise<User> {
-    return this.prisma.user.create({ data });
+  create(
+    data: Prisma.UserCreateInput,
+    client: Prisma.TransactionClient | PrismaService = this.prisma,
+  ): Promise<User> {
+    return client.user.create({ data });
   }
 
   /**
    * Writes `lastLoginAt` for `userId` and nothing else, so this operation can
    * never accidentally overwrite unrelated user columns.
    */
-  updateLastLoginAt(userId: string, lastLoginAt: Date): Promise<User> {
-    return this.prisma.user.update({
+  updateLastLoginAt(
+    userId: string,
+    lastLoginAt: Date,
+    client: Prisma.TransactionClient | PrismaService = this.prisma,
+  ): Promise<User> {
+    return client.user.update({
       where: { id: userId },
       data: { lastLoginAt },
+    });
+  }
+
+  /**
+   * Writes `emailVerifiedAt` for `userId` and nothing else.
+   */
+  updateEmailVerifiedAt(
+    userId: string,
+    emailVerifiedAt: Date,
+    client: Prisma.TransactionClient | PrismaService = this.prisma,
+  ): Promise<User> {
+    return client.user.update({
+      where: { id: userId },
+      data: { emailVerifiedAt },
     });
   }
 }

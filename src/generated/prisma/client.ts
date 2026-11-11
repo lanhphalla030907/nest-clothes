@@ -47,6 +47,24 @@ export { Prisma }
  */
 export type User = Prisma.UserModel
 /**
+ * Model Feedback
+ * Feedback about the store and its services, owned by one customer.
+ * 
+ * Feedback is general: it is not tied to a product or an order, carries no
+ * star rating, and has no approval or reply workflow beyond publishing and
+ * unpublishing. Only `PUBLISHED` rows reach the public website.
+ */
+export type Feedback = Prisma.FeedbackModel
+/**
+ * Model UserIdentity
+ * A federated identity linked to a user account (e.g. Google OAuth/OIDC).
+ * 
+ * Ties an external provider and subject identifier (`sub`) to exactly one user account.
+ * The `(provider, providerSubject)` unique constraint guarantees no identity is linked to
+ * multiple users and prevents account takeover races.
+ */
+export type UserIdentity = Prisma.UserIdentityModel
+/**
  * Model Category
  * A catalog category. Categories form a tree through the `parent`/`children`
  * self-relation: `parentId` is nullable so that root categories exist, and a

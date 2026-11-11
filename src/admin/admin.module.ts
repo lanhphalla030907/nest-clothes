@@ -38,6 +38,7 @@ import { AdminVariantOptionsController } from './controllers/admin-variant-optio
 import { PromotionsModule } from '../promotions/promotions.module.js';
 import { AdminPromotionsController } from './controllers/admin-promotions.controller.js';
 import { FinanceModule } from '../finance/finance.module.js';
+import { CustomersModule } from '../customers/customers.module.js';
 
 /**
  * Every route that requires `ADMIN`, and nothing else.
@@ -111,6 +112,7 @@ import { FinanceModule } from '../finance/finance.module.js';
     LocationsModule,
     PromotionsModule,
     FinanceModule,
+    CustomersModule,
   ],
   controllers: [
     AdminController,

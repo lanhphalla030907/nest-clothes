@@ -3,6 +3,7 @@ import { PasswordModule } from '../auth/password/password.module.js';
 import { UsersController } from './users.controller.js';
 import { UsersService } from './users.service.js';
 import { UsersRepository } from './repositories/users.repository.js';
+import { UserIdentityRepository } from './repositories/user-identity.repository.js';
 
 /**
  * Owns the user aggregate and the registration endpoint.
@@ -20,7 +21,7 @@ import { UsersRepository } from './repositories/users.repository.js';
 @Module({
   imports: [PasswordModule],
   controllers: [UsersController],
-  providers: [UsersService, UsersRepository],
-  exports: [UsersRepository, UsersService],
+  providers: [UsersService, UsersRepository, UserIdentityRepository],
+  exports: [UsersRepository, UserIdentityRepository, UsersService],
 })
 export class UsersModule {}

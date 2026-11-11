@@ -13,6 +13,11 @@ import {
 } from '@nestjs/common';
 import { CreateProductDto } from './dto/create-product.dto.js';
 import { ProductResponseDto } from './dto/product-response.dto.js';
+import { PublicProductQueryDto } from './dto/public-product-query.dto.js';
+import {
+  PublicProductListResponseDto,
+  type ProductFilterOptionsDto,
+} from './dto/public-product-list-response.dto.js';
 import { UpdateProductDto } from './dto/update-product.dto.js';
 import { ProductsService } from './products.service.js';
 
@@ -37,9 +42,16 @@ export class ProductsController {
     return this.productsService.findBestSellers(Number.isNaN(n) || n <= 0 ? 8 : Math.min(n, 50));
   }
 
+  @Get('filters')
+  getFilterOptions(): Promise<ProductFilterOptionsDto> {
+    return this.productsService.getFilterOptions();
+  }
+
   @Get()
-  findAll(): Promise<ProductResponseDto[]> {
-    return this.productsService.findAll();
+  findAll(
+    @Query() query: PublicProductQueryDto,
+  ): Promise<PublicProductListResponseDto> {
+    return this.productsService.findPublicProducts(query);
   }
 
   @Get(':id')

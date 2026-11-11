@@ -27,6 +27,7 @@ import { PostersModule } from './posters/posters.module.js';
 import { ReceiptModule } from './receipts/receipt.module.js';
 import { LocationsModule } from './locations/locations.module.js';
 import { CollectionsModule } from './collections/collections.module.js';
+import { FeedbackModule } from './feedback/feedback.module.js';
 import { ScheduleModule } from '@nestjs/schedule';
 
 @Module({
@@ -53,6 +54,7 @@ import { ScheduleModule } from '@nestjs/schedule';
     CodAreasModule,
     LocationsModule,
     CollectionsModule,
+    FeedbackModule,
     ProductsModule,
     ProductImagesModule,
     ProductVariantsModule,
