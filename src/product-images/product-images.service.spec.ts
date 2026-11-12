@@ -228,9 +228,9 @@ describe('ProductImagesService', () => {
 
     it('defaults sortOrder to 0 and isPrimary to false when omitted', async () => {
       const dto = buildCreateDto();
-      delete (dto as Record<string, unknown>).sortOrder;
-      delete (dto as Record<string, unknown>).isPrimary;
-      delete (dto as Record<string, unknown>).altText;
+      delete (dto as unknown as Record<string, unknown>).sortOrder;
+      delete (dto as unknown as Record<string, unknown>).isPrimary;
+      delete (dto as unknown as Record<string, unknown>).altText;
 
       await service.create(PRODUCT_ID, dto);
 

@@ -9,6 +9,7 @@ import { ShippingProvidersModule } from '../shipping-providers/shipping-provider
 import { UsersModule } from '../users/users.module.js';
 import { LocationsModule } from '../locations/locations.module.js';
 import { PromotionsModule } from '../promotions/promotions.module.js';
+import { NotificationsModule } from '../notifications/notifications.module.js';
 import { CheckoutController } from './checkout.controller.js';
 import { CheckoutService } from './checkout.service.js';
 import { CheckoutQuotesRepository } from './repositories/checkout-quotes.repository.js';
@@ -59,6 +60,7 @@ import { CheckoutQuotesRepository } from './repositories/checkout-quotes.reposit
     CodAreasModule,
     LocationsModule,
     PromotionsModule,
+    NotificationsModule,
   ],
   controllers: [CheckoutController],
   providers: [CheckoutService, CheckoutQuotesRepository],

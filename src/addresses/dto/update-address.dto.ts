@@ -133,6 +133,22 @@ export class UpdateAddressDto {
   })
   administrativeLocationPcode?: string | null;
 
+  @ValidateIf((_, value) => value !== undefined)
+  @IsOptional()
+  @IsString()
+  @Matches(/^KH[0-9]{4}$/, {
+    message: 'districtPcode must identify a Cambodia district or khan',
+  })
+  districtPcode?: string | null;
+
+  @ValidateIf((_, value) => value !== undefined)
+  @IsOptional()
+  @IsString()
+  @Matches(/^KH[0-9]{6}$/, {
+    message: 'communePcode must identify a Cambodia commune or sangkat',
+  })
+  communePcode?: string | null;
+
   @Transform(trimOptionalField)
   @IsOptional()
   @IsString()

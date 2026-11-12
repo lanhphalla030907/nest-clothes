@@ -94,8 +94,8 @@ describe('CloudinaryService', () => {
 
     const client: CloudinaryClient = {
       uploader: {
-        upload_stream: uploadStream,
-        destroy,
+        upload_stream: uploadStream as unknown as CloudinaryClient['uploader']['upload_stream'],
+        destroy: destroy as unknown as CloudinaryClient['uploader']['destroy'],
         ...overrides.client?.uploader,
       },
     };

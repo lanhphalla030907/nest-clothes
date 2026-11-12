@@ -9,6 +9,7 @@ import {
   TestIdentityRegistry,
   signRawToken,
 } from '../../test/support/auth-fixtures.js';
+import { PrismaService } from '../prisma/prisma.service.js';
 import { CategoriesService } from '../categories/categories.service.js';
 import { Role } from '../generated/prisma/enums.js';
 import { InventoryService } from '../inventory/inventory.service.js';
@@ -85,8 +86,12 @@ describe('Admin catalogue controllers (HTTP)', () => {
     productVariantsService: {
       create: vi.fn(),
       findAllByProductId: vi.fn(),
+      findAllAdminByProductId: vi.fn(),
       findOne: vi.fn(),
+      findOneAdmin: vi.fn(),
       update: vi.fn(),
+      updateCost: vi.fn(),
+      updateVariantCosts: vi.fn(),
       remove: vi.fn(),
     },
     variantOptionsService: {
@@ -141,6 +146,14 @@ describe('Admin catalogue controllers (HTTP)', () => {
           useValue: stub.variantOptionsService,
         },
         { provide: InventoryService, useValue: stub.inventoryService },
+        {
+          provide: PrismaService,
+          useValue: {
+            $transaction: vi.fn(async (arg: unknown) =>
+              typeof arg === 'function' ? arg({}) : Promise.all(arg as Promise<unknown>[]),
+            ),
+          },
+        },
       ],
     }).compile();
 
@@ -159,7 +172,7 @@ describe('Admin catalogue controllers (HTTP)', () => {
   }, 60_000);
 
   afterAll(async () => {
-    await app.close();
+    await app?.close();
   });
 
   beforeEach(() => {
@@ -201,7 +214,7 @@ describe('Admin catalogue controllers (HTTP)', () => {
     },
     {
       path: `/admin/products/${PRODUCT_ID}/variants`,
-      reached: () => stub.productVariantsService.findAllByProductId,
+      reached: () => stub.productVariantsService.findAllAdminByProductId,
     },
     {
       path: `/admin/products/${PRODUCT_ID}/variants/${VARIANT_ID}/options`,
@@ -580,7 +593,7 @@ describe('Admin catalogue controllers (HTTP)', () => {
     });
 
     it('a variant reached through another product is a 404, not a 403', async () => {
-      stub.productVariantsService.findOne.mockRejectedValue(
+      stub.productVariantsService.findOneAdmin.mockRejectedValue(
         new NotFoundException('Product does not exist'),
       );
 
@@ -590,7 +603,7 @@ describe('Admin catalogue controllers (HTTP)', () => {
       );
 
       expect(res.status).toBe(HttpStatus.NOT_FOUND);
-      expect(stub.productVariantsService.findOne).toHaveBeenCalledWith(
+      expect(stub.productVariantsService.findOneAdmin).toHaveBeenCalledWith(
         OTHER_ID,
         VARIANT_ID,
       );

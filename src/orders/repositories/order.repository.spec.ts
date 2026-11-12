@@ -39,6 +39,10 @@ const buildCreateData = (
         unitPrice: '129.00',
         quantity: 1,
         lineTotal: '129.00',
+        unitCostSnapshot: null,
+        costCurrency: null,
+        costSource: 'UNKNOWN',
+        costCapturedAt: null,
       },
     ],
   },
@@ -578,6 +582,10 @@ describe('OrderRepository', () => {
             unitPrice: '129.00',
             quantity: 1,
             lineTotal: '129.00',
+            unitCostSnapshot: null,
+            costCurrency: null,
+            costSource: 'UNKNOWN',
+            costCapturedAt: null,
           },
         ],
       });
@@ -635,13 +643,14 @@ describe('OrderRepository', () => {
 
       expect(prisma.productVariant.findUnique).toHaveBeenCalledWith({
         where: { id: VARIANT_ID },
-        // A narrower projection is what stops a future column — a cost price, an
-        // internal flag — reaching an order line by accident.
+        // Minimal snapshot/profit inputs needed at checkout: sell price, cost, identity, status.
         select: {
           id: true,
           productId: true,
           sku: true,
           price: true,
+          costPrice: true,
+          costCurrency: true,
           isActive: true,
         },
       });

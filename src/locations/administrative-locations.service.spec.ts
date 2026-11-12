@@ -12,6 +12,7 @@ const province = (codEnabledOverride: boolean | null): AdministrativeLocation =>
     nameEn: 'Phnom Penh',
     nameKm: null,
     codEnabledOverride,
+    datasetVersion: 'test',
     createdAt: new Date(),
     updatedAt: new Date(),
   }) as AdministrativeLocation;
@@ -26,6 +27,7 @@ const district = (
     nameEn: 'Chamkar Mon',
     nameKm: null,
     codEnabledOverride,
+    datasetVersion: 'test',
     createdAt: new Date(),
     updatedAt: new Date(),
   }) as AdministrativeLocation;
@@ -40,6 +42,7 @@ const commune = (
     nameEn: 'Tonle Bassac',
     nameKm: null,
     codEnabledOverride,
+    datasetVersion: 'test',
     createdAt: new Date(),
     updatedAt: new Date(),
   }) as AdministrativeLocation;

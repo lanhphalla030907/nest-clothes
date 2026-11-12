@@ -673,10 +673,28 @@ describe('Addresses (PostgreSQL)', () => {
       const user = await createUser('index');
       const [first, second] = await Promise.all([
         prisma.address.create({
-          data: { ...validBody(), userId: user, isDefault: false },
+          data: {
+            userId: user,
+            isDefault: false,
+            label: 'First',
+            recipientName: 'Ada Lovelace',
+            phone: '+44 117 496 0000',
+            addressLine1: '12 Mill Lane',
+            city: 'Bristol',
+            countryCode: 'GB',
+          },
         }),
         prisma.address.create({
-          data: { ...validBody(), userId: user, isDefault: false },
+          data: {
+            userId: user,
+            isDefault: false,
+            label: 'Second',
+            recipientName: 'Ada Lovelace',
+            phone: '+44 117 496 0000',
+            addressLine1: '12 Mill Lane',
+            city: 'Bristol',
+            countryCode: 'GB',
+          },
         }),
       ]);
 

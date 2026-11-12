@@ -123,6 +123,38 @@ describe('JwtAuthGuard', () => {
     expect(request.user?.role).toBe(Role.CUSTOMER);
   });
 
+  it('refuses tokens issued before the password was reset', async () => {
+    const changedAt = new Date('2026-03-01T10:00:00.000Z');
+    identities.register(
+      { id: USER_ID, email: 'ada@example.test', role: Role.CUSTOMER },
+      { passwordChangedAt: changedAt },
+    );
+
+    const stale = signRawToken({
+      sub: USER_ID,
+      email: 'ada@example.test',
+      role: Role.CUSTOMER,
+      pwd: 0,
+    });
+
+    await expect(
+      guard.canActivate(
+        contextFor({ Authorization: `Bearer ${stale}` }),
+      ),
+    ).rejects.toBeInstanceOf(UnauthorizedException);
+
+    const fresh = signRawToken({
+      sub: USER_ID,
+      email: 'ada@example.test',
+      role: Role.CUSTOMER,
+      pwd: changedAt.getTime(),
+    });
+
+    await expect(
+      guard.canActivate(contextFor({ Authorization: `Bearer ${fresh}` })),
+    ).resolves.toBe(true);
+  });
+
   it('refuses a user the database says is not active', async () => {
     identities.register(
       { id: ADMIN_ID, email: 'root@example.test', role: Role.ADMIN },

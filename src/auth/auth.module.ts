@@ -1,4 +1,5 @@
 import { Module } from '@nestjs/common';
+import { EmailModule } from '../email/email.module.js';
 import { UsersModule } from '../users/users.module.js';
 import { AuthController } from './auth.controller.js';
 import { AuthService } from './auth.service.js';
@@ -6,6 +7,8 @@ import { GoogleAuthService } from './google/google-auth.service.js';
 import { AuthRateLimiterGuard } from './guards/auth-rate-limiter.guard.js';
 import { JwtAuthModule } from './jwt/jwt-auth.module.js';
 import { PasswordModule } from './password/password.module.js';
+import { PasswordResetTokenRepository } from './password-reset/password-reset-token.repository.js';
+import { PasswordResetService } from './password-reset/password-reset.service.js';
 
 /**
  * Owns authentication: the login endpoint, the current-user endpoint, and the identity
@@ -23,8 +26,14 @@ import { PasswordModule } from './password/password.module.js';
  * not ask for.
  */
 @Module({
-  imports: [PasswordModule, JwtAuthModule, UsersModule],
+  imports: [PasswordModule, JwtAuthModule, UsersModule, EmailModule],
   controllers: [AuthController],
-  providers: [AuthService, GoogleAuthService, AuthRateLimiterGuard],
+  providers: [
+    AuthService,
+    GoogleAuthService,
+    AuthRateLimiterGuard,
+    PasswordResetService,
+    PasswordResetTokenRepository,
+  ],
 })
 export class AuthModule {}

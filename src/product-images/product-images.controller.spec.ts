@@ -390,7 +390,7 @@ describe('ProductImagesController (HTTP)', () => {
      * JSON body and accept a multipart file.
      */
     const form = new FormData();
-    form.append('file', new Blob(PNG_BYTES, { type: 'image/png' }), 'front.png');
+    form.append('file', new Blob([new Uint8Array(PNG_BYTES)], { type: 'image/png' }), 'front.png');
 
     const res = await fetch(baseUrl, { method: 'POST', body: form });
 
@@ -454,7 +454,7 @@ describe('ProductImagesController (multipart upload)', () => {
     if (options.includeFile !== false) {
       form.append(
         'file',
-        new Blob([options.bytes ?? PNG_BYTES], {
+        new Blob([new Uint8Array(options.bytes ?? PNG_BYTES)], {
           type: options.mimeType ?? 'image/png',
         }),
         options.filename ?? 'front.png',

@@ -10,11 +10,18 @@ import {
 import { UserResponseDto } from '../users/dto/user-response.dto.js';
 import { AuthService } from './auth.service.js';
 import { CurrentUser } from './decorators/current-user.decorator.js';
+import { ForgotPasswordDto } from './dto/forgot-password.dto.js';
 import { GoogleLoginDto } from './dto/google-login.dto.js';
 import { LoginResponseDto } from './dto/login-response.dto.js';
 import { LoginDto } from './dto/login.dto.js';
+import { ResetPasswordDto } from './dto/reset-password.dto.js';
+import { AuthRateLimit } from './guards/auth-rate-limit.decorator.js';
 import { AuthRateLimiterGuard } from './guards/auth-rate-limiter.guard.js';
 import { JwtAuthGuard } from './guards/jwt-auth.guard.js';
+import {
+  PasswordResetMessage,
+  PasswordResetService,
+} from './password-reset/password-reset.service.js';
 import type { AuthenticatedUser } from './types/authenticated-user.js';
 
 /**
@@ -27,7 +34,10 @@ import type { AuthenticatedUser } from './types/authenticated-user.js';
  */
 @Controller('auth')
 export class AuthController {
-  constructor(private readonly authService: AuthService) {}
+  constructor(
+    private readonly authService: AuthService,
+    private readonly passwordResetService: PasswordResetService,
+  ) {}
 
   /**
    * Exchanges valid email/password credentials for an access token.
@@ -47,6 +57,30 @@ export class AuthController {
   @HttpCode(HttpStatus.OK)
   googleLogin(@Body() dto: GoogleLoginDto): Promise<LoginResponseDto> {
     return this.authService.googleLogin(dto);
+  }
+
+  /**
+   * Starts a password reset. The response never says whether the address exists.
+   */
+  @Post('forgot-password')
+  @UseGuards(AuthRateLimiterGuard)
+  @AuthRateLimit({ limit: 5, windowMs: 60_000 })
+  @HttpCode(HttpStatus.OK)
+  forgotPassword(
+    @Body() dto: ForgotPasswordDto,
+  ): Promise<PasswordResetMessage> {
+    return this.passwordResetService.requestReset(dto);
+  }
+
+  /**
+   * Consumes a single-use reset token and sets a new local password.
+   */
+  @Post('reset-password')
+  @UseGuards(AuthRateLimiterGuard)
+  @AuthRateLimit({ limit: 10, windowMs: 60_000 })
+  @HttpCode(HttpStatus.OK)
+  resetPassword(@Body() dto: ResetPasswordDto): Promise<PasswordResetMessage> {
+    return this.passwordResetService.resetPassword(dto);
   }
 
   /**

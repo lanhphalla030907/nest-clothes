@@ -1,8 +1,7 @@
 import 'dotenv/config';
 import { Test, TestingModule } from '@nestjs/testing';
-import { INestApplication } from '@nestjs/common';
+import type { INestApplication } from '@nestjs/common';
 import request from 'supertest';
-import { App } from 'supertest/types';
 import { AppModule } from './../src/app.module.js';
 
 /**
@@ -19,7 +18,7 @@ import { AppModule } from './../src/app.module.js';
  * this one fails for a reason that has nothing to do with orders.
  */
 describe('AppController (e2e)', () => {
-  let app: INestApplication<App>;
+  let app: INestApplication;
 
   beforeAll(async () => {
     const moduleFixture: TestingModule = await Test.createTestingModule({

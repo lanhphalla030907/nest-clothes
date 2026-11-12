@@ -47,6 +47,26 @@ export { Prisma }
  */
 export type User = Prisma.UserModel
 /**
+ * Model Notification
+ * One in-app notification addressed to exactly one user.
+ * 
+ * `dedupe_key` is the idempotency guarantee: event handlers run after a
+ * transaction commits, but webhooks and status endpoints can be called more
+ * than once, so a unique key makes a repeated event a no-op rather than a
+ * second row. It is internal and never returned by the API.
+ */
+export type Notification = Prisma.NotificationModel
+/**
+ * Model TelegramOrderAlert
+ * Durable outbox for the one Telegram alert each order may produce.
+ * 
+ * New-order alerts are enqueued after the order commits, then delivered by a
+ * scheduler. The unique `order_id` is what makes "one alert per order" true
+ * even when checkout retries or an event is processed twice. Failures are
+ * retried with backoff; a terminal failure stays `FAILED` for inspection.
+ */
+export type TelegramOrderAlert = Prisma.TelegramOrderAlertModel
+/**
  * Model Feedback
  * Feedback about the store and its services, owned by one customer.
  * 
@@ -64,6 +84,16 @@ export type Feedback = Prisma.FeedbackModel
  * multiple users and prevents account takeover races.
  */
 export type UserIdentity = Prisma.UserIdentityModel
+/**
+ * Model PasswordResetToken
+ * A single-use, short-lived password reset credential.
+ * 
+ * Only the SHA-256 digest of the random token is stored. The raw token travels
+ * by email and is never persisted, logged, or returned by an API. `usedAt`
+ * records consumption so a second attempt with the same link is refused, and
+ * the row is kept as an audit trail rather than deleted.
+ */
+export type PasswordResetToken = Prisma.PasswordResetTokenModel
 /**
  * Model Category
  * A catalog category. Categories form a tree through the `parent`/`children`

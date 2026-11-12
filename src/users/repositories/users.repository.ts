@@ -76,4 +76,27 @@ export class UsersRepository {
       data: { emailVerifiedAt },
     });
   }
+
+  /**
+   * Sets a new local password credential.
+   *
+   * `passwordChangedAt` is what makes existing access tokens stop working after
+   * a reset: `JwtAuthGuard` compares the token's issue time with it. A reset
+   * delivered to the account's email also proves control of that address, so an
+   * unverified address is marked verified in the same write.
+   */
+  updatePassword(
+    userId: string,
+    data: {
+      passwordHash: string;
+      passwordChangedAt: Date;
+      emailVerifiedAt: Date | null;
+    },
+    client: Prisma.TransactionClient | PrismaService = this.prisma,
+  ): Promise<User> {
+    return client.user.update({
+      where: { id: userId },
+      data,
+    });
+  }
 }

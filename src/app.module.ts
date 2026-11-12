@@ -23,6 +23,7 @@ import { VariantOptionsModule } from './variant-options/variant-options.module.j
 import { WishlistModule } from './wishlist/wishlist.module.js';
 import { OrderModule } from './orders/order.module.js';
 import { PaymentsModule } from './payments/payments.module.js';
+import { NotificationsModule } from './notifications/notifications.module.js';
 import { PostersModule } from './posters/posters.module.js';
 import { ReceiptModule } from './receipts/receipt.module.js';
 import { LocationsModule } from './locations/locations.module.js';
@@ -55,6 +56,7 @@ import { ScheduleModule } from '@nestjs/schedule';
     LocationsModule,
     CollectionsModule,
     FeedbackModule,
+    NotificationsModule,
     ProductsModule,
     ProductImagesModule,
     ProductVariantsModule,

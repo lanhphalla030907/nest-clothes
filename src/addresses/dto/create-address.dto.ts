@@ -127,6 +127,22 @@ export class CreateAddressDto {
   })
   administrativeLocationPcode?: string;
 
+  @ValidateIf((dto: CreateAddressDto) => dto.countryCode === 'KH')
+  @IsOptional()
+  @IsString()
+  @Matches(/^KH[0-9]{4}$/, {
+    message: 'districtPcode must identify a Cambodia district or khan',
+  })
+  districtPcode?: string;
+
+  @ValidateIf((dto: CreateAddressDto) => dto.countryCode === 'KH')
+  @IsOptional()
+  @IsString()
+  @Matches(/^KH[0-9]{6}$/, {
+    message: 'communePcode must identify a Cambodia commune or sangkat',
+  })
+  communePcode?: string;
+
   @Transform(trimOptionalField)
   @IsOptional()
   @IsString()

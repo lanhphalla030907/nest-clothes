@@ -492,6 +492,8 @@ export class AddressesService {
     if (
       !isCambodia &&
       (dto.administrativeLocationPcode !== undefined ||
+        dto.districtPcode !== undefined ||
+        dto.communePcode !== undefined ||
         dto.district !== undefined ||
         dto.commune !== undefined)
     ) {
@@ -499,11 +501,42 @@ export class AddressesService {
         'Cambodia administrative locations can only be used for country KH',
       );
     }
+    let administrativeLocationPcode: string | null = null;
     if (isCambodia) {
-      await this.locationsService.requireProvince(
-        dto.administrativeLocationPcode,
-        tx,
-      );
+      // Validate the full hierarchy if pcodes are provided
+      if (dto.communePcode) {
+        await this.locationsService.requireCommune(dto.communePcode, tx);
+        // Verify the commune's district matches the provided districtPcode
+        const path = await this.locationsService.getPath(dto.communePcode, tx);
+        if (path && dto.districtPcode && path[1]?.pcode !== dto.districtPcode) {
+          throw new BadRequestException(
+            'The selected commune does not belong to the selected district',
+          );
+        }
+        // Verify the district's province matches the provided administrativeLocationPcode
+        if (path && dto.administrativeLocationPcode && path[0]?.pcode !== dto.administrativeLocationPcode) {
+          throw new BadRequestException(
+            'The selected district does not belong to the selected province',
+          );
+        }
+        administrativeLocationPcode = dto.communePcode;
+      } else if (dto.districtPcode) {
+        await this.locationsService.requireProvince(dto.districtPcode, tx);
+        // Verify the district belongs to the province
+        const path = await this.locationsService.getPath(dto.districtPcode, tx);
+        if (path && dto.administrativeLocationPcode && path[0]?.pcode !== dto.administrativeLocationPcode) {
+          throw new BadRequestException(
+            'The selected district does not belong to the selected province',
+          );
+        }
+        administrativeLocationPcode = dto.districtPcode;
+      } else {
+        await this.locationsService.requireProvince(
+          dto.administrativeLocationPcode,
+          tx,
+        );
+        administrativeLocationPcode = dto.administrativeLocationPcode ?? null;
+      }
     }
     return {
       userId,
@@ -514,9 +547,7 @@ export class AddressesService {
       addressLine2: dto.addressLine2 ?? null,
       city: isCambodia ? dto.commune! : dto.city!,
       stateProvince: isCambodia ? dto.district! : (dto.stateProvince ?? null),
-      administrativeLocationPcode: isCambodia
-        ? dto.administrativeLocationPcode!
-        : null,
+      administrativeLocationPcode,
       postalCode: dto.postalCode ?? null,
       countryCode: dto.countryCode,
       isDefault,
@@ -538,19 +569,59 @@ export class AddressesService {
       }
       const locationChanged =
         dto.administrativeLocationPcode !== undefined ||
+        dto.districtPcode !== undefined ||
+        dto.communePcode !== undefined ||
         dto.district !== undefined ||
         dto.commune !== undefined ||
         (dto.countryCode !== undefined && existing.countryCode !== 'KH');
       if (!locationChanged) {
         return data;
       }
-      const pcode =
-        dto.administrativeLocationPcode === undefined
-          ? existing.administrativeLocationPcode
-          : dto.administrativeLocationPcode;
-      await this.locationsService.requireProvince(pcode ?? undefined);
-      const district = dto.district ?? existing.stateProvince;
-      const commune = dto.commune ?? existing.city;
+      let administrativeLocationPcode: string | null = existing.administrativeLocationPcode;
+      let district: string | undefined = dto.district ?? existing.stateProvince ?? undefined;
+      let commune: string | undefined = dto.commune ?? existing.city ?? undefined;
+
+      // Validate hierarchy if pcodes are provided
+      if (dto.communePcode !== undefined) {
+        if (dto.communePcode !== null) {
+          await this.locationsService.requireCommune(dto.communePcode);
+          const path = await this.locationsService.getPath(dto.communePcode);
+          if (path && dto.districtPcode && path[1]?.pcode !== dto.districtPcode) {
+            throw new BadRequestException(
+              'The selected commune does not belong to the selected district',
+            );
+          }
+          if (path && dto.administrativeLocationPcode && path[0]?.pcode !== dto.administrativeLocationPcode) {
+            throw new BadRequestException(
+              'The selected district does not belong to the selected province',
+            );
+          }
+          administrativeLocationPcode = dto.communePcode;
+        } else {
+          administrativeLocationPcode = null;
+        }
+      } else if (dto.districtPcode !== undefined) {
+        if (dto.districtPcode !== null) {
+          await this.locationsService.requireProvince(dto.districtPcode);
+          const path = await this.locationsService.getPath(dto.districtPcode);
+          if (path && dto.administrativeLocationPcode && path[0]?.pcode !== dto.administrativeLocationPcode) {
+            throw new BadRequestException(
+              'The selected district does not belong to the selected province',
+            );
+          }
+          administrativeLocationPcode = dto.districtPcode;
+        } else {
+          administrativeLocationPcode = null;
+        }
+      } else if (dto.administrativeLocationPcode !== undefined) {
+        if (dto.administrativeLocationPcode !== null) {
+          await this.locationsService.requireProvince(dto.administrativeLocationPcode);
+          administrativeLocationPcode = dto.administrativeLocationPcode;
+        } else {
+          administrativeLocationPcode = null;
+        }
+      }
+
       if (!district?.trim() || !commune?.trim()) {
         throw new BadRequestException(
           'Provide both the district and commune for a Cambodia address',
@@ -558,7 +629,7 @@ export class AddressesService {
       }
       data.city = commune;
       data.stateProvince = district;
-      data.administrativeLocationPcode = pcode;
+      data.administrativeLocationPcode = administrativeLocationPcode;
     } else {
       if (dto.district !== undefined || dto.commune !== undefined) {
         throw new BadRequestException(
@@ -571,6 +642,11 @@ export class AddressesService {
       ) {
         throw new BadRequestException(
           'Cambodia administrative locations can only be used for country KH',
+        );
+      }
+      if (dto.districtPcode !== undefined || dto.communePcode !== undefined) {
+        throw new BadRequestException(
+          'Cambodia administrative location pcodes can only be used for country KH',
         );
       }
       const city = dto.city ?? (existing.countryCode === countryCode ? existing.city : null);

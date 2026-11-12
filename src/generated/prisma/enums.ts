@@ -29,3 +29,25 @@ export const DeliveryStatus = {
 } as const
 
 export type DeliveryStatus = (typeof DeliveryStatus)[keyof typeof DeliveryStatus]
+
+
+export const NotificationType = {
+  ORDER_PLACED: 'ORDER_PLACED',
+  PAYMENT_CONFIRMED: 'PAYMENT_CONFIRMED',
+  ORDER_SHIPPED: 'ORDER_SHIPPED',
+  ORDER_DELIVERED: 'ORDER_DELIVERED',
+  ORDER_CANCELLED: 'ORDER_CANCELLED',
+  ADMIN_NEW_ORDER: 'ADMIN_NEW_ORDER',
+  ADMIN_NEW_FEEDBACK: 'ADMIN_NEW_FEEDBACK'
+} as const
+
+export type NotificationType = (typeof NotificationType)[keyof typeof NotificationType]
+
+
+export const TelegramAlertStatus = {
+  PENDING: 'PENDING',
+  SENT: 'SENT',
+  FAILED: 'FAILED'
+} as const
+
+export type TelegramAlertStatus = (typeof TelegramAlertStatus)[keyof typeof TelegramAlertStatus]

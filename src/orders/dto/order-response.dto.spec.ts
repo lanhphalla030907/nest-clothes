@@ -23,6 +23,10 @@ const buildItem = (overrides: Record<string, unknown> = {}) => ({
   unitPrice: new Prisma.Decimal('129.00'),
   quantity: 2,
   lineTotal: new Prisma.Decimal('258.00'),
+  unitCostSnapshot: null,
+  costCurrency: null,
+  costSource: 'UNKNOWN',
+  costCapturedAt: null,
   createdAt: CREATED_AT,
   ...overrides,
 });

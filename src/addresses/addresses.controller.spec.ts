@@ -358,7 +358,7 @@ describe('AddressesController (HTTP)', () => {
       ['a state longer than the column', { stateProvince: 'x'.repeat(101) }],
       ['a postal code longer than the column', { postalCode: 'x'.repeat(21) }],
     ])('rejects %s', async (_name, override) => {
-      const body = { ...VALID_BODY, ...override };
+      const body: Record<string, unknown> = { ...VALID_BODY, ...override };
       for (const key of Object.keys(override)) {
         if (body[key] === undefined) {
           delete body[key];

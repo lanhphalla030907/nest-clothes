@@ -35,6 +35,7 @@ export type UserMinAggregateOutputType = {
   role: $Enums.Role | null
   emailVerifiedAt: Date | null
   lastLoginAt: Date | null
+  passwordChangedAt: Date | null
   createdAt: Date | null
   updatedAt: Date | null
 }
@@ -50,6 +51,7 @@ export type UserMaxAggregateOutputType = {
   role: $Enums.Role | null
   emailVerifiedAt: Date | null
   lastLoginAt: Date | null
+  passwordChangedAt: Date | null
   createdAt: Date | null
   updatedAt: Date | null
 }
@@ -65,6 +67,7 @@ export type UserCountAggregateOutputType = {
   role: number
   emailVerifiedAt: number
   lastLoginAt: number
+  passwordChangedAt: number
   createdAt: number
   updatedAt: number
   _all: number
@@ -82,6 +85,7 @@ export type UserMinAggregateInputType = {
   role?: true
   emailVerifiedAt?: true
   lastLoginAt?: true
+  passwordChangedAt?: true
   createdAt?: true
   updatedAt?: true
 }
@@ -97,6 +101,7 @@ export type UserMaxAggregateInputType = {
   role?: true
   emailVerifiedAt?: true
   lastLoginAt?: true
+  passwordChangedAt?: true
   createdAt?: true
   updatedAt?: true
 }
@@ -112,6 +117,7 @@ export type UserCountAggregateInputType = {
   role?: true
   emailVerifiedAt?: true
   lastLoginAt?: true
+  passwordChangedAt?: true
   createdAt?: true
   updatedAt?: true
   _all?: true
@@ -200,6 +206,7 @@ export type UserGroupByOutputType = {
   role: $Enums.Role
   emailVerifiedAt: Date | null
   lastLoginAt: Date | null
+  passwordChangedAt: Date | null
   createdAt: Date
   updatedAt: Date
   _count: UserCountAggregateOutputType | null
@@ -236,6 +243,7 @@ export type UserWhereInput = {
   role?: Prisma.EnumRoleFilter<"User"> | $Enums.Role
   emailVerifiedAt?: Prisma.DateTimeNullableFilter<"User"> | Date | string | null
   lastLoginAt?: Prisma.DateTimeNullableFilter<"User"> | Date | string | null
+  passwordChangedAt?: Prisma.DateTimeNullableFilter<"User"> | Date | string | null
   createdAt?: Prisma.DateTimeFilter<"User"> | Date | string
   updatedAt?: Prisma.DateTimeFilter<"User"> | Date | string
   addresses?: Prisma.AddressListRelationFilter
@@ -244,12 +252,14 @@ export type UserWhereInput = {
   orders?: Prisma.OrderListRelationFilter
   checkoutQuotes?: Prisma.CheckoutQuoteListRelationFilter
   promotionUsages?: Prisma.PromotionUsageListRelationFilter
+  passwordResetTokens?: Prisma.PasswordResetTokenListRelationFilter
   deliveryAssignments?: Prisma.DeliveryAssignmentListRelationFilter
   assignmentsMade?: Prisma.DeliveryAssignmentListRelationFilter
   codCollections?: Prisma.CodCollectionListRelationFilter
   variantCostChanges?: Prisma.VariantCostHistoryListRelationFilter
   identities?: Prisma.UserIdentityListRelationFilter
   feedback?: Prisma.FeedbackListRelationFilter
+  notifications?: Prisma.NotificationListRelationFilter
 }
 
 export type UserOrderByWithRelationInput = {
@@ -263,6 +273,7 @@ export type UserOrderByWithRelationInput = {
   role?: Prisma.SortOrder
   emailVerifiedAt?: Prisma.SortOrderInput | Prisma.SortOrder
   lastLoginAt?: Prisma.SortOrderInput | Prisma.SortOrder
+  passwordChangedAt?: Prisma.SortOrderInput | Prisma.SortOrder
   createdAt?: Prisma.SortOrder
   updatedAt?: Prisma.SortOrder
   addresses?: Prisma.AddressOrderByRelationAggregateInput
@@ -271,12 +282,14 @@ export type UserOrderByWithRelationInput = {
   orders?: Prisma.OrderOrderByRelationAggregateInput
   checkoutQuotes?: Prisma.CheckoutQuoteOrderByRelationAggregateInput
   promotionUsages?: Prisma.PromotionUsageOrderByRelationAggregateInput
+  passwordResetTokens?: Prisma.PasswordResetTokenOrderByRelationAggregateInput
   deliveryAssignments?: Prisma.DeliveryAssignmentOrderByRelationAggregateInput
   assignmentsMade?: Prisma.DeliveryAssignmentOrderByRelationAggregateInput
   codCollections?: Prisma.CodCollectionOrderByRelationAggregateInput
   variantCostChanges?: Prisma.VariantCostHistoryOrderByRelationAggregateInput
   identities?: Prisma.UserIdentityOrderByRelationAggregateInput
   feedback?: Prisma.FeedbackOrderByRelationAggregateInput
+  notifications?: Prisma.NotificationOrderByRelationAggregateInput
 }
 
 export type UserWhereUniqueInput = Prisma.AtLeast<{
@@ -293,6 +306,7 @@ export type UserWhereUniqueInput = Prisma.AtLeast<{
   role?: Prisma.EnumRoleFilter<"User"> | $Enums.Role
   emailVerifiedAt?: Prisma.DateTimeNullableFilter<"User"> | Date | string | null
   lastLoginAt?: Prisma.DateTimeNullableFilter<"User"> | Date | string | null
+  passwordChangedAt?: Prisma.DateTimeNullableFilter<"User"> | Date | string | null
   createdAt?: Prisma.DateTimeFilter<"User"> | Date | string
   updatedAt?: Prisma.DateTimeFilter<"User"> | Date | string
   addresses?: Prisma.AddressListRelationFilter
@@ -301,12 +315,14 @@ export type UserWhereUniqueInput = Prisma.AtLeast<{
   orders?: Prisma.OrderListRelationFilter
   checkoutQuotes?: Prisma.CheckoutQuoteListRelationFilter
   promotionUsages?: Prisma.PromotionUsageListRelationFilter
+  passwordResetTokens?: Prisma.PasswordResetTokenListRelationFilter
   deliveryAssignments?: Prisma.DeliveryAssignmentListRelationFilter
   assignmentsMade?: Prisma.DeliveryAssignmentListRelationFilter
   codCollections?: Prisma.CodCollectionListRelationFilter
   variantCostChanges?: Prisma.VariantCostHistoryListRelationFilter
   identities?: Prisma.UserIdentityListRelationFilter
   feedback?: Prisma.FeedbackListRelationFilter
+  notifications?: Prisma.NotificationListRelationFilter
 }, "id" | "email">
 
 export type UserOrderByWithAggregationInput = {
@@ -320,6 +336,7 @@ export type UserOrderByWithAggregationInput = {
   role?: Prisma.SortOrder
   emailVerifiedAt?: Prisma.SortOrderInput | Prisma.SortOrder
   lastLoginAt?: Prisma.SortOrderInput | Prisma.SortOrder
+  passwordChangedAt?: Prisma.SortOrderInput | Prisma.SortOrder
   createdAt?: Prisma.SortOrder
   updatedAt?: Prisma.SortOrder
   _count?: Prisma.UserCountOrderByAggregateInput
@@ -341,6 +358,7 @@ export type UserScalarWhereWithAggregatesInput = {
   role?: Prisma.EnumRoleWithAggregatesFilter<"User"> | $Enums.Role
   emailVerifiedAt?: Prisma.DateTimeNullableWithAggregatesFilter<"User"> | Date | string | null
   lastLoginAt?: Prisma.DateTimeNullableWithAggregatesFilter<"User"> | Date | string | null
+  passwordChangedAt?: Prisma.DateTimeNullableWithAggregatesFilter<"User"> | Date | string | null
   createdAt?: Prisma.DateTimeWithAggregatesFilter<"User"> | Date | string
   updatedAt?: Prisma.DateTimeWithAggregatesFilter<"User"> | Date | string
 }
@@ -356,6 +374,7 @@ export type UserCreateInput = {
   role?: $Enums.Role
   emailVerifiedAt?: Date | string | null
   lastLoginAt?: Date | string | null
+  passwordChangedAt?: Date | string | null
   createdAt?: Date | string
   updatedAt?: Date | string
   addresses?: Prisma.AddressCreateNestedManyWithoutUserInput
@@ -364,12 +383,14 @@ export type UserCreateInput = {
   orders?: Prisma.OrderCreateNestedManyWithoutUserInput
   checkoutQuotes?: Prisma.CheckoutQuoteCreateNestedManyWithoutUserInput
   promotionUsages?: Prisma.PromotionUsageCreateNestedManyWithoutUserInput
+  passwordResetTokens?: Prisma.PasswordResetTokenCreateNestedManyWithoutUserInput
   deliveryAssignments?: Prisma.DeliveryAssignmentCreateNestedManyWithoutDeliveryStaffInput
   assignmentsMade?: Prisma.DeliveryAssignmentCreateNestedManyWithoutAssignedByInput
   codCollections?: Prisma.CodCollectionCreateNestedManyWithoutCollectedByInput
   variantCostChanges?: Prisma.VariantCostHistoryCreateNestedManyWithoutCreatedByInput
   identities?: Prisma.UserIdentityCreateNestedManyWithoutUserInput
   feedback?: Prisma.FeedbackCreateNestedManyWithoutCustomerInput
+  notifications?: Prisma.NotificationCreateNestedManyWithoutUserInput
 }
 
 export type UserUncheckedCreateInput = {
@@ -383,6 +404,7 @@ export type UserUncheckedCreateInput = {
   role?: $Enums.Role
   emailVerifiedAt?: Date | string | null
   lastLoginAt?: Date | string | null
+  passwordChangedAt?: Date | string | null
   createdAt?: Date | string
   updatedAt?: Date | string
   addresses?: Prisma.AddressUncheckedCreateNestedManyWithoutUserInput
@@ -391,12 +413,14 @@ export type UserUncheckedCreateInput = {
   orders?: Prisma.OrderUncheckedCreateNestedManyWithoutUserInput
   checkoutQuotes?: Prisma.CheckoutQuoteUncheckedCreateNestedManyWithoutUserInput
   promotionUsages?: Prisma.PromotionUsageUncheckedCreateNestedManyWithoutUserInput
+  passwordResetTokens?: Prisma.PasswordResetTokenUncheckedCreateNestedManyWithoutUserInput
   deliveryAssignments?: Prisma.DeliveryAssignmentUncheckedCreateNestedManyWithoutDeliveryStaffInput
   assignmentsMade?: Prisma.DeliveryAssignmentUncheckedCreateNestedManyWithoutAssignedByInput
   codCollections?: Prisma.CodCollectionUncheckedCreateNestedManyWithoutCollectedByInput
   variantCostChanges?: Prisma.VariantCostHistoryUncheckedCreateNestedManyWithoutCreatedByInput
   identities?: Prisma.UserIdentityUncheckedCreateNestedManyWithoutUserInput
   feedback?: Prisma.FeedbackUncheckedCreateNestedManyWithoutCustomerInput
+  notifications?: Prisma.NotificationUncheckedCreateNestedManyWithoutUserInput
 }
 
 export type UserUpdateInput = {
@@ -410,6 +434,7 @@ export type UserUpdateInput = {
   role?: Prisma.EnumRoleFieldUpdateOperationsInput | $Enums.Role
   emailVerifiedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   lastLoginAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  passwordChangedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   addresses?: Prisma.AddressUpdateManyWithoutUserNestedInput
@@ -418,12 +443,14 @@ export type UserUpdateInput = {
   orders?: Prisma.OrderUpdateManyWithoutUserNestedInput
   checkoutQuotes?: Prisma.CheckoutQuoteUpdateManyWithoutUserNestedInput
   promotionUsages?: Prisma.PromotionUsageUpdateManyWithoutUserNestedInput
+  passwordResetTokens?: Prisma.PasswordResetTokenUpdateManyWithoutUserNestedInput
   deliveryAssignments?: Prisma.DeliveryAssignmentUpdateManyWithoutDeliveryStaffNestedInput
   assignmentsMade?: Prisma.DeliveryAssignmentUpdateManyWithoutAssignedByNestedInput
   codCollections?: Prisma.CodCollectionUpdateManyWithoutCollectedByNestedInput
   variantCostChanges?: Prisma.VariantCostHistoryUpdateManyWithoutCreatedByNestedInput
   identities?: Prisma.UserIdentityUpdateManyWithoutUserNestedInput
   feedback?: Prisma.FeedbackUpdateManyWithoutCustomerNestedInput
+  notifications?: Prisma.NotificationUpdateManyWithoutUserNestedInput
 }
 
 export type UserUncheckedUpdateInput = {
@@ -437,6 +464,7 @@ export type UserUncheckedUpdateInput = {
   role?: Prisma.EnumRoleFieldUpdateOperationsInput | $Enums.Role
   emailVerifiedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   lastLoginAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  passwordChangedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   addresses?: Prisma.AddressUncheckedUpdateManyWithoutUserNestedInput
@@ -445,12 +473,14 @@ export type UserUncheckedUpdateInput = {
   orders?: Prisma.OrderUncheckedUpdateManyWithoutUserNestedInput
   checkoutQuotes?: Prisma.CheckoutQuoteUncheckedUpdateManyWithoutUserNestedInput
   promotionUsages?: Prisma.PromotionUsageUncheckedUpdateManyWithoutUserNestedInput
+  passwordResetTokens?: Prisma.PasswordResetTokenUncheckedUpdateManyWithoutUserNestedInput
   deliveryAssignments?: Prisma.DeliveryAssignmentUncheckedUpdateManyWithoutDeliveryStaffNestedInput
   assignmentsMade?: Prisma.DeliveryAssignmentUncheckedUpdateManyWithoutAssignedByNestedInput
   codCollections?: Prisma.CodCollectionUncheckedUpdateManyWithoutCollectedByNestedInput
   variantCostChanges?: Prisma.VariantCostHistoryUncheckedUpdateManyWithoutCreatedByNestedInput
   identities?: Prisma.UserIdentityUncheckedUpdateManyWithoutUserNestedInput
   feedback?: Prisma.FeedbackUncheckedUpdateManyWithoutCustomerNestedInput
+  notifications?: Prisma.NotificationUncheckedUpdateManyWithoutUserNestedInput
 }
 
 export type UserCreateManyInput = {
@@ -464,6 +494,7 @@ export type UserCreateManyInput = {
   role?: $Enums.Role
   emailVerifiedAt?: Date | string | null
   lastLoginAt?: Date | string | null
+  passwordChangedAt?: Date | string | null
   createdAt?: Date | string
   updatedAt?: Date | string
 }
@@ -479,6 +510,7 @@ export type UserUpdateManyMutationInput = {
   role?: Prisma.EnumRoleFieldUpdateOperationsInput | $Enums.Role
   emailVerifiedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   lastLoginAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  passwordChangedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
 }
@@ -494,6 +526,7 @@ export type UserUncheckedUpdateManyInput = {
   role?: Prisma.EnumRoleFieldUpdateOperationsInput | $Enums.Role
   emailVerifiedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   lastLoginAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  passwordChangedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
 }
@@ -509,6 +542,7 @@ export type UserCountOrderByAggregateInput = {
   role?: Prisma.SortOrder
   emailVerifiedAt?: Prisma.SortOrder
   lastLoginAt?: Prisma.SortOrder
+  passwordChangedAt?: Prisma.SortOrder
   createdAt?: Prisma.SortOrder
   updatedAt?: Prisma.SortOrder
 }
@@ -524,6 +558,7 @@ export type UserMaxOrderByAggregateInput = {
   role?: Prisma.SortOrder
   emailVerifiedAt?: Prisma.SortOrder
   lastLoginAt?: Prisma.SortOrder
+  passwordChangedAt?: Prisma.SortOrder
   createdAt?: Prisma.SortOrder
   updatedAt?: Prisma.SortOrder
 }
@@ -539,6 +574,7 @@ export type UserMinOrderByAggregateInput = {
   role?: Prisma.SortOrder
   emailVerifiedAt?: Prisma.SortOrder
   lastLoginAt?: Prisma.SortOrder
+  passwordChangedAt?: Prisma.SortOrder
   createdAt?: Prisma.SortOrder
   updatedAt?: Prisma.SortOrder
 }
@@ -573,6 +609,20 @@ export type DateTimeFieldUpdateOperationsInput = {
   set?: Date | string
 }
 
+export type UserCreateNestedOneWithoutNotificationsInput = {
+  create?: Prisma.XOR<Prisma.UserCreateWithoutNotificationsInput, Prisma.UserUncheckedCreateWithoutNotificationsInput>
+  connectOrCreate?: Prisma.UserCreateOrConnectWithoutNotificationsInput
+  connect?: Prisma.UserWhereUniqueInput
+}
+
+export type UserUpdateOneRequiredWithoutNotificationsNestedInput = {
+  create?: Prisma.XOR<Prisma.UserCreateWithoutNotificationsInput, Prisma.UserUncheckedCreateWithoutNotificationsInput>
+  connectOrCreate?: Prisma.UserCreateOrConnectWithoutNotificationsInput
+  upsert?: Prisma.UserUpsertWithoutNotificationsInput
+  connect?: Prisma.UserWhereUniqueInput
+  update?: Prisma.XOR<Prisma.XOR<Prisma.UserUpdateToOneWithWhereWithoutNotificationsInput, Prisma.UserUpdateWithoutNotificationsInput>, Prisma.UserUncheckedUpdateWithoutNotificationsInput>
+}
+
 export type UserCreateNestedOneWithoutFeedbackInput = {
   create?: Prisma.XOR<Prisma.UserCreateWithoutFeedbackInput, Prisma.UserUncheckedCreateWithoutFeedbackInput>
   connectOrCreate?: Prisma.UserCreateOrConnectWithoutFeedbackInput
@@ -599,6 +649,20 @@ export type UserUpdateOneRequiredWithoutIdentitiesNestedInput = {
   upsert?: Prisma.UserUpsertWithoutIdentitiesInput
   connect?: Prisma.UserWhereUniqueInput
   update?: Prisma.XOR<Prisma.XOR<Prisma.UserUpdateToOneWithWhereWithoutIdentitiesInput, Prisma.UserUpdateWithoutIdentitiesInput>, Prisma.UserUncheckedUpdateWithoutIdentitiesInput>
+}
+
+export type UserCreateNestedOneWithoutPasswordResetTokensInput = {
+  create?: Prisma.XOR<Prisma.UserCreateWithoutPasswordResetTokensInput, Prisma.UserUncheckedCreateWithoutPasswordResetTokensInput>
+  connectOrCreate?: Prisma.UserCreateOrConnectWithoutPasswordResetTokensInput
+  connect?: Prisma.UserWhereUniqueInput
+}
+
+export type UserUpdateOneRequiredWithoutPasswordResetTokensNestedInput = {
+  create?: Prisma.XOR<Prisma.UserCreateWithoutPasswordResetTokensInput, Prisma.UserUncheckedCreateWithoutPasswordResetTokensInput>
+  connectOrCreate?: Prisma.UserCreateOrConnectWithoutPasswordResetTokensInput
+  upsert?: Prisma.UserUpsertWithoutPasswordResetTokensInput
+  connect?: Prisma.UserWhereUniqueInput
+  update?: Prisma.XOR<Prisma.XOR<Prisma.UserUpdateToOneWithWhereWithoutPasswordResetTokensInput, Prisma.UserUpdateWithoutPasswordResetTokensInput>, Prisma.UserUncheckedUpdateWithoutPasswordResetTokensInput>
 }
 
 export type UserCreateNestedOneWithoutVariantCostChangesInput = {
@@ -743,6 +807,138 @@ export type UserUpdateOneRequiredWithoutPromotionUsagesNestedInput = {
   update?: Prisma.XOR<Prisma.XOR<Prisma.UserUpdateToOneWithWhereWithoutPromotionUsagesInput, Prisma.UserUpdateWithoutPromotionUsagesInput>, Prisma.UserUncheckedUpdateWithoutPromotionUsagesInput>
 }
 
+export type UserCreateWithoutNotificationsInput = {
+  id?: string
+  firstName: string
+  lastName: string
+  email: string
+  passwordHash: string
+  phone?: string | null
+  status: string
+  role?: $Enums.Role
+  emailVerifiedAt?: Date | string | null
+  lastLoginAt?: Date | string | null
+  passwordChangedAt?: Date | string | null
+  createdAt?: Date | string
+  updatedAt?: Date | string
+  addresses?: Prisma.AddressCreateNestedManyWithoutUserInput
+  cart?: Prisma.CartCreateNestedOneWithoutUserInput
+  wishlist?: Prisma.WishlistCreateNestedOneWithoutUserInput
+  orders?: Prisma.OrderCreateNestedManyWithoutUserInput
+  checkoutQuotes?: Prisma.CheckoutQuoteCreateNestedManyWithoutUserInput
+  promotionUsages?: Prisma.PromotionUsageCreateNestedManyWithoutUserInput
+  passwordResetTokens?: Prisma.PasswordResetTokenCreateNestedManyWithoutUserInput
+  deliveryAssignments?: Prisma.DeliveryAssignmentCreateNestedManyWithoutDeliveryStaffInput
+  assignmentsMade?: Prisma.DeliveryAssignmentCreateNestedManyWithoutAssignedByInput
+  codCollections?: Prisma.CodCollectionCreateNestedManyWithoutCollectedByInput
+  variantCostChanges?: Prisma.VariantCostHistoryCreateNestedManyWithoutCreatedByInput
+  identities?: Prisma.UserIdentityCreateNestedManyWithoutUserInput
+  feedback?: Prisma.FeedbackCreateNestedManyWithoutCustomerInput
+}
+
+export type UserUncheckedCreateWithoutNotificationsInput = {
+  id?: string
+  firstName: string
+  lastName: string
+  email: string
+  passwordHash: string
+  phone?: string | null
+  status: string
+  role?: $Enums.Role
+  emailVerifiedAt?: Date | string | null
+  lastLoginAt?: Date | string | null
+  passwordChangedAt?: Date | string | null
+  createdAt?: Date | string
+  updatedAt?: Date | string
+  addresses?: Prisma.AddressUncheckedCreateNestedManyWithoutUserInput
+  cart?: Prisma.CartUncheckedCreateNestedOneWithoutUserInput
+  wishlist?: Prisma.WishlistUncheckedCreateNestedOneWithoutUserInput
+  orders?: Prisma.OrderUncheckedCreateNestedManyWithoutUserInput
+  checkoutQuotes?: Prisma.CheckoutQuoteUncheckedCreateNestedManyWithoutUserInput
+  promotionUsages?: Prisma.PromotionUsageUncheckedCreateNestedManyWithoutUserInput
+  passwordResetTokens?: Prisma.PasswordResetTokenUncheckedCreateNestedManyWithoutUserInput
+  deliveryAssignments?: Prisma.DeliveryAssignmentUncheckedCreateNestedManyWithoutDeliveryStaffInput
+  assignmentsMade?: Prisma.DeliveryAssignmentUncheckedCreateNestedManyWithoutAssignedByInput
+  codCollections?: Prisma.CodCollectionUncheckedCreateNestedManyWithoutCollectedByInput
+  variantCostChanges?: Prisma.VariantCostHistoryUncheckedCreateNestedManyWithoutCreatedByInput
+  identities?: Prisma.UserIdentityUncheckedCreateNestedManyWithoutUserInput
+  feedback?: Prisma.FeedbackUncheckedCreateNestedManyWithoutCustomerInput
+}
+
+export type UserCreateOrConnectWithoutNotificationsInput = {
+  where: Prisma.UserWhereUniqueInput
+  create: Prisma.XOR<Prisma.UserCreateWithoutNotificationsInput, Prisma.UserUncheckedCreateWithoutNotificationsInput>
+}
+
+export type UserUpsertWithoutNotificationsInput = {
+  update: Prisma.XOR<Prisma.UserUpdateWithoutNotificationsInput, Prisma.UserUncheckedUpdateWithoutNotificationsInput>
+  create: Prisma.XOR<Prisma.UserCreateWithoutNotificationsInput, Prisma.UserUncheckedCreateWithoutNotificationsInput>
+  where?: Prisma.UserWhereInput
+}
+
+export type UserUpdateToOneWithWhereWithoutNotificationsInput = {
+  where?: Prisma.UserWhereInput
+  data: Prisma.XOR<Prisma.UserUpdateWithoutNotificationsInput, Prisma.UserUncheckedUpdateWithoutNotificationsInput>
+}
+
+export type UserUpdateWithoutNotificationsInput = {
+  id?: Prisma.StringFieldUpdateOperationsInput | string
+  firstName?: Prisma.StringFieldUpdateOperationsInput | string
+  lastName?: Prisma.StringFieldUpdateOperationsInput | string
+  email?: Prisma.StringFieldUpdateOperationsInput | string
+  passwordHash?: Prisma.StringFieldUpdateOperationsInput | string
+  phone?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  status?: Prisma.StringFieldUpdateOperationsInput | string
+  role?: Prisma.EnumRoleFieldUpdateOperationsInput | $Enums.Role
+  emailVerifiedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  lastLoginAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  passwordChangedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  addresses?: Prisma.AddressUpdateManyWithoutUserNestedInput
+  cart?: Prisma.CartUpdateOneWithoutUserNestedInput
+  wishlist?: Prisma.WishlistUpdateOneWithoutUserNestedInput
+  orders?: Prisma.OrderUpdateManyWithoutUserNestedInput
+  checkoutQuotes?: Prisma.CheckoutQuoteUpdateManyWithoutUserNestedInput
+  promotionUsages?: Prisma.PromotionUsageUpdateManyWithoutUserNestedInput
+  passwordResetTokens?: Prisma.PasswordResetTokenUpdateManyWithoutUserNestedInput
+  deliveryAssignments?: Prisma.DeliveryAssignmentUpdateManyWithoutDeliveryStaffNestedInput
+  assignmentsMade?: Prisma.DeliveryAssignmentUpdateManyWithoutAssignedByNestedInput
+  codCollections?: Prisma.CodCollectionUpdateManyWithoutCollectedByNestedInput
+  variantCostChanges?: Prisma.VariantCostHistoryUpdateManyWithoutCreatedByNestedInput
+  identities?: Prisma.UserIdentityUpdateManyWithoutUserNestedInput
+  feedback?: Prisma.FeedbackUpdateManyWithoutCustomerNestedInput
+}
+
+export type UserUncheckedUpdateWithoutNotificationsInput = {
+  id?: Prisma.StringFieldUpdateOperationsInput | string
+  firstName?: Prisma.StringFieldUpdateOperationsInput | string
+  lastName?: Prisma.StringFieldUpdateOperationsInput | string
+  email?: Prisma.StringFieldUpdateOperationsInput | string
+  passwordHash?: Prisma.StringFieldUpdateOperationsInput | string
+  phone?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  status?: Prisma.StringFieldUpdateOperationsInput | string
+  role?: Prisma.EnumRoleFieldUpdateOperationsInput | $Enums.Role
+  emailVerifiedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  lastLoginAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  passwordChangedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  addresses?: Prisma.AddressUncheckedUpdateManyWithoutUserNestedInput
+  cart?: Prisma.CartUncheckedUpdateOneWithoutUserNestedInput
+  wishlist?: Prisma.WishlistUncheckedUpdateOneWithoutUserNestedInput
+  orders?: Prisma.OrderUncheckedUpdateManyWithoutUserNestedInput
+  checkoutQuotes?: Prisma.CheckoutQuoteUncheckedUpdateManyWithoutUserNestedInput
+  promotionUsages?: Prisma.PromotionUsageUncheckedUpdateManyWithoutUserNestedInput
+  passwordResetTokens?: Prisma.PasswordResetTokenUncheckedUpdateManyWithoutUserNestedInput
+  deliveryAssignments?: Prisma.DeliveryAssignmentUncheckedUpdateManyWithoutDeliveryStaffNestedInput
+  assignmentsMade?: Prisma.DeliveryAssignmentUncheckedUpdateManyWithoutAssignedByNestedInput
+  codCollections?: Prisma.CodCollectionUncheckedUpdateManyWithoutCollectedByNestedInput
+  variantCostChanges?: Prisma.VariantCostHistoryUncheckedUpdateManyWithoutCreatedByNestedInput
+  identities?: Prisma.UserIdentityUncheckedUpdateManyWithoutUserNestedInput
+  feedback?: Prisma.FeedbackUncheckedUpdateManyWithoutCustomerNestedInput
+}
+
 export type UserCreateWithoutFeedbackInput = {
   id?: string
   firstName: string
@@ -754,6 +950,7 @@ export type UserCreateWithoutFeedbackInput = {
   role?: $Enums.Role
   emailVerifiedAt?: Date | string | null
   lastLoginAt?: Date | string | null
+  passwordChangedAt?: Date | string | null
   createdAt?: Date | string
   updatedAt?: Date | string
   addresses?: Prisma.AddressCreateNestedManyWithoutUserInput
@@ -762,11 +959,13 @@ export type UserCreateWithoutFeedbackInput = {
   orders?: Prisma.OrderCreateNestedManyWithoutUserInput
   checkoutQuotes?: Prisma.CheckoutQuoteCreateNestedManyWithoutUserInput
   promotionUsages?: Prisma.PromotionUsageCreateNestedManyWithoutUserInput
+  passwordResetTokens?: Prisma.PasswordResetTokenCreateNestedManyWithoutUserInput
   deliveryAssignments?: Prisma.DeliveryAssignmentCreateNestedManyWithoutDeliveryStaffInput
   assignmentsMade?: Prisma.DeliveryAssignmentCreateNestedManyWithoutAssignedByInput
   codCollections?: Prisma.CodCollectionCreateNestedManyWithoutCollectedByInput
   variantCostChanges?: Prisma.VariantCostHistoryCreateNestedManyWithoutCreatedByInput
   identities?: Prisma.UserIdentityCreateNestedManyWithoutUserInput
+  notifications?: Prisma.NotificationCreateNestedManyWithoutUserInput
 }
 
 export type UserUncheckedCreateWithoutFeedbackInput = {
@@ -780,6 +979,7 @@ export type UserUncheckedCreateWithoutFeedbackInput = {
   role?: $Enums.Role
   emailVerifiedAt?: Date | string | null
   lastLoginAt?: Date | string | null
+  passwordChangedAt?: Date | string | null
   createdAt?: Date | string
   updatedAt?: Date | string
   addresses?: Prisma.AddressUncheckedCreateNestedManyWithoutUserInput
@@ -788,11 +988,13 @@ export type UserUncheckedCreateWithoutFeedbackInput = {
   orders?: Prisma.OrderUncheckedCreateNestedManyWithoutUserInput
   checkoutQuotes?: Prisma.CheckoutQuoteUncheckedCreateNestedManyWithoutUserInput
   promotionUsages?: Prisma.PromotionUsageUncheckedCreateNestedManyWithoutUserInput
+  passwordResetTokens?: Prisma.PasswordResetTokenUncheckedCreateNestedManyWithoutUserInput
   deliveryAssignments?: Prisma.DeliveryAssignmentUncheckedCreateNestedManyWithoutDeliveryStaffInput
   assignmentsMade?: Prisma.DeliveryAssignmentUncheckedCreateNestedManyWithoutAssignedByInput
   codCollections?: Prisma.CodCollectionUncheckedCreateNestedManyWithoutCollectedByInput
   variantCostChanges?: Prisma.VariantCostHistoryUncheckedCreateNestedManyWithoutCreatedByInput
   identities?: Prisma.UserIdentityUncheckedCreateNestedManyWithoutUserInput
+  notifications?: Prisma.NotificationUncheckedCreateNestedManyWithoutUserInput
 }
 
 export type UserCreateOrConnectWithoutFeedbackInput = {
@@ -822,6 +1024,7 @@ export type UserUpdateWithoutFeedbackInput = {
   role?: Prisma.EnumRoleFieldUpdateOperationsInput | $Enums.Role
   emailVerifiedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   lastLoginAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  passwordChangedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   addresses?: Prisma.AddressUpdateManyWithoutUserNestedInput
@@ -830,11 +1033,13 @@ export type UserUpdateWithoutFeedbackInput = {
   orders?: Prisma.OrderUpdateManyWithoutUserNestedInput
   checkoutQuotes?: Prisma.CheckoutQuoteUpdateManyWithoutUserNestedInput
   promotionUsages?: Prisma.PromotionUsageUpdateManyWithoutUserNestedInput
+  passwordResetTokens?: Prisma.PasswordResetTokenUpdateManyWithoutUserNestedInput
   deliveryAssignments?: Prisma.DeliveryAssignmentUpdateManyWithoutDeliveryStaffNestedInput
   assignmentsMade?: Prisma.DeliveryAssignmentUpdateManyWithoutAssignedByNestedInput
   codCollections?: Prisma.CodCollectionUpdateManyWithoutCollectedByNestedInput
   variantCostChanges?: Prisma.VariantCostHistoryUpdateManyWithoutCreatedByNestedInput
   identities?: Prisma.UserIdentityUpdateManyWithoutUserNestedInput
+  notifications?: Prisma.NotificationUpdateManyWithoutUserNestedInput
 }
 
 export type UserUncheckedUpdateWithoutFeedbackInput = {
@@ -848,6 +1053,7 @@ export type UserUncheckedUpdateWithoutFeedbackInput = {
   role?: Prisma.EnumRoleFieldUpdateOperationsInput | $Enums.Role
   emailVerifiedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   lastLoginAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  passwordChangedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   addresses?: Prisma.AddressUncheckedUpdateManyWithoutUserNestedInput
@@ -856,11 +1062,13 @@ export type UserUncheckedUpdateWithoutFeedbackInput = {
   orders?: Prisma.OrderUncheckedUpdateManyWithoutUserNestedInput
   checkoutQuotes?: Prisma.CheckoutQuoteUncheckedUpdateManyWithoutUserNestedInput
   promotionUsages?: Prisma.PromotionUsageUncheckedUpdateManyWithoutUserNestedInput
+  passwordResetTokens?: Prisma.PasswordResetTokenUncheckedUpdateManyWithoutUserNestedInput
   deliveryAssignments?: Prisma.DeliveryAssignmentUncheckedUpdateManyWithoutDeliveryStaffNestedInput
   assignmentsMade?: Prisma.DeliveryAssignmentUncheckedUpdateManyWithoutAssignedByNestedInput
   codCollections?: Prisma.CodCollectionUncheckedUpdateManyWithoutCollectedByNestedInput
   variantCostChanges?: Prisma.VariantCostHistoryUncheckedUpdateManyWithoutCreatedByNestedInput
   identities?: Prisma.UserIdentityUncheckedUpdateManyWithoutUserNestedInput
+  notifications?: Prisma.NotificationUncheckedUpdateManyWithoutUserNestedInput
 }
 
 export type UserCreateWithoutIdentitiesInput = {
@@ -874,6 +1082,7 @@ export type UserCreateWithoutIdentitiesInput = {
   role?: $Enums.Role
   emailVerifiedAt?: Date | string | null
   lastLoginAt?: Date | string | null
+  passwordChangedAt?: Date | string | null
   createdAt?: Date | string
   updatedAt?: Date | string
   addresses?: Prisma.AddressCreateNestedManyWithoutUserInput
@@ -882,11 +1091,13 @@ export type UserCreateWithoutIdentitiesInput = {
   orders?: Prisma.OrderCreateNestedManyWithoutUserInput
   checkoutQuotes?: Prisma.CheckoutQuoteCreateNestedManyWithoutUserInput
   promotionUsages?: Prisma.PromotionUsageCreateNestedManyWithoutUserInput
+  passwordResetTokens?: Prisma.PasswordResetTokenCreateNestedManyWithoutUserInput
   deliveryAssignments?: Prisma.DeliveryAssignmentCreateNestedManyWithoutDeliveryStaffInput
   assignmentsMade?: Prisma.DeliveryAssignmentCreateNestedManyWithoutAssignedByInput
   codCollections?: Prisma.CodCollectionCreateNestedManyWithoutCollectedByInput
   variantCostChanges?: Prisma.VariantCostHistoryCreateNestedManyWithoutCreatedByInput
   feedback?: Prisma.FeedbackCreateNestedManyWithoutCustomerInput
+  notifications?: Prisma.NotificationCreateNestedManyWithoutUserInput
 }
 
 export type UserUncheckedCreateWithoutIdentitiesInput = {
@@ -900,6 +1111,7 @@ export type UserUncheckedCreateWithoutIdentitiesInput = {
   role?: $Enums.Role
   emailVerifiedAt?: Date | string | null
   lastLoginAt?: Date | string | null
+  passwordChangedAt?: Date | string | null
   createdAt?: Date | string
   updatedAt?: Date | string
   addresses?: Prisma.AddressUncheckedCreateNestedManyWithoutUserInput
@@ -908,11 +1120,13 @@ export type UserUncheckedCreateWithoutIdentitiesInput = {
   orders?: Prisma.OrderUncheckedCreateNestedManyWithoutUserInput
   checkoutQuotes?: Prisma.CheckoutQuoteUncheckedCreateNestedManyWithoutUserInput
   promotionUsages?: Prisma.PromotionUsageUncheckedCreateNestedManyWithoutUserInput
+  passwordResetTokens?: Prisma.PasswordResetTokenUncheckedCreateNestedManyWithoutUserInput
   deliveryAssignments?: Prisma.DeliveryAssignmentUncheckedCreateNestedManyWithoutDeliveryStaffInput
   assignmentsMade?: Prisma.DeliveryAssignmentUncheckedCreateNestedManyWithoutAssignedByInput
   codCollections?: Prisma.CodCollectionUncheckedCreateNestedManyWithoutCollectedByInput
   variantCostChanges?: Prisma.VariantCostHistoryUncheckedCreateNestedManyWithoutCreatedByInput
   feedback?: Prisma.FeedbackUncheckedCreateNestedManyWithoutCustomerInput
+  notifications?: Prisma.NotificationUncheckedCreateNestedManyWithoutUserInput
 }
 
 export type UserCreateOrConnectWithoutIdentitiesInput = {
@@ -942,6 +1156,7 @@ export type UserUpdateWithoutIdentitiesInput = {
   role?: Prisma.EnumRoleFieldUpdateOperationsInput | $Enums.Role
   emailVerifiedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   lastLoginAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  passwordChangedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   addresses?: Prisma.AddressUpdateManyWithoutUserNestedInput
@@ -950,11 +1165,13 @@ export type UserUpdateWithoutIdentitiesInput = {
   orders?: Prisma.OrderUpdateManyWithoutUserNestedInput
   checkoutQuotes?: Prisma.CheckoutQuoteUpdateManyWithoutUserNestedInput
   promotionUsages?: Prisma.PromotionUsageUpdateManyWithoutUserNestedInput
+  passwordResetTokens?: Prisma.PasswordResetTokenUpdateManyWithoutUserNestedInput
   deliveryAssignments?: Prisma.DeliveryAssignmentUpdateManyWithoutDeliveryStaffNestedInput
   assignmentsMade?: Prisma.DeliveryAssignmentUpdateManyWithoutAssignedByNestedInput
   codCollections?: Prisma.CodCollectionUpdateManyWithoutCollectedByNestedInput
   variantCostChanges?: Prisma.VariantCostHistoryUpdateManyWithoutCreatedByNestedInput
   feedback?: Prisma.FeedbackUpdateManyWithoutCustomerNestedInput
+  notifications?: Prisma.NotificationUpdateManyWithoutUserNestedInput
 }
 
 export type UserUncheckedUpdateWithoutIdentitiesInput = {
@@ -968,6 +1185,139 @@ export type UserUncheckedUpdateWithoutIdentitiesInput = {
   role?: Prisma.EnumRoleFieldUpdateOperationsInput | $Enums.Role
   emailVerifiedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   lastLoginAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  passwordChangedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  addresses?: Prisma.AddressUncheckedUpdateManyWithoutUserNestedInput
+  cart?: Prisma.CartUncheckedUpdateOneWithoutUserNestedInput
+  wishlist?: Prisma.WishlistUncheckedUpdateOneWithoutUserNestedInput
+  orders?: Prisma.OrderUncheckedUpdateManyWithoutUserNestedInput
+  checkoutQuotes?: Prisma.CheckoutQuoteUncheckedUpdateManyWithoutUserNestedInput
+  promotionUsages?: Prisma.PromotionUsageUncheckedUpdateManyWithoutUserNestedInput
+  passwordResetTokens?: Prisma.PasswordResetTokenUncheckedUpdateManyWithoutUserNestedInput
+  deliveryAssignments?: Prisma.DeliveryAssignmentUncheckedUpdateManyWithoutDeliveryStaffNestedInput
+  assignmentsMade?: Prisma.DeliveryAssignmentUncheckedUpdateManyWithoutAssignedByNestedInput
+  codCollections?: Prisma.CodCollectionUncheckedUpdateManyWithoutCollectedByNestedInput
+  variantCostChanges?: Prisma.VariantCostHistoryUncheckedUpdateManyWithoutCreatedByNestedInput
+  feedback?: Prisma.FeedbackUncheckedUpdateManyWithoutCustomerNestedInput
+  notifications?: Prisma.NotificationUncheckedUpdateManyWithoutUserNestedInput
+}
+
+export type UserCreateWithoutPasswordResetTokensInput = {
+  id?: string
+  firstName: string
+  lastName: string
+  email: string
+  passwordHash: string
+  phone?: string | null
+  status: string
+  role?: $Enums.Role
+  emailVerifiedAt?: Date | string | null
+  lastLoginAt?: Date | string | null
+  passwordChangedAt?: Date | string | null
+  createdAt?: Date | string
+  updatedAt?: Date | string
+  addresses?: Prisma.AddressCreateNestedManyWithoutUserInput
+  cart?: Prisma.CartCreateNestedOneWithoutUserInput
+  wishlist?: Prisma.WishlistCreateNestedOneWithoutUserInput
+  orders?: Prisma.OrderCreateNestedManyWithoutUserInput
+  checkoutQuotes?: Prisma.CheckoutQuoteCreateNestedManyWithoutUserInput
+  promotionUsages?: Prisma.PromotionUsageCreateNestedManyWithoutUserInput
+  deliveryAssignments?: Prisma.DeliveryAssignmentCreateNestedManyWithoutDeliveryStaffInput
+  assignmentsMade?: Prisma.DeliveryAssignmentCreateNestedManyWithoutAssignedByInput
+  codCollections?: Prisma.CodCollectionCreateNestedManyWithoutCollectedByInput
+  variantCostChanges?: Prisma.VariantCostHistoryCreateNestedManyWithoutCreatedByInput
+  identities?: Prisma.UserIdentityCreateNestedManyWithoutUserInput
+  feedback?: Prisma.FeedbackCreateNestedManyWithoutCustomerInput
+  notifications?: Prisma.NotificationCreateNestedManyWithoutUserInput
+}
+
+export type UserUncheckedCreateWithoutPasswordResetTokensInput = {
+  id?: string
+  firstName: string
+  lastName: string
+  email: string
+  passwordHash: string
+  phone?: string | null
+  status: string
+  role?: $Enums.Role
+  emailVerifiedAt?: Date | string | null
+  lastLoginAt?: Date | string | null
+  passwordChangedAt?: Date | string | null
+  createdAt?: Date | string
+  updatedAt?: Date | string
+  addresses?: Prisma.AddressUncheckedCreateNestedManyWithoutUserInput
+  cart?: Prisma.CartUncheckedCreateNestedOneWithoutUserInput
+  wishlist?: Prisma.WishlistUncheckedCreateNestedOneWithoutUserInput
+  orders?: Prisma.OrderUncheckedCreateNestedManyWithoutUserInput
+  checkoutQuotes?: Prisma.CheckoutQuoteUncheckedCreateNestedManyWithoutUserInput
+  promotionUsages?: Prisma.PromotionUsageUncheckedCreateNestedManyWithoutUserInput
+  deliveryAssignments?: Prisma.DeliveryAssignmentUncheckedCreateNestedManyWithoutDeliveryStaffInput
+  assignmentsMade?: Prisma.DeliveryAssignmentUncheckedCreateNestedManyWithoutAssignedByInput
+  codCollections?: Prisma.CodCollectionUncheckedCreateNestedManyWithoutCollectedByInput
+  variantCostChanges?: Prisma.VariantCostHistoryUncheckedCreateNestedManyWithoutCreatedByInput
+  identities?: Prisma.UserIdentityUncheckedCreateNestedManyWithoutUserInput
+  feedback?: Prisma.FeedbackUncheckedCreateNestedManyWithoutCustomerInput
+  notifications?: Prisma.NotificationUncheckedCreateNestedManyWithoutUserInput
+}
+
+export type UserCreateOrConnectWithoutPasswordResetTokensInput = {
+  where: Prisma.UserWhereUniqueInput
+  create: Prisma.XOR<Prisma.UserCreateWithoutPasswordResetTokensInput, Prisma.UserUncheckedCreateWithoutPasswordResetTokensInput>
+}
+
+export type UserUpsertWithoutPasswordResetTokensInput = {
+  update: Prisma.XOR<Prisma.UserUpdateWithoutPasswordResetTokensInput, Prisma.UserUncheckedUpdateWithoutPasswordResetTokensInput>
+  create: Prisma.XOR<Prisma.UserCreateWithoutPasswordResetTokensInput, Prisma.UserUncheckedCreateWithoutPasswordResetTokensInput>
+  where?: Prisma.UserWhereInput
+}
+
+export type UserUpdateToOneWithWhereWithoutPasswordResetTokensInput = {
+  where?: Prisma.UserWhereInput
+  data: Prisma.XOR<Prisma.UserUpdateWithoutPasswordResetTokensInput, Prisma.UserUncheckedUpdateWithoutPasswordResetTokensInput>
+}
+
+export type UserUpdateWithoutPasswordResetTokensInput = {
+  id?: Prisma.StringFieldUpdateOperationsInput | string
+  firstName?: Prisma.StringFieldUpdateOperationsInput | string
+  lastName?: Prisma.StringFieldUpdateOperationsInput | string
+  email?: Prisma.StringFieldUpdateOperationsInput | string
+  passwordHash?: Prisma.StringFieldUpdateOperationsInput | string
+  phone?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  status?: Prisma.StringFieldUpdateOperationsInput | string
+  role?: Prisma.EnumRoleFieldUpdateOperationsInput | $Enums.Role
+  emailVerifiedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  lastLoginAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  passwordChangedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  addresses?: Prisma.AddressUpdateManyWithoutUserNestedInput
+  cart?: Prisma.CartUpdateOneWithoutUserNestedInput
+  wishlist?: Prisma.WishlistUpdateOneWithoutUserNestedInput
+  orders?: Prisma.OrderUpdateManyWithoutUserNestedInput
+  checkoutQuotes?: Prisma.CheckoutQuoteUpdateManyWithoutUserNestedInput
+  promotionUsages?: Prisma.PromotionUsageUpdateManyWithoutUserNestedInput
+  deliveryAssignments?: Prisma.DeliveryAssignmentUpdateManyWithoutDeliveryStaffNestedInput
+  assignmentsMade?: Prisma.DeliveryAssignmentUpdateManyWithoutAssignedByNestedInput
+  codCollections?: Prisma.CodCollectionUpdateManyWithoutCollectedByNestedInput
+  variantCostChanges?: Prisma.VariantCostHistoryUpdateManyWithoutCreatedByNestedInput
+  identities?: Prisma.UserIdentityUpdateManyWithoutUserNestedInput
+  feedback?: Prisma.FeedbackUpdateManyWithoutCustomerNestedInput
+  notifications?: Prisma.NotificationUpdateManyWithoutUserNestedInput
+}
+
+export type UserUncheckedUpdateWithoutPasswordResetTokensInput = {
+  id?: Prisma.StringFieldUpdateOperationsInput | string
+  firstName?: Prisma.StringFieldUpdateOperationsInput | string
+  lastName?: Prisma.StringFieldUpdateOperationsInput | string
+  email?: Prisma.StringFieldUpdateOperationsInput | string
+  passwordHash?: Prisma.StringFieldUpdateOperationsInput | string
+  phone?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  status?: Prisma.StringFieldUpdateOperationsInput | string
+  role?: Prisma.EnumRoleFieldUpdateOperationsInput | $Enums.Role
+  emailVerifiedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  lastLoginAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  passwordChangedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   addresses?: Prisma.AddressUncheckedUpdateManyWithoutUserNestedInput
@@ -980,7 +1330,9 @@ export type UserUncheckedUpdateWithoutIdentitiesInput = {
   assignmentsMade?: Prisma.DeliveryAssignmentUncheckedUpdateManyWithoutAssignedByNestedInput
   codCollections?: Prisma.CodCollectionUncheckedUpdateManyWithoutCollectedByNestedInput
   variantCostChanges?: Prisma.VariantCostHistoryUncheckedUpdateManyWithoutCreatedByNestedInput
+  identities?: Prisma.UserIdentityUncheckedUpdateManyWithoutUserNestedInput
   feedback?: Prisma.FeedbackUncheckedUpdateManyWithoutCustomerNestedInput
+  notifications?: Prisma.NotificationUncheckedUpdateManyWithoutUserNestedInput
 }
 
 export type UserCreateWithoutVariantCostChangesInput = {
@@ -994,6 +1346,7 @@ export type UserCreateWithoutVariantCostChangesInput = {
   role?: $Enums.Role
   emailVerifiedAt?: Date | string | null
   lastLoginAt?: Date | string | null
+  passwordChangedAt?: Date | string | null
   createdAt?: Date | string
   updatedAt?: Date | string
   addresses?: Prisma.AddressCreateNestedManyWithoutUserInput
@@ -1002,11 +1355,13 @@ export type UserCreateWithoutVariantCostChangesInput = {
   orders?: Prisma.OrderCreateNestedManyWithoutUserInput
   checkoutQuotes?: Prisma.CheckoutQuoteCreateNestedManyWithoutUserInput
   promotionUsages?: Prisma.PromotionUsageCreateNestedManyWithoutUserInput
+  passwordResetTokens?: Prisma.PasswordResetTokenCreateNestedManyWithoutUserInput
   deliveryAssignments?: Prisma.DeliveryAssignmentCreateNestedManyWithoutDeliveryStaffInput
   assignmentsMade?: Prisma.DeliveryAssignmentCreateNestedManyWithoutAssignedByInput
   codCollections?: Prisma.CodCollectionCreateNestedManyWithoutCollectedByInput
   identities?: Prisma.UserIdentityCreateNestedManyWithoutUserInput
   feedback?: Prisma.FeedbackCreateNestedManyWithoutCustomerInput
+  notifications?: Prisma.NotificationCreateNestedManyWithoutUserInput
 }
 
 export type UserUncheckedCreateWithoutVariantCostChangesInput = {
@@ -1020,6 +1375,7 @@ export type UserUncheckedCreateWithoutVariantCostChangesInput = {
   role?: $Enums.Role
   emailVerifiedAt?: Date | string | null
   lastLoginAt?: Date | string | null
+  passwordChangedAt?: Date | string | null
   createdAt?: Date | string
   updatedAt?: Date | string
   addresses?: Prisma.AddressUncheckedCreateNestedManyWithoutUserInput
@@ -1028,11 +1384,13 @@ export type UserUncheckedCreateWithoutVariantCostChangesInput = {
   orders?: Prisma.OrderUncheckedCreateNestedManyWithoutUserInput
   checkoutQuotes?: Prisma.CheckoutQuoteUncheckedCreateNestedManyWithoutUserInput
   promotionUsages?: Prisma.PromotionUsageUncheckedCreateNestedManyWithoutUserInput
+  passwordResetTokens?: Prisma.PasswordResetTokenUncheckedCreateNestedManyWithoutUserInput
   deliveryAssignments?: Prisma.DeliveryAssignmentUncheckedCreateNestedManyWithoutDeliveryStaffInput
   assignmentsMade?: Prisma.DeliveryAssignmentUncheckedCreateNestedManyWithoutAssignedByInput
   codCollections?: Prisma.CodCollectionUncheckedCreateNestedManyWithoutCollectedByInput
   identities?: Prisma.UserIdentityUncheckedCreateNestedManyWithoutUserInput
   feedback?: Prisma.FeedbackUncheckedCreateNestedManyWithoutCustomerInput
+  notifications?: Prisma.NotificationUncheckedCreateNestedManyWithoutUserInput
 }
 
 export type UserCreateOrConnectWithoutVariantCostChangesInput = {
@@ -1062,6 +1420,7 @@ export type UserUpdateWithoutVariantCostChangesInput = {
   role?: Prisma.EnumRoleFieldUpdateOperationsInput | $Enums.Role
   emailVerifiedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   lastLoginAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  passwordChangedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   addresses?: Prisma.AddressUpdateManyWithoutUserNestedInput
@@ -1070,11 +1429,13 @@ export type UserUpdateWithoutVariantCostChangesInput = {
   orders?: Prisma.OrderUpdateManyWithoutUserNestedInput
   checkoutQuotes?: Prisma.CheckoutQuoteUpdateManyWithoutUserNestedInput
   promotionUsages?: Prisma.PromotionUsageUpdateManyWithoutUserNestedInput
+  passwordResetTokens?: Prisma.PasswordResetTokenUpdateManyWithoutUserNestedInput
   deliveryAssignments?: Prisma.DeliveryAssignmentUpdateManyWithoutDeliveryStaffNestedInput
   assignmentsMade?: Prisma.DeliveryAssignmentUpdateManyWithoutAssignedByNestedInput
   codCollections?: Prisma.CodCollectionUpdateManyWithoutCollectedByNestedInput
   identities?: Prisma.UserIdentityUpdateManyWithoutUserNestedInput
   feedback?: Prisma.FeedbackUpdateManyWithoutCustomerNestedInput
+  notifications?: Prisma.NotificationUpdateManyWithoutUserNestedInput
 }
 
 export type UserUncheckedUpdateWithoutVariantCostChangesInput = {
@@ -1088,6 +1449,7 @@ export type UserUncheckedUpdateWithoutVariantCostChangesInput = {
   role?: Prisma.EnumRoleFieldUpdateOperationsInput | $Enums.Role
   emailVerifiedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   lastLoginAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  passwordChangedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   addresses?: Prisma.AddressUncheckedUpdateManyWithoutUserNestedInput
@@ -1096,11 +1458,13 @@ export type UserUncheckedUpdateWithoutVariantCostChangesInput = {
   orders?: Prisma.OrderUncheckedUpdateManyWithoutUserNestedInput
   checkoutQuotes?: Prisma.CheckoutQuoteUncheckedUpdateManyWithoutUserNestedInput
   promotionUsages?: Prisma.PromotionUsageUncheckedUpdateManyWithoutUserNestedInput
+  passwordResetTokens?: Prisma.PasswordResetTokenUncheckedUpdateManyWithoutUserNestedInput
   deliveryAssignments?: Prisma.DeliveryAssignmentUncheckedUpdateManyWithoutDeliveryStaffNestedInput
   assignmentsMade?: Prisma.DeliveryAssignmentUncheckedUpdateManyWithoutAssignedByNestedInput
   codCollections?: Prisma.CodCollectionUncheckedUpdateManyWithoutCollectedByNestedInput
   identities?: Prisma.UserIdentityUncheckedUpdateManyWithoutUserNestedInput
   feedback?: Prisma.FeedbackUncheckedUpdateManyWithoutCustomerNestedInput
+  notifications?: Prisma.NotificationUncheckedUpdateManyWithoutUserNestedInput
 }
 
 export type UserCreateWithoutCartInput = {
@@ -1114,6 +1478,7 @@ export type UserCreateWithoutCartInput = {
   role?: $Enums.Role
   emailVerifiedAt?: Date | string | null
   lastLoginAt?: Date | string | null
+  passwordChangedAt?: Date | string | null
   createdAt?: Date | string
   updatedAt?: Date | string
   addresses?: Prisma.AddressCreateNestedManyWithoutUserInput
@@ -1121,12 +1486,14 @@ export type UserCreateWithoutCartInput = {
   orders?: Prisma.OrderCreateNestedManyWithoutUserInput
   checkoutQuotes?: Prisma.CheckoutQuoteCreateNestedManyWithoutUserInput
   promotionUsages?: Prisma.PromotionUsageCreateNestedManyWithoutUserInput
+  passwordResetTokens?: Prisma.PasswordResetTokenCreateNestedManyWithoutUserInput
   deliveryAssignments?: Prisma.DeliveryAssignmentCreateNestedManyWithoutDeliveryStaffInput
   assignmentsMade?: Prisma.DeliveryAssignmentCreateNestedManyWithoutAssignedByInput
   codCollections?: Prisma.CodCollectionCreateNestedManyWithoutCollectedByInput
   variantCostChanges?: Prisma.VariantCostHistoryCreateNestedManyWithoutCreatedByInput
   identities?: Prisma.UserIdentityCreateNestedManyWithoutUserInput
   feedback?: Prisma.FeedbackCreateNestedManyWithoutCustomerInput
+  notifications?: Prisma.NotificationCreateNestedManyWithoutUserInput
 }
 
 export type UserUncheckedCreateWithoutCartInput = {
@@ -1140,6 +1507,7 @@ export type UserUncheckedCreateWithoutCartInput = {
   role?: $Enums.Role
   emailVerifiedAt?: Date | string | null
   lastLoginAt?: Date | string | null
+  passwordChangedAt?: Date | string | null
   createdAt?: Date | string
   updatedAt?: Date | string
   addresses?: Prisma.AddressUncheckedCreateNestedManyWithoutUserInput
@@ -1147,12 +1515,14 @@ export type UserUncheckedCreateWithoutCartInput = {
   orders?: Prisma.OrderUncheckedCreateNestedManyWithoutUserInput
   checkoutQuotes?: Prisma.CheckoutQuoteUncheckedCreateNestedManyWithoutUserInput
   promotionUsages?: Prisma.PromotionUsageUncheckedCreateNestedManyWithoutUserInput
+  passwordResetTokens?: Prisma.PasswordResetTokenUncheckedCreateNestedManyWithoutUserInput
   deliveryAssignments?: Prisma.DeliveryAssignmentUncheckedCreateNestedManyWithoutDeliveryStaffInput
   assignmentsMade?: Prisma.DeliveryAssignmentUncheckedCreateNestedManyWithoutAssignedByInput
   codCollections?: Prisma.CodCollectionUncheckedCreateNestedManyWithoutCollectedByInput
   variantCostChanges?: Prisma.VariantCostHistoryUncheckedCreateNestedManyWithoutCreatedByInput
   identities?: Prisma.UserIdentityUncheckedCreateNestedManyWithoutUserInput
   feedback?: Prisma.FeedbackUncheckedCreateNestedManyWithoutCustomerInput
+  notifications?: Prisma.NotificationUncheckedCreateNestedManyWithoutUserInput
 }
 
 export type UserCreateOrConnectWithoutCartInput = {
@@ -1182,6 +1552,7 @@ export type UserUpdateWithoutCartInput = {
   role?: Prisma.EnumRoleFieldUpdateOperationsInput | $Enums.Role
   emailVerifiedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   lastLoginAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  passwordChangedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   addresses?: Prisma.AddressUpdateManyWithoutUserNestedInput
@@ -1189,12 +1560,14 @@ export type UserUpdateWithoutCartInput = {
   orders?: Prisma.OrderUpdateManyWithoutUserNestedInput
   checkoutQuotes?: Prisma.CheckoutQuoteUpdateManyWithoutUserNestedInput
   promotionUsages?: Prisma.PromotionUsageUpdateManyWithoutUserNestedInput
+  passwordResetTokens?: Prisma.PasswordResetTokenUpdateManyWithoutUserNestedInput
   deliveryAssignments?: Prisma.DeliveryAssignmentUpdateManyWithoutDeliveryStaffNestedInput
   assignmentsMade?: Prisma.DeliveryAssignmentUpdateManyWithoutAssignedByNestedInput
   codCollections?: Prisma.CodCollectionUpdateManyWithoutCollectedByNestedInput
   variantCostChanges?: Prisma.VariantCostHistoryUpdateManyWithoutCreatedByNestedInput
   identities?: Prisma.UserIdentityUpdateManyWithoutUserNestedInput
   feedback?: Prisma.FeedbackUpdateManyWithoutCustomerNestedInput
+  notifications?: Prisma.NotificationUpdateManyWithoutUserNestedInput
 }
 
 export type UserUncheckedUpdateWithoutCartInput = {
@@ -1208,6 +1581,7 @@ export type UserUncheckedUpdateWithoutCartInput = {
   role?: Prisma.EnumRoleFieldUpdateOperationsInput | $Enums.Role
   emailVerifiedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   lastLoginAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  passwordChangedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   addresses?: Prisma.AddressUncheckedUpdateManyWithoutUserNestedInput
@@ -1215,12 +1589,14 @@ export type UserUncheckedUpdateWithoutCartInput = {
   orders?: Prisma.OrderUncheckedUpdateManyWithoutUserNestedInput
   checkoutQuotes?: Prisma.CheckoutQuoteUncheckedUpdateManyWithoutUserNestedInput
   promotionUsages?: Prisma.PromotionUsageUncheckedUpdateManyWithoutUserNestedInput
+  passwordResetTokens?: Prisma.PasswordResetTokenUncheckedUpdateManyWithoutUserNestedInput
   deliveryAssignments?: Prisma.DeliveryAssignmentUncheckedUpdateManyWithoutDeliveryStaffNestedInput
   assignmentsMade?: Prisma.DeliveryAssignmentUncheckedUpdateManyWithoutAssignedByNestedInput
   codCollections?: Prisma.CodCollectionUncheckedUpdateManyWithoutCollectedByNestedInput
   variantCostChanges?: Prisma.VariantCostHistoryUncheckedUpdateManyWithoutCreatedByNestedInput
   identities?: Prisma.UserIdentityUncheckedUpdateManyWithoutUserNestedInput
   feedback?: Prisma.FeedbackUncheckedUpdateManyWithoutCustomerNestedInput
+  notifications?: Prisma.NotificationUncheckedUpdateManyWithoutUserNestedInput
 }
 
 export type UserCreateWithoutWishlistInput = {
@@ -1234,6 +1610,7 @@ export type UserCreateWithoutWishlistInput = {
   role?: $Enums.Role
   emailVerifiedAt?: Date | string | null
   lastLoginAt?: Date | string | null
+  passwordChangedAt?: Date | string | null
   createdAt?: Date | string
   updatedAt?: Date | string
   addresses?: Prisma.AddressCreateNestedManyWithoutUserInput
@@ -1241,12 +1618,14 @@ export type UserCreateWithoutWishlistInput = {
   orders?: Prisma.OrderCreateNestedManyWithoutUserInput
   checkoutQuotes?: Prisma.CheckoutQuoteCreateNestedManyWithoutUserInput
   promotionUsages?: Prisma.PromotionUsageCreateNestedManyWithoutUserInput
+  passwordResetTokens?: Prisma.PasswordResetTokenCreateNestedManyWithoutUserInput
   deliveryAssignments?: Prisma.DeliveryAssignmentCreateNestedManyWithoutDeliveryStaffInput
   assignmentsMade?: Prisma.DeliveryAssignmentCreateNestedManyWithoutAssignedByInput
   codCollections?: Prisma.CodCollectionCreateNestedManyWithoutCollectedByInput
   variantCostChanges?: Prisma.VariantCostHistoryCreateNestedManyWithoutCreatedByInput
   identities?: Prisma.UserIdentityCreateNestedManyWithoutUserInput
   feedback?: Prisma.FeedbackCreateNestedManyWithoutCustomerInput
+  notifications?: Prisma.NotificationCreateNestedManyWithoutUserInput
 }
 
 export type UserUncheckedCreateWithoutWishlistInput = {
@@ -1260,6 +1639,7 @@ export type UserUncheckedCreateWithoutWishlistInput = {
   role?: $Enums.Role
   emailVerifiedAt?: Date | string | null
   lastLoginAt?: Date | string | null
+  passwordChangedAt?: Date | string | null
   createdAt?: Date | string
   updatedAt?: Date | string
   addresses?: Prisma.AddressUncheckedCreateNestedManyWithoutUserInput
@@ -1267,12 +1647,14 @@ export type UserUncheckedCreateWithoutWishlistInput = {
   orders?: Prisma.OrderUncheckedCreateNestedManyWithoutUserInput
   checkoutQuotes?: Prisma.CheckoutQuoteUncheckedCreateNestedManyWithoutUserInput
   promotionUsages?: Prisma.PromotionUsageUncheckedCreateNestedManyWithoutUserInput
+  passwordResetTokens?: Prisma.PasswordResetTokenUncheckedCreateNestedManyWithoutUserInput
   deliveryAssignments?: Prisma.DeliveryAssignmentUncheckedCreateNestedManyWithoutDeliveryStaffInput
   assignmentsMade?: Prisma.DeliveryAssignmentUncheckedCreateNestedManyWithoutAssignedByInput
   codCollections?: Prisma.CodCollectionUncheckedCreateNestedManyWithoutCollectedByInput
   variantCostChanges?: Prisma.VariantCostHistoryUncheckedCreateNestedManyWithoutCreatedByInput
   identities?: Prisma.UserIdentityUncheckedCreateNestedManyWithoutUserInput
   feedback?: Prisma.FeedbackUncheckedCreateNestedManyWithoutCustomerInput
+  notifications?: Prisma.NotificationUncheckedCreateNestedManyWithoutUserInput
 }
 
 export type UserCreateOrConnectWithoutWishlistInput = {
@@ -1302,6 +1684,7 @@ export type UserUpdateWithoutWishlistInput = {
   role?: Prisma.EnumRoleFieldUpdateOperationsInput | $Enums.Role
   emailVerifiedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   lastLoginAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  passwordChangedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   addresses?: Prisma.AddressUpdateManyWithoutUserNestedInput
@@ -1309,12 +1692,14 @@ export type UserUpdateWithoutWishlistInput = {
   orders?: Prisma.OrderUpdateManyWithoutUserNestedInput
   checkoutQuotes?: Prisma.CheckoutQuoteUpdateManyWithoutUserNestedInput
   promotionUsages?: Prisma.PromotionUsageUpdateManyWithoutUserNestedInput
+  passwordResetTokens?: Prisma.PasswordResetTokenUpdateManyWithoutUserNestedInput
   deliveryAssignments?: Prisma.DeliveryAssignmentUpdateManyWithoutDeliveryStaffNestedInput
   assignmentsMade?: Prisma.DeliveryAssignmentUpdateManyWithoutAssignedByNestedInput
   codCollections?: Prisma.CodCollectionUpdateManyWithoutCollectedByNestedInput
   variantCostChanges?: Prisma.VariantCostHistoryUpdateManyWithoutCreatedByNestedInput
   identities?: Prisma.UserIdentityUpdateManyWithoutUserNestedInput
   feedback?: Prisma.FeedbackUpdateManyWithoutCustomerNestedInput
+  notifications?: Prisma.NotificationUpdateManyWithoutUserNestedInput
 }
 
 export type UserUncheckedUpdateWithoutWishlistInput = {
@@ -1328,6 +1713,7 @@ export type UserUncheckedUpdateWithoutWishlistInput = {
   role?: Prisma.EnumRoleFieldUpdateOperationsInput | $Enums.Role
   emailVerifiedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   lastLoginAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  passwordChangedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   addresses?: Prisma.AddressUncheckedUpdateManyWithoutUserNestedInput
@@ -1335,12 +1721,14 @@ export type UserUncheckedUpdateWithoutWishlistInput = {
   orders?: Prisma.OrderUncheckedUpdateManyWithoutUserNestedInput
   checkoutQuotes?: Prisma.CheckoutQuoteUncheckedUpdateManyWithoutUserNestedInput
   promotionUsages?: Prisma.PromotionUsageUncheckedUpdateManyWithoutUserNestedInput
+  passwordResetTokens?: Prisma.PasswordResetTokenUncheckedUpdateManyWithoutUserNestedInput
   deliveryAssignments?: Prisma.DeliveryAssignmentUncheckedUpdateManyWithoutDeliveryStaffNestedInput
   assignmentsMade?: Prisma.DeliveryAssignmentUncheckedUpdateManyWithoutAssignedByNestedInput
   codCollections?: Prisma.CodCollectionUncheckedUpdateManyWithoutCollectedByNestedInput
   variantCostChanges?: Prisma.VariantCostHistoryUncheckedUpdateManyWithoutCreatedByNestedInput
   identities?: Prisma.UserIdentityUncheckedUpdateManyWithoutUserNestedInput
   feedback?: Prisma.FeedbackUncheckedUpdateManyWithoutCustomerNestedInput
+  notifications?: Prisma.NotificationUncheckedUpdateManyWithoutUserNestedInput
 }
 
 export type UserCreateWithoutAddressesInput = {
@@ -1354,6 +1742,7 @@ export type UserCreateWithoutAddressesInput = {
   role?: $Enums.Role
   emailVerifiedAt?: Date | string | null
   lastLoginAt?: Date | string | null
+  passwordChangedAt?: Date | string | null
   createdAt?: Date | string
   updatedAt?: Date | string
   cart?: Prisma.CartCreateNestedOneWithoutUserInput
@@ -1361,12 +1750,14 @@ export type UserCreateWithoutAddressesInput = {
   orders?: Prisma.OrderCreateNestedManyWithoutUserInput
   checkoutQuotes?: Prisma.CheckoutQuoteCreateNestedManyWithoutUserInput
   promotionUsages?: Prisma.PromotionUsageCreateNestedManyWithoutUserInput
+  passwordResetTokens?: Prisma.PasswordResetTokenCreateNestedManyWithoutUserInput
   deliveryAssignments?: Prisma.DeliveryAssignmentCreateNestedManyWithoutDeliveryStaffInput
   assignmentsMade?: Prisma.DeliveryAssignmentCreateNestedManyWithoutAssignedByInput
   codCollections?: Prisma.CodCollectionCreateNestedManyWithoutCollectedByInput
   variantCostChanges?: Prisma.VariantCostHistoryCreateNestedManyWithoutCreatedByInput
   identities?: Prisma.UserIdentityCreateNestedManyWithoutUserInput
   feedback?: Prisma.FeedbackCreateNestedManyWithoutCustomerInput
+  notifications?: Prisma.NotificationCreateNestedManyWithoutUserInput
 }
 
 export type UserUncheckedCreateWithoutAddressesInput = {
@@ -1380,6 +1771,7 @@ export type UserUncheckedCreateWithoutAddressesInput = {
   role?: $Enums.Role
   emailVerifiedAt?: Date | string | null
   lastLoginAt?: Date | string | null
+  passwordChangedAt?: Date | string | null
   createdAt?: Date | string
   updatedAt?: Date | string
   cart?: Prisma.CartUncheckedCreateNestedOneWithoutUserInput
@@ -1387,12 +1779,14 @@ export type UserUncheckedCreateWithoutAddressesInput = {
   orders?: Prisma.OrderUncheckedCreateNestedManyWithoutUserInput
   checkoutQuotes?: Prisma.CheckoutQuoteUncheckedCreateNestedManyWithoutUserInput
   promotionUsages?: Prisma.PromotionUsageUncheckedCreateNestedManyWithoutUserInput
+  passwordResetTokens?: Prisma.PasswordResetTokenUncheckedCreateNestedManyWithoutUserInput
   deliveryAssignments?: Prisma.DeliveryAssignmentUncheckedCreateNestedManyWithoutDeliveryStaffInput
   assignmentsMade?: Prisma.DeliveryAssignmentUncheckedCreateNestedManyWithoutAssignedByInput
   codCollections?: Prisma.CodCollectionUncheckedCreateNestedManyWithoutCollectedByInput
   variantCostChanges?: Prisma.VariantCostHistoryUncheckedCreateNestedManyWithoutCreatedByInput
   identities?: Prisma.UserIdentityUncheckedCreateNestedManyWithoutUserInput
   feedback?: Prisma.FeedbackUncheckedCreateNestedManyWithoutCustomerInput
+  notifications?: Prisma.NotificationUncheckedCreateNestedManyWithoutUserInput
 }
 
 export type UserCreateOrConnectWithoutAddressesInput = {
@@ -1422,6 +1816,7 @@ export type UserUpdateWithoutAddressesInput = {
   role?: Prisma.EnumRoleFieldUpdateOperationsInput | $Enums.Role
   emailVerifiedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   lastLoginAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  passwordChangedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   cart?: Prisma.CartUpdateOneWithoutUserNestedInput
@@ -1429,12 +1824,14 @@ export type UserUpdateWithoutAddressesInput = {
   orders?: Prisma.OrderUpdateManyWithoutUserNestedInput
   checkoutQuotes?: Prisma.CheckoutQuoteUpdateManyWithoutUserNestedInput
   promotionUsages?: Prisma.PromotionUsageUpdateManyWithoutUserNestedInput
+  passwordResetTokens?: Prisma.PasswordResetTokenUpdateManyWithoutUserNestedInput
   deliveryAssignments?: Prisma.DeliveryAssignmentUpdateManyWithoutDeliveryStaffNestedInput
   assignmentsMade?: Prisma.DeliveryAssignmentUpdateManyWithoutAssignedByNestedInput
   codCollections?: Prisma.CodCollectionUpdateManyWithoutCollectedByNestedInput
   variantCostChanges?: Prisma.VariantCostHistoryUpdateManyWithoutCreatedByNestedInput
   identities?: Prisma.UserIdentityUpdateManyWithoutUserNestedInput
   feedback?: Prisma.FeedbackUpdateManyWithoutCustomerNestedInput
+  notifications?: Prisma.NotificationUpdateManyWithoutUserNestedInput
 }
 
 export type UserUncheckedUpdateWithoutAddressesInput = {
@@ -1448,6 +1845,7 @@ export type UserUncheckedUpdateWithoutAddressesInput = {
   role?: Prisma.EnumRoleFieldUpdateOperationsInput | $Enums.Role
   emailVerifiedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   lastLoginAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  passwordChangedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   cart?: Prisma.CartUncheckedUpdateOneWithoutUserNestedInput
@@ -1455,12 +1853,14 @@ export type UserUncheckedUpdateWithoutAddressesInput = {
   orders?: Prisma.OrderUncheckedUpdateManyWithoutUserNestedInput
   checkoutQuotes?: Prisma.CheckoutQuoteUncheckedUpdateManyWithoutUserNestedInput
   promotionUsages?: Prisma.PromotionUsageUncheckedUpdateManyWithoutUserNestedInput
+  passwordResetTokens?: Prisma.PasswordResetTokenUncheckedUpdateManyWithoutUserNestedInput
   deliveryAssignments?: Prisma.DeliveryAssignmentUncheckedUpdateManyWithoutDeliveryStaffNestedInput
   assignmentsMade?: Prisma.DeliveryAssignmentUncheckedUpdateManyWithoutAssignedByNestedInput
   codCollections?: Prisma.CodCollectionUncheckedUpdateManyWithoutCollectedByNestedInput
   variantCostChanges?: Prisma.VariantCostHistoryUncheckedUpdateManyWithoutCreatedByNestedInput
   identities?: Prisma.UserIdentityUncheckedUpdateManyWithoutUserNestedInput
   feedback?: Prisma.FeedbackUncheckedUpdateManyWithoutCustomerNestedInput
+  notifications?: Prisma.NotificationUncheckedUpdateManyWithoutUserNestedInput
 }
 
 export type UserCreateWithoutOrdersInput = {
@@ -1474,6 +1874,7 @@ export type UserCreateWithoutOrdersInput = {
   role?: $Enums.Role
   emailVerifiedAt?: Date | string | null
   lastLoginAt?: Date | string | null
+  passwordChangedAt?: Date | string | null
   createdAt?: Date | string
   updatedAt?: Date | string
   addresses?: Prisma.AddressCreateNestedManyWithoutUserInput
@@ -1481,12 +1882,14 @@ export type UserCreateWithoutOrdersInput = {
   wishlist?: Prisma.WishlistCreateNestedOneWithoutUserInput
   checkoutQuotes?: Prisma.CheckoutQuoteCreateNestedManyWithoutUserInput
   promotionUsages?: Prisma.PromotionUsageCreateNestedManyWithoutUserInput
+  passwordResetTokens?: Prisma.PasswordResetTokenCreateNestedManyWithoutUserInput
   deliveryAssignments?: Prisma.DeliveryAssignmentCreateNestedManyWithoutDeliveryStaffInput
   assignmentsMade?: Prisma.DeliveryAssignmentCreateNestedManyWithoutAssignedByInput
   codCollections?: Prisma.CodCollectionCreateNestedManyWithoutCollectedByInput
   variantCostChanges?: Prisma.VariantCostHistoryCreateNestedManyWithoutCreatedByInput
   identities?: Prisma.UserIdentityCreateNestedManyWithoutUserInput
   feedback?: Prisma.FeedbackCreateNestedManyWithoutCustomerInput
+  notifications?: Prisma.NotificationCreateNestedManyWithoutUserInput
 }
 
 export type UserUncheckedCreateWithoutOrdersInput = {
@@ -1500,6 +1903,7 @@ export type UserUncheckedCreateWithoutOrdersInput = {
   role?: $Enums.Role
   emailVerifiedAt?: Date | string | null
   lastLoginAt?: Date | string | null
+  passwordChangedAt?: Date | string | null
   createdAt?: Date | string
   updatedAt?: Date | string
   addresses?: Prisma.AddressUncheckedCreateNestedManyWithoutUserInput
@@ -1507,12 +1911,14 @@ export type UserUncheckedCreateWithoutOrdersInput = {
   wishlist?: Prisma.WishlistUncheckedCreateNestedOneWithoutUserInput
   checkoutQuotes?: Prisma.CheckoutQuoteUncheckedCreateNestedManyWithoutUserInput
   promotionUsages?: Prisma.PromotionUsageUncheckedCreateNestedManyWithoutUserInput
+  passwordResetTokens?: Prisma.PasswordResetTokenUncheckedCreateNestedManyWithoutUserInput
   deliveryAssignments?: Prisma.DeliveryAssignmentUncheckedCreateNestedManyWithoutDeliveryStaffInput
   assignmentsMade?: Prisma.DeliveryAssignmentUncheckedCreateNestedManyWithoutAssignedByInput
   codCollections?: Prisma.CodCollectionUncheckedCreateNestedManyWithoutCollectedByInput
   variantCostChanges?: Prisma.VariantCostHistoryUncheckedCreateNestedManyWithoutCreatedByInput
   identities?: Prisma.UserIdentityUncheckedCreateNestedManyWithoutUserInput
   feedback?: Prisma.FeedbackUncheckedCreateNestedManyWithoutCustomerInput
+  notifications?: Prisma.NotificationUncheckedCreateNestedManyWithoutUserInput
 }
 
 export type UserCreateOrConnectWithoutOrdersInput = {
@@ -1542,6 +1948,7 @@ export type UserUpdateWithoutOrdersInput = {
   role?: Prisma.EnumRoleFieldUpdateOperationsInput | $Enums.Role
   emailVerifiedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   lastLoginAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  passwordChangedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   addresses?: Prisma.AddressUpdateManyWithoutUserNestedInput
@@ -1549,12 +1956,14 @@ export type UserUpdateWithoutOrdersInput = {
   wishlist?: Prisma.WishlistUpdateOneWithoutUserNestedInput
   checkoutQuotes?: Prisma.CheckoutQuoteUpdateManyWithoutUserNestedInput
   promotionUsages?: Prisma.PromotionUsageUpdateManyWithoutUserNestedInput
+  passwordResetTokens?: Prisma.PasswordResetTokenUpdateManyWithoutUserNestedInput
   deliveryAssignments?: Prisma.DeliveryAssignmentUpdateManyWithoutDeliveryStaffNestedInput
   assignmentsMade?: Prisma.DeliveryAssignmentUpdateManyWithoutAssignedByNestedInput
   codCollections?: Prisma.CodCollectionUpdateManyWithoutCollectedByNestedInput
   variantCostChanges?: Prisma.VariantCostHistoryUpdateManyWithoutCreatedByNestedInput
   identities?: Prisma.UserIdentityUpdateManyWithoutUserNestedInput
   feedback?: Prisma.FeedbackUpdateManyWithoutCustomerNestedInput
+  notifications?: Prisma.NotificationUpdateManyWithoutUserNestedInput
 }
 
 export type UserUncheckedUpdateWithoutOrdersInput = {
@@ -1568,6 +1977,7 @@ export type UserUncheckedUpdateWithoutOrdersInput = {
   role?: Prisma.EnumRoleFieldUpdateOperationsInput | $Enums.Role
   emailVerifiedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   lastLoginAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  passwordChangedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   addresses?: Prisma.AddressUncheckedUpdateManyWithoutUserNestedInput
@@ -1575,12 +1985,14 @@ export type UserUncheckedUpdateWithoutOrdersInput = {
   wishlist?: Prisma.WishlistUncheckedUpdateOneWithoutUserNestedInput
   checkoutQuotes?: Prisma.CheckoutQuoteUncheckedUpdateManyWithoutUserNestedInput
   promotionUsages?: Prisma.PromotionUsageUncheckedUpdateManyWithoutUserNestedInput
+  passwordResetTokens?: Prisma.PasswordResetTokenUncheckedUpdateManyWithoutUserNestedInput
   deliveryAssignments?: Prisma.DeliveryAssignmentUncheckedUpdateManyWithoutDeliveryStaffNestedInput
   assignmentsMade?: Prisma.DeliveryAssignmentUncheckedUpdateManyWithoutAssignedByNestedInput
   codCollections?: Prisma.CodCollectionUncheckedUpdateManyWithoutCollectedByNestedInput
   variantCostChanges?: Prisma.VariantCostHistoryUncheckedUpdateManyWithoutCreatedByNestedInput
   identities?: Prisma.UserIdentityUncheckedUpdateManyWithoutUserNestedInput
   feedback?: Prisma.FeedbackUncheckedUpdateManyWithoutCustomerNestedInput
+  notifications?: Prisma.NotificationUncheckedUpdateManyWithoutUserNestedInput
 }
 
 export type UserCreateWithoutDeliveryAssignmentsInput = {
@@ -1594,6 +2006,7 @@ export type UserCreateWithoutDeliveryAssignmentsInput = {
   role?: $Enums.Role
   emailVerifiedAt?: Date | string | null
   lastLoginAt?: Date | string | null
+  passwordChangedAt?: Date | string | null
   createdAt?: Date | string
   updatedAt?: Date | string
   addresses?: Prisma.AddressCreateNestedManyWithoutUserInput
@@ -1602,11 +2015,13 @@ export type UserCreateWithoutDeliveryAssignmentsInput = {
   orders?: Prisma.OrderCreateNestedManyWithoutUserInput
   checkoutQuotes?: Prisma.CheckoutQuoteCreateNestedManyWithoutUserInput
   promotionUsages?: Prisma.PromotionUsageCreateNestedManyWithoutUserInput
+  passwordResetTokens?: Prisma.PasswordResetTokenCreateNestedManyWithoutUserInput
   assignmentsMade?: Prisma.DeliveryAssignmentCreateNestedManyWithoutAssignedByInput
   codCollections?: Prisma.CodCollectionCreateNestedManyWithoutCollectedByInput
   variantCostChanges?: Prisma.VariantCostHistoryCreateNestedManyWithoutCreatedByInput
   identities?: Prisma.UserIdentityCreateNestedManyWithoutUserInput
   feedback?: Prisma.FeedbackCreateNestedManyWithoutCustomerInput
+  notifications?: Prisma.NotificationCreateNestedManyWithoutUserInput
 }
 
 export type UserUncheckedCreateWithoutDeliveryAssignmentsInput = {
@@ -1620,6 +2035,7 @@ export type UserUncheckedCreateWithoutDeliveryAssignmentsInput = {
   role?: $Enums.Role
   emailVerifiedAt?: Date | string | null
   lastLoginAt?: Date | string | null
+  passwordChangedAt?: Date | string | null
   createdAt?: Date | string
   updatedAt?: Date | string
   addresses?: Prisma.AddressUncheckedCreateNestedManyWithoutUserInput
@@ -1628,11 +2044,13 @@ export type UserUncheckedCreateWithoutDeliveryAssignmentsInput = {
   orders?: Prisma.OrderUncheckedCreateNestedManyWithoutUserInput
   checkoutQuotes?: Prisma.CheckoutQuoteUncheckedCreateNestedManyWithoutUserInput
   promotionUsages?: Prisma.PromotionUsageUncheckedCreateNestedManyWithoutUserInput
+  passwordResetTokens?: Prisma.PasswordResetTokenUncheckedCreateNestedManyWithoutUserInput
   assignmentsMade?: Prisma.DeliveryAssignmentUncheckedCreateNestedManyWithoutAssignedByInput
   codCollections?: Prisma.CodCollectionUncheckedCreateNestedManyWithoutCollectedByInput
   variantCostChanges?: Prisma.VariantCostHistoryUncheckedCreateNestedManyWithoutCreatedByInput
   identities?: Prisma.UserIdentityUncheckedCreateNestedManyWithoutUserInput
   feedback?: Prisma.FeedbackUncheckedCreateNestedManyWithoutCustomerInput
+  notifications?: Prisma.NotificationUncheckedCreateNestedManyWithoutUserInput
 }
 
 export type UserCreateOrConnectWithoutDeliveryAssignmentsInput = {
@@ -1651,6 +2069,7 @@ export type UserCreateWithoutAssignmentsMadeInput = {
   role?: $Enums.Role
   emailVerifiedAt?: Date | string | null
   lastLoginAt?: Date | string | null
+  passwordChangedAt?: Date | string | null
   createdAt?: Date | string
   updatedAt?: Date | string
   addresses?: Prisma.AddressCreateNestedManyWithoutUserInput
@@ -1659,11 +2078,13 @@ export type UserCreateWithoutAssignmentsMadeInput = {
   orders?: Prisma.OrderCreateNestedManyWithoutUserInput
   checkoutQuotes?: Prisma.CheckoutQuoteCreateNestedManyWithoutUserInput
   promotionUsages?: Prisma.PromotionUsageCreateNestedManyWithoutUserInput
+  passwordResetTokens?: Prisma.PasswordResetTokenCreateNestedManyWithoutUserInput
   deliveryAssignments?: Prisma.DeliveryAssignmentCreateNestedManyWithoutDeliveryStaffInput
   codCollections?: Prisma.CodCollectionCreateNestedManyWithoutCollectedByInput
   variantCostChanges?: Prisma.VariantCostHistoryCreateNestedManyWithoutCreatedByInput
   identities?: Prisma.UserIdentityCreateNestedManyWithoutUserInput
   feedback?: Prisma.FeedbackCreateNestedManyWithoutCustomerInput
+  notifications?: Prisma.NotificationCreateNestedManyWithoutUserInput
 }
 
 export type UserUncheckedCreateWithoutAssignmentsMadeInput = {
@@ -1677,6 +2098,7 @@ export type UserUncheckedCreateWithoutAssignmentsMadeInput = {
   role?: $Enums.Role
   emailVerifiedAt?: Date | string | null
   lastLoginAt?: Date | string | null
+  passwordChangedAt?: Date | string | null
   createdAt?: Date | string
   updatedAt?: Date | string
   addresses?: Prisma.AddressUncheckedCreateNestedManyWithoutUserInput
@@ -1685,11 +2107,13 @@ export type UserUncheckedCreateWithoutAssignmentsMadeInput = {
   orders?: Prisma.OrderUncheckedCreateNestedManyWithoutUserInput
   checkoutQuotes?: Prisma.CheckoutQuoteUncheckedCreateNestedManyWithoutUserInput
   promotionUsages?: Prisma.PromotionUsageUncheckedCreateNestedManyWithoutUserInput
+  passwordResetTokens?: Prisma.PasswordResetTokenUncheckedCreateNestedManyWithoutUserInput
   deliveryAssignments?: Prisma.DeliveryAssignmentUncheckedCreateNestedManyWithoutDeliveryStaffInput
   codCollections?: Prisma.CodCollectionUncheckedCreateNestedManyWithoutCollectedByInput
   variantCostChanges?: Prisma.VariantCostHistoryUncheckedCreateNestedManyWithoutCreatedByInput
   identities?: Prisma.UserIdentityUncheckedCreateNestedManyWithoutUserInput
   feedback?: Prisma.FeedbackUncheckedCreateNestedManyWithoutCustomerInput
+  notifications?: Prisma.NotificationUncheckedCreateNestedManyWithoutUserInput
 }
 
 export type UserCreateOrConnectWithoutAssignmentsMadeInput = {
@@ -1719,6 +2143,7 @@ export type UserUpdateWithoutDeliveryAssignmentsInput = {
   role?: Prisma.EnumRoleFieldUpdateOperationsInput | $Enums.Role
   emailVerifiedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   lastLoginAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  passwordChangedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   addresses?: Prisma.AddressUpdateManyWithoutUserNestedInput
@@ -1727,11 +2152,13 @@ export type UserUpdateWithoutDeliveryAssignmentsInput = {
   orders?: Prisma.OrderUpdateManyWithoutUserNestedInput
   checkoutQuotes?: Prisma.CheckoutQuoteUpdateManyWithoutUserNestedInput
   promotionUsages?: Prisma.PromotionUsageUpdateManyWithoutUserNestedInput
+  passwordResetTokens?: Prisma.PasswordResetTokenUpdateManyWithoutUserNestedInput
   assignmentsMade?: Prisma.DeliveryAssignmentUpdateManyWithoutAssignedByNestedInput
   codCollections?: Prisma.CodCollectionUpdateManyWithoutCollectedByNestedInput
   variantCostChanges?: Prisma.VariantCostHistoryUpdateManyWithoutCreatedByNestedInput
   identities?: Prisma.UserIdentityUpdateManyWithoutUserNestedInput
   feedback?: Prisma.FeedbackUpdateManyWithoutCustomerNestedInput
+  notifications?: Prisma.NotificationUpdateManyWithoutUserNestedInput
 }
 
 export type UserUncheckedUpdateWithoutDeliveryAssignmentsInput = {
@@ -1745,6 +2172,7 @@ export type UserUncheckedUpdateWithoutDeliveryAssignmentsInput = {
   role?: Prisma.EnumRoleFieldUpdateOperationsInput | $Enums.Role
   emailVerifiedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   lastLoginAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  passwordChangedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   addresses?: Prisma.AddressUncheckedUpdateManyWithoutUserNestedInput
@@ -1753,11 +2181,13 @@ export type UserUncheckedUpdateWithoutDeliveryAssignmentsInput = {
   orders?: Prisma.OrderUncheckedUpdateManyWithoutUserNestedInput
   checkoutQuotes?: Prisma.CheckoutQuoteUncheckedUpdateManyWithoutUserNestedInput
   promotionUsages?: Prisma.PromotionUsageUncheckedUpdateManyWithoutUserNestedInput
+  passwordResetTokens?: Prisma.PasswordResetTokenUncheckedUpdateManyWithoutUserNestedInput
   assignmentsMade?: Prisma.DeliveryAssignmentUncheckedUpdateManyWithoutAssignedByNestedInput
   codCollections?: Prisma.CodCollectionUncheckedUpdateManyWithoutCollectedByNestedInput
   variantCostChanges?: Prisma.VariantCostHistoryUncheckedUpdateManyWithoutCreatedByNestedInput
   identities?: Prisma.UserIdentityUncheckedUpdateManyWithoutUserNestedInput
   feedback?: Prisma.FeedbackUncheckedUpdateManyWithoutCustomerNestedInput
+  notifications?: Prisma.NotificationUncheckedUpdateManyWithoutUserNestedInput
 }
 
 export type UserUpsertWithoutAssignmentsMadeInput = {
@@ -1782,6 +2212,7 @@ export type UserUpdateWithoutAssignmentsMadeInput = {
   role?: Prisma.EnumRoleFieldUpdateOperationsInput | $Enums.Role
   emailVerifiedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   lastLoginAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  passwordChangedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   addresses?: Prisma.AddressUpdateManyWithoutUserNestedInput
@@ -1790,11 +2221,13 @@ export type UserUpdateWithoutAssignmentsMadeInput = {
   orders?: Prisma.OrderUpdateManyWithoutUserNestedInput
   checkoutQuotes?: Prisma.CheckoutQuoteUpdateManyWithoutUserNestedInput
   promotionUsages?: Prisma.PromotionUsageUpdateManyWithoutUserNestedInput
+  passwordResetTokens?: Prisma.PasswordResetTokenUpdateManyWithoutUserNestedInput
   deliveryAssignments?: Prisma.DeliveryAssignmentUpdateManyWithoutDeliveryStaffNestedInput
   codCollections?: Prisma.CodCollectionUpdateManyWithoutCollectedByNestedInput
   variantCostChanges?: Prisma.VariantCostHistoryUpdateManyWithoutCreatedByNestedInput
   identities?: Prisma.UserIdentityUpdateManyWithoutUserNestedInput
   feedback?: Prisma.FeedbackUpdateManyWithoutCustomerNestedInput
+  notifications?: Prisma.NotificationUpdateManyWithoutUserNestedInput
 }
 
 export type UserUncheckedUpdateWithoutAssignmentsMadeInput = {
@@ -1808,6 +2241,7 @@ export type UserUncheckedUpdateWithoutAssignmentsMadeInput = {
   role?: Prisma.EnumRoleFieldUpdateOperationsInput | $Enums.Role
   emailVerifiedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   lastLoginAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  passwordChangedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   addresses?: Prisma.AddressUncheckedUpdateManyWithoutUserNestedInput
@@ -1816,11 +2250,13 @@ export type UserUncheckedUpdateWithoutAssignmentsMadeInput = {
   orders?: Prisma.OrderUncheckedUpdateManyWithoutUserNestedInput
   checkoutQuotes?: Prisma.CheckoutQuoteUncheckedUpdateManyWithoutUserNestedInput
   promotionUsages?: Prisma.PromotionUsageUncheckedUpdateManyWithoutUserNestedInput
+  passwordResetTokens?: Prisma.PasswordResetTokenUncheckedUpdateManyWithoutUserNestedInput
   deliveryAssignments?: Prisma.DeliveryAssignmentUncheckedUpdateManyWithoutDeliveryStaffNestedInput
   codCollections?: Prisma.CodCollectionUncheckedUpdateManyWithoutCollectedByNestedInput
   variantCostChanges?: Prisma.VariantCostHistoryUncheckedUpdateManyWithoutCreatedByNestedInput
   identities?: Prisma.UserIdentityUncheckedUpdateManyWithoutUserNestedInput
   feedback?: Prisma.FeedbackUncheckedUpdateManyWithoutCustomerNestedInput
+  notifications?: Prisma.NotificationUncheckedUpdateManyWithoutUserNestedInput
 }
 
 export type UserCreateWithoutCheckoutQuotesInput = {
@@ -1834,6 +2270,7 @@ export type UserCreateWithoutCheckoutQuotesInput = {
   role?: $Enums.Role
   emailVerifiedAt?: Date | string | null
   lastLoginAt?: Date | string | null
+  passwordChangedAt?: Date | string | null
   createdAt?: Date | string
   updatedAt?: Date | string
   addresses?: Prisma.AddressCreateNestedManyWithoutUserInput
@@ -1841,12 +2278,14 @@ export type UserCreateWithoutCheckoutQuotesInput = {
   wishlist?: Prisma.WishlistCreateNestedOneWithoutUserInput
   orders?: Prisma.OrderCreateNestedManyWithoutUserInput
   promotionUsages?: Prisma.PromotionUsageCreateNestedManyWithoutUserInput
+  passwordResetTokens?: Prisma.PasswordResetTokenCreateNestedManyWithoutUserInput
   deliveryAssignments?: Prisma.DeliveryAssignmentCreateNestedManyWithoutDeliveryStaffInput
   assignmentsMade?: Prisma.DeliveryAssignmentCreateNestedManyWithoutAssignedByInput
   codCollections?: Prisma.CodCollectionCreateNestedManyWithoutCollectedByInput
   variantCostChanges?: Prisma.VariantCostHistoryCreateNestedManyWithoutCreatedByInput
   identities?: Prisma.UserIdentityCreateNestedManyWithoutUserInput
   feedback?: Prisma.FeedbackCreateNestedManyWithoutCustomerInput
+  notifications?: Prisma.NotificationCreateNestedManyWithoutUserInput
 }
 
 export type UserUncheckedCreateWithoutCheckoutQuotesInput = {
@@ -1860,6 +2299,7 @@ export type UserUncheckedCreateWithoutCheckoutQuotesInput = {
   role?: $Enums.Role
   emailVerifiedAt?: Date | string | null
   lastLoginAt?: Date | string | null
+  passwordChangedAt?: Date | string | null
   createdAt?: Date | string
   updatedAt?: Date | string
   addresses?: Prisma.AddressUncheckedCreateNestedManyWithoutUserInput
@@ -1867,12 +2307,14 @@ export type UserUncheckedCreateWithoutCheckoutQuotesInput = {
   wishlist?: Prisma.WishlistUncheckedCreateNestedOneWithoutUserInput
   orders?: Prisma.OrderUncheckedCreateNestedManyWithoutUserInput
   promotionUsages?: Prisma.PromotionUsageUncheckedCreateNestedManyWithoutUserInput
+  passwordResetTokens?: Prisma.PasswordResetTokenUncheckedCreateNestedManyWithoutUserInput
   deliveryAssignments?: Prisma.DeliveryAssignmentUncheckedCreateNestedManyWithoutDeliveryStaffInput
   assignmentsMade?: Prisma.DeliveryAssignmentUncheckedCreateNestedManyWithoutAssignedByInput
   codCollections?: Prisma.CodCollectionUncheckedCreateNestedManyWithoutCollectedByInput
   variantCostChanges?: Prisma.VariantCostHistoryUncheckedCreateNestedManyWithoutCreatedByInput
   identities?: Prisma.UserIdentityUncheckedCreateNestedManyWithoutUserInput
   feedback?: Prisma.FeedbackUncheckedCreateNestedManyWithoutCustomerInput
+  notifications?: Prisma.NotificationUncheckedCreateNestedManyWithoutUserInput
 }
 
 export type UserCreateOrConnectWithoutCheckoutQuotesInput = {
@@ -1902,6 +2344,7 @@ export type UserUpdateWithoutCheckoutQuotesInput = {
   role?: Prisma.EnumRoleFieldUpdateOperationsInput | $Enums.Role
   emailVerifiedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   lastLoginAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  passwordChangedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   addresses?: Prisma.AddressUpdateManyWithoutUserNestedInput
@@ -1909,12 +2352,14 @@ export type UserUpdateWithoutCheckoutQuotesInput = {
   wishlist?: Prisma.WishlistUpdateOneWithoutUserNestedInput
   orders?: Prisma.OrderUpdateManyWithoutUserNestedInput
   promotionUsages?: Prisma.PromotionUsageUpdateManyWithoutUserNestedInput
+  passwordResetTokens?: Prisma.PasswordResetTokenUpdateManyWithoutUserNestedInput
   deliveryAssignments?: Prisma.DeliveryAssignmentUpdateManyWithoutDeliveryStaffNestedInput
   assignmentsMade?: Prisma.DeliveryAssignmentUpdateManyWithoutAssignedByNestedInput
   codCollections?: Prisma.CodCollectionUpdateManyWithoutCollectedByNestedInput
   variantCostChanges?: Prisma.VariantCostHistoryUpdateManyWithoutCreatedByNestedInput
   identities?: Prisma.UserIdentityUpdateManyWithoutUserNestedInput
   feedback?: Prisma.FeedbackUpdateManyWithoutCustomerNestedInput
+  notifications?: Prisma.NotificationUpdateManyWithoutUserNestedInput
 }
 
 export type UserUncheckedUpdateWithoutCheckoutQuotesInput = {
@@ -1928,6 +2373,7 @@ export type UserUncheckedUpdateWithoutCheckoutQuotesInput = {
   role?: Prisma.EnumRoleFieldUpdateOperationsInput | $Enums.Role
   emailVerifiedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   lastLoginAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  passwordChangedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   addresses?: Prisma.AddressUncheckedUpdateManyWithoutUserNestedInput
@@ -1935,12 +2381,14 @@ export type UserUncheckedUpdateWithoutCheckoutQuotesInput = {
   wishlist?: Prisma.WishlistUncheckedUpdateOneWithoutUserNestedInput
   orders?: Prisma.OrderUncheckedUpdateManyWithoutUserNestedInput
   promotionUsages?: Prisma.PromotionUsageUncheckedUpdateManyWithoutUserNestedInput
+  passwordResetTokens?: Prisma.PasswordResetTokenUncheckedUpdateManyWithoutUserNestedInput
   deliveryAssignments?: Prisma.DeliveryAssignmentUncheckedUpdateManyWithoutDeliveryStaffNestedInput
   assignmentsMade?: Prisma.DeliveryAssignmentUncheckedUpdateManyWithoutAssignedByNestedInput
   codCollections?: Prisma.CodCollectionUncheckedUpdateManyWithoutCollectedByNestedInput
   variantCostChanges?: Prisma.VariantCostHistoryUncheckedUpdateManyWithoutCreatedByNestedInput
   identities?: Prisma.UserIdentityUncheckedUpdateManyWithoutUserNestedInput
   feedback?: Prisma.FeedbackUncheckedUpdateManyWithoutCustomerNestedInput
+  notifications?: Prisma.NotificationUncheckedUpdateManyWithoutUserNestedInput
 }
 
 export type UserCreateWithoutCodCollectionsInput = {
@@ -1954,6 +2402,7 @@ export type UserCreateWithoutCodCollectionsInput = {
   role?: $Enums.Role
   emailVerifiedAt?: Date | string | null
   lastLoginAt?: Date | string | null
+  passwordChangedAt?: Date | string | null
   createdAt?: Date | string
   updatedAt?: Date | string
   addresses?: Prisma.AddressCreateNestedManyWithoutUserInput
@@ -1962,11 +2411,13 @@ export type UserCreateWithoutCodCollectionsInput = {
   orders?: Prisma.OrderCreateNestedManyWithoutUserInput
   checkoutQuotes?: Prisma.CheckoutQuoteCreateNestedManyWithoutUserInput
   promotionUsages?: Prisma.PromotionUsageCreateNestedManyWithoutUserInput
+  passwordResetTokens?: Prisma.PasswordResetTokenCreateNestedManyWithoutUserInput
   deliveryAssignments?: Prisma.DeliveryAssignmentCreateNestedManyWithoutDeliveryStaffInput
   assignmentsMade?: Prisma.DeliveryAssignmentCreateNestedManyWithoutAssignedByInput
   variantCostChanges?: Prisma.VariantCostHistoryCreateNestedManyWithoutCreatedByInput
   identities?: Prisma.UserIdentityCreateNestedManyWithoutUserInput
   feedback?: Prisma.FeedbackCreateNestedManyWithoutCustomerInput
+  notifications?: Prisma.NotificationCreateNestedManyWithoutUserInput
 }
 
 export type UserUncheckedCreateWithoutCodCollectionsInput = {
@@ -1980,6 +2431,7 @@ export type UserUncheckedCreateWithoutCodCollectionsInput = {
   role?: $Enums.Role
   emailVerifiedAt?: Date | string | null
   lastLoginAt?: Date | string | null
+  passwordChangedAt?: Date | string | null
   createdAt?: Date | string
   updatedAt?: Date | string
   addresses?: Prisma.AddressUncheckedCreateNestedManyWithoutUserInput
@@ -1988,11 +2440,13 @@ export type UserUncheckedCreateWithoutCodCollectionsInput = {
   orders?: Prisma.OrderUncheckedCreateNestedManyWithoutUserInput
   checkoutQuotes?: Prisma.CheckoutQuoteUncheckedCreateNestedManyWithoutUserInput
   promotionUsages?: Prisma.PromotionUsageUncheckedCreateNestedManyWithoutUserInput
+  passwordResetTokens?: Prisma.PasswordResetTokenUncheckedCreateNestedManyWithoutUserInput
   deliveryAssignments?: Prisma.DeliveryAssignmentUncheckedCreateNestedManyWithoutDeliveryStaffInput
   assignmentsMade?: Prisma.DeliveryAssignmentUncheckedCreateNestedManyWithoutAssignedByInput
   variantCostChanges?: Prisma.VariantCostHistoryUncheckedCreateNestedManyWithoutCreatedByInput
   identities?: Prisma.UserIdentityUncheckedCreateNestedManyWithoutUserInput
   feedback?: Prisma.FeedbackUncheckedCreateNestedManyWithoutCustomerInput
+  notifications?: Prisma.NotificationUncheckedCreateNestedManyWithoutUserInput
 }
 
 export type UserCreateOrConnectWithoutCodCollectionsInput = {
@@ -2022,6 +2476,7 @@ export type UserUpdateWithoutCodCollectionsInput = {
   role?: Prisma.EnumRoleFieldUpdateOperationsInput | $Enums.Role
   emailVerifiedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   lastLoginAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  passwordChangedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   addresses?: Prisma.AddressUpdateManyWithoutUserNestedInput
@@ -2030,11 +2485,13 @@ export type UserUpdateWithoutCodCollectionsInput = {
   orders?: Prisma.OrderUpdateManyWithoutUserNestedInput
   checkoutQuotes?: Prisma.CheckoutQuoteUpdateManyWithoutUserNestedInput
   promotionUsages?: Prisma.PromotionUsageUpdateManyWithoutUserNestedInput
+  passwordResetTokens?: Prisma.PasswordResetTokenUpdateManyWithoutUserNestedInput
   deliveryAssignments?: Prisma.DeliveryAssignmentUpdateManyWithoutDeliveryStaffNestedInput
   assignmentsMade?: Prisma.DeliveryAssignmentUpdateManyWithoutAssignedByNestedInput
   variantCostChanges?: Prisma.VariantCostHistoryUpdateManyWithoutCreatedByNestedInput
   identities?: Prisma.UserIdentityUpdateManyWithoutUserNestedInput
   feedback?: Prisma.FeedbackUpdateManyWithoutCustomerNestedInput
+  notifications?: Prisma.NotificationUpdateManyWithoutUserNestedInput
 }
 
 export type UserUncheckedUpdateWithoutCodCollectionsInput = {
@@ -2048,6 +2505,7 @@ export type UserUncheckedUpdateWithoutCodCollectionsInput = {
   role?: Prisma.EnumRoleFieldUpdateOperationsInput | $Enums.Role
   emailVerifiedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   lastLoginAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  passwordChangedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   addresses?: Prisma.AddressUncheckedUpdateManyWithoutUserNestedInput
@@ -2056,11 +2514,13 @@ export type UserUncheckedUpdateWithoutCodCollectionsInput = {
   orders?: Prisma.OrderUncheckedUpdateManyWithoutUserNestedInput
   checkoutQuotes?: Prisma.CheckoutQuoteUncheckedUpdateManyWithoutUserNestedInput
   promotionUsages?: Prisma.PromotionUsageUncheckedUpdateManyWithoutUserNestedInput
+  passwordResetTokens?: Prisma.PasswordResetTokenUncheckedUpdateManyWithoutUserNestedInput
   deliveryAssignments?: Prisma.DeliveryAssignmentUncheckedUpdateManyWithoutDeliveryStaffNestedInput
   assignmentsMade?: Prisma.DeliveryAssignmentUncheckedUpdateManyWithoutAssignedByNestedInput
   variantCostChanges?: Prisma.VariantCostHistoryUncheckedUpdateManyWithoutCreatedByNestedInput
   identities?: Prisma.UserIdentityUncheckedUpdateManyWithoutUserNestedInput
   feedback?: Prisma.FeedbackUncheckedUpdateManyWithoutCustomerNestedInput
+  notifications?: Prisma.NotificationUncheckedUpdateManyWithoutUserNestedInput
 }
 
 export type UserCreateWithoutPromotionUsagesInput = {
@@ -2074,6 +2534,7 @@ export type UserCreateWithoutPromotionUsagesInput = {
   role?: $Enums.Role
   emailVerifiedAt?: Date | string | null
   lastLoginAt?: Date | string | null
+  passwordChangedAt?: Date | string | null
   createdAt?: Date | string
   updatedAt?: Date | string
   addresses?: Prisma.AddressCreateNestedManyWithoutUserInput
@@ -2081,12 +2542,14 @@ export type UserCreateWithoutPromotionUsagesInput = {
   wishlist?: Prisma.WishlistCreateNestedOneWithoutUserInput
   orders?: Prisma.OrderCreateNestedManyWithoutUserInput
   checkoutQuotes?: Prisma.CheckoutQuoteCreateNestedManyWithoutUserInput
+  passwordResetTokens?: Prisma.PasswordResetTokenCreateNestedManyWithoutUserInput
   deliveryAssignments?: Prisma.DeliveryAssignmentCreateNestedManyWithoutDeliveryStaffInput
   assignmentsMade?: Prisma.DeliveryAssignmentCreateNestedManyWithoutAssignedByInput
   codCollections?: Prisma.CodCollectionCreateNestedManyWithoutCollectedByInput
   variantCostChanges?: Prisma.VariantCostHistoryCreateNestedManyWithoutCreatedByInput
   identities?: Prisma.UserIdentityCreateNestedManyWithoutUserInput
   feedback?: Prisma.FeedbackCreateNestedManyWithoutCustomerInput
+  notifications?: Prisma.NotificationCreateNestedManyWithoutUserInput
 }
 
 export type UserUncheckedCreateWithoutPromotionUsagesInput = {
@@ -2100,6 +2563,7 @@ export type UserUncheckedCreateWithoutPromotionUsagesInput = {
   role?: $Enums.Role
   emailVerifiedAt?: Date | string | null
   lastLoginAt?: Date | string | null
+  passwordChangedAt?: Date | string | null
   createdAt?: Date | string
   updatedAt?: Date | string
   addresses?: Prisma.AddressUncheckedCreateNestedManyWithoutUserInput
@@ -2107,12 +2571,14 @@ export type UserUncheckedCreateWithoutPromotionUsagesInput = {
   wishlist?: Prisma.WishlistUncheckedCreateNestedOneWithoutUserInput
   orders?: Prisma.OrderUncheckedCreateNestedManyWithoutUserInput
   checkoutQuotes?: Prisma.CheckoutQuoteUncheckedCreateNestedManyWithoutUserInput
+  passwordResetTokens?: Prisma.PasswordResetTokenUncheckedCreateNestedManyWithoutUserInput
   deliveryAssignments?: Prisma.DeliveryAssignmentUncheckedCreateNestedManyWithoutDeliveryStaffInput
   assignmentsMade?: Prisma.DeliveryAssignmentUncheckedCreateNestedManyWithoutAssignedByInput
   codCollections?: Prisma.CodCollectionUncheckedCreateNestedManyWithoutCollectedByInput
   variantCostChanges?: Prisma.VariantCostHistoryUncheckedCreateNestedManyWithoutCreatedByInput
   identities?: Prisma.UserIdentityUncheckedCreateNestedManyWithoutUserInput
   feedback?: Prisma.FeedbackUncheckedCreateNestedManyWithoutCustomerInput
+  notifications?: Prisma.NotificationUncheckedCreateNestedManyWithoutUserInput
 }
 
 export type UserCreateOrConnectWithoutPromotionUsagesInput = {
@@ -2142,6 +2608,7 @@ export type UserUpdateWithoutPromotionUsagesInput = {
   role?: Prisma.EnumRoleFieldUpdateOperationsInput | $Enums.Role
   emailVerifiedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   lastLoginAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  passwordChangedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   addresses?: Prisma.AddressUpdateManyWithoutUserNestedInput
@@ -2149,12 +2616,14 @@ export type UserUpdateWithoutPromotionUsagesInput = {
   wishlist?: Prisma.WishlistUpdateOneWithoutUserNestedInput
   orders?: Prisma.OrderUpdateManyWithoutUserNestedInput
   checkoutQuotes?: Prisma.CheckoutQuoteUpdateManyWithoutUserNestedInput
+  passwordResetTokens?: Prisma.PasswordResetTokenUpdateManyWithoutUserNestedInput
   deliveryAssignments?: Prisma.DeliveryAssignmentUpdateManyWithoutDeliveryStaffNestedInput
   assignmentsMade?: Prisma.DeliveryAssignmentUpdateManyWithoutAssignedByNestedInput
   codCollections?: Prisma.CodCollectionUpdateManyWithoutCollectedByNestedInput
   variantCostChanges?: Prisma.VariantCostHistoryUpdateManyWithoutCreatedByNestedInput
   identities?: Prisma.UserIdentityUpdateManyWithoutUserNestedInput
   feedback?: Prisma.FeedbackUpdateManyWithoutCustomerNestedInput
+  notifications?: Prisma.NotificationUpdateManyWithoutUserNestedInput
 }
 
 export type UserUncheckedUpdateWithoutPromotionUsagesInput = {
@@ -2168,6 +2637,7 @@ export type UserUncheckedUpdateWithoutPromotionUsagesInput = {
   role?: Prisma.EnumRoleFieldUpdateOperationsInput | $Enums.Role
   emailVerifiedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   lastLoginAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  passwordChangedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   addresses?: Prisma.AddressUncheckedUpdateManyWithoutUserNestedInput
@@ -2175,12 +2645,14 @@ export type UserUncheckedUpdateWithoutPromotionUsagesInput = {
   wishlist?: Prisma.WishlistUncheckedUpdateOneWithoutUserNestedInput
   orders?: Prisma.OrderUncheckedUpdateManyWithoutUserNestedInput
   checkoutQuotes?: Prisma.CheckoutQuoteUncheckedUpdateManyWithoutUserNestedInput
+  passwordResetTokens?: Prisma.PasswordResetTokenUncheckedUpdateManyWithoutUserNestedInput
   deliveryAssignments?: Prisma.DeliveryAssignmentUncheckedUpdateManyWithoutDeliveryStaffNestedInput
   assignmentsMade?: Prisma.DeliveryAssignmentUncheckedUpdateManyWithoutAssignedByNestedInput
   codCollections?: Prisma.CodCollectionUncheckedUpdateManyWithoutCollectedByNestedInput
   variantCostChanges?: Prisma.VariantCostHistoryUncheckedUpdateManyWithoutCreatedByNestedInput
   identities?: Prisma.UserIdentityUncheckedUpdateManyWithoutUserNestedInput
   feedback?: Prisma.FeedbackUncheckedUpdateManyWithoutCustomerNestedInput
+  notifications?: Prisma.NotificationUncheckedUpdateManyWithoutUserNestedInput
 }
 
 
@@ -2193,12 +2665,14 @@ export type UserCountOutputType = {
   orders: number
   checkoutQuotes: number
   promotionUsages: number
+  passwordResetTokens: number
   deliveryAssignments: number
   assignmentsMade: number
   codCollections: number
   variantCostChanges: number
   identities: number
   feedback: number
+  notifications: number
 }
 
 export type UserCountOutputTypeSelect<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
@@ -2206,12 +2680,14 @@ export type UserCountOutputTypeSelect<ExtArgs extends runtime.Types.Extensions.I
   orders?: boolean | UserCountOutputTypeCountOrdersArgs
   checkoutQuotes?: boolean | UserCountOutputTypeCountCheckoutQuotesArgs
   promotionUsages?: boolean | UserCountOutputTypeCountPromotionUsagesArgs
+  passwordResetTokens?: boolean | UserCountOutputTypeCountPasswordResetTokensArgs
   deliveryAssignments?: boolean | UserCountOutputTypeCountDeliveryAssignmentsArgs
   assignmentsMade?: boolean | UserCountOutputTypeCountAssignmentsMadeArgs
   codCollections?: boolean | UserCountOutputTypeCountCodCollectionsArgs
   variantCostChanges?: boolean | UserCountOutputTypeCountVariantCostChangesArgs
   identities?: boolean | UserCountOutputTypeCountIdentitiesArgs
   feedback?: boolean | UserCountOutputTypeCountFeedbackArgs
+  notifications?: boolean | UserCountOutputTypeCountNotificationsArgs
 }
 
 /**
@@ -2250,6 +2726,13 @@ export type UserCountOutputTypeCountCheckoutQuotesArgs<ExtArgs extends runtime.T
  */
 export type UserCountOutputTypeCountPromotionUsagesArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
   where?: Prisma.PromotionUsageWhereInput
+}
+
+/**
+ * UserCountOutputType without action
+ */
+export type UserCountOutputTypeCountPasswordResetTokensArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
+  where?: Prisma.PasswordResetTokenWhereInput
 }
 
 /**
@@ -2294,6 +2777,13 @@ export type UserCountOutputTypeCountFeedbackArgs<ExtArgs extends runtime.Types.E
   where?: Prisma.FeedbackWhereInput
 }
 
+/**
+ * UserCountOutputType without action
+ */
+export type UserCountOutputTypeCountNotificationsArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
+  where?: Prisma.NotificationWhereInput
+}
+
 
 export type UserSelect<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetSelect<{
   id?: boolean
@@ -2306,6 +2796,7 @@ export type UserSelect<ExtArgs extends runtime.Types.Extensions.InternalArgs = r
   role?: boolean
   emailVerifiedAt?: boolean
   lastLoginAt?: boolean
+  passwordChangedAt?: boolean
   createdAt?: boolean
   updatedAt?: boolean
   addresses?: boolean | Prisma.User$addressesArgs<ExtArgs>
@@ -2314,12 +2805,14 @@ export type UserSelect<ExtArgs extends runtime.Types.Extensions.InternalArgs = r
   orders?: boolean | Prisma.User$ordersArgs<ExtArgs>
   checkoutQuotes?: boolean | Prisma.User$checkoutQuotesArgs<ExtArgs>
   promotionUsages?: boolean | Prisma.User$promotionUsagesArgs<ExtArgs>
+  passwordResetTokens?: boolean | Prisma.User$passwordResetTokensArgs<ExtArgs>
   deliveryAssignments?: boolean | Prisma.User$deliveryAssignmentsArgs<ExtArgs>
   assignmentsMade?: boolean | Prisma.User$assignmentsMadeArgs<ExtArgs>
   codCollections?: boolean | Prisma.User$codCollectionsArgs<ExtArgs>
   variantCostChanges?: boolean | Prisma.User$variantCostChangesArgs<ExtArgs>
   identities?: boolean | Prisma.User$identitiesArgs<ExtArgs>
   feedback?: boolean | Prisma.User$feedbackArgs<ExtArgs>
+  notifications?: boolean | Prisma.User$notificationsArgs<ExtArgs>
   _count?: boolean | Prisma.UserCountOutputTypeDefaultArgs<ExtArgs>
 }, ExtArgs["result"]["user"]>
 
@@ -2334,6 +2827,7 @@ export type UserSelectCreateManyAndReturn<ExtArgs extends runtime.Types.Extensio
   role?: boolean
   emailVerifiedAt?: boolean
   lastLoginAt?: boolean
+  passwordChangedAt?: boolean
   createdAt?: boolean
   updatedAt?: boolean
 }, ExtArgs["result"]["user"]>
@@ -2349,6 +2843,7 @@ export type UserSelectUpdateManyAndReturn<ExtArgs extends runtime.Types.Extensio
   role?: boolean
   emailVerifiedAt?: boolean
   lastLoginAt?: boolean
+  passwordChangedAt?: boolean
   createdAt?: boolean
   updatedAt?: boolean
 }, ExtArgs["result"]["user"]>
@@ -2364,11 +2859,12 @@ export type UserSelectScalar = {
   role?: boolean
   emailVerifiedAt?: boolean
   lastLoginAt?: boolean
+  passwordChangedAt?: boolean
   createdAt?: boolean
   updatedAt?: boolean
 }
 
-export type UserOmit<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetOmit<"id" | "firstName" | "lastName" | "email" | "passwordHash" | "phone" | "status" | "role" | "emailVerifiedAt" | "lastLoginAt" | "createdAt" | "updatedAt", ExtArgs["result"]["user"]>
+export type UserOmit<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetOmit<"id" | "firstName" | "lastName" | "email" | "passwordHash" | "phone" | "status" | "role" | "emailVerifiedAt" | "lastLoginAt" | "passwordChangedAt" | "createdAt" | "updatedAt", ExtArgs["result"]["user"]>
 export type UserInclude<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
   addresses?: boolean | Prisma.User$addressesArgs<ExtArgs>
   cart?: boolean | Prisma.User$cartArgs<ExtArgs>
@@ -2376,12 +2872,14 @@ export type UserInclude<ExtArgs extends runtime.Types.Extensions.InternalArgs = 
   orders?: boolean | Prisma.User$ordersArgs<ExtArgs>
   checkoutQuotes?: boolean | Prisma.User$checkoutQuotesArgs<ExtArgs>
   promotionUsages?: boolean | Prisma.User$promotionUsagesArgs<ExtArgs>
+  passwordResetTokens?: boolean | Prisma.User$passwordResetTokensArgs<ExtArgs>
   deliveryAssignments?: boolean | Prisma.User$deliveryAssignmentsArgs<ExtArgs>
   assignmentsMade?: boolean | Prisma.User$assignmentsMadeArgs<ExtArgs>
   codCollections?: boolean | Prisma.User$codCollectionsArgs<ExtArgs>
   variantCostChanges?: boolean | Prisma.User$variantCostChangesArgs<ExtArgs>
   identities?: boolean | Prisma.User$identitiesArgs<ExtArgs>
   feedback?: boolean | Prisma.User$feedbackArgs<ExtArgs>
+  notifications?: boolean | Prisma.User$notificationsArgs<ExtArgs>
   _count?: boolean | Prisma.UserCountOutputTypeDefaultArgs<ExtArgs>
 }
 export type UserIncludeCreateManyAndReturn<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {}
@@ -2399,6 +2897,10 @@ export type $UserPayload<ExtArgs extends runtime.Types.Extensions.InternalArgs =
      * Every promotion this user has consumed, kept as financial history.
      */
     promotionUsages: Prisma.$PromotionUsagePayload<ExtArgs>[]
+    /**
+     * Short-lived, single-use links for setting or changing a local password.
+     */
+    passwordResetTokens: Prisma.$PasswordResetTokenPayload<ExtArgs>[]
     /**
      * Assignments where this user is the courier, and history is never overwritten.
      */
@@ -2420,6 +2922,10 @@ export type $UserPayload<ExtArgs extends runtime.Types.Extensions.InternalArgs =
      */
     identities: Prisma.$UserIdentityPayload<ExtArgs>[]
     feedback: Prisma.$FeedbackPayload<ExtArgs>[]
+    /**
+     * In-app notifications addressed to this user (customer or administrator).
+     */
+    notifications: Prisma.$NotificationPayload<ExtArgs>[]
   }
   scalars: runtime.Types.Extensions.GetPayloadResult<{
     id: string
@@ -2432,6 +2938,11 @@ export type $UserPayload<ExtArgs extends runtime.Types.Extensions.InternalArgs =
     role: $Enums.Role
     emailVerifiedAt: Date | null
     lastLoginAt: Date | null
+    /**
+     * Set whenever the local password is changed through the verified reset flow.
+     * Access tokens issued before this instant are refused by `JwtAuthGuard`.
+     */
+    passwordChangedAt: Date | null
     createdAt: Date
     updatedAt: Date
   }, ExtArgs["result"]["user"]>
@@ -2834,12 +3345,14 @@ export interface Prisma__UserClient<T, Null = never, ExtArgs extends runtime.Typ
   orders<T extends Prisma.User$ordersArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.User$ordersArgs<ExtArgs>>): Prisma.PrismaPromise<runtime.Types.Result.GetResult<Prisma.$OrderPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
   checkoutQuotes<T extends Prisma.User$checkoutQuotesArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.User$checkoutQuotesArgs<ExtArgs>>): Prisma.PrismaPromise<runtime.Types.Result.GetResult<Prisma.$CheckoutQuotePayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
   promotionUsages<T extends Prisma.User$promotionUsagesArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.User$promotionUsagesArgs<ExtArgs>>): Prisma.PrismaPromise<runtime.Types.Result.GetResult<Prisma.$PromotionUsagePayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
+  passwordResetTokens<T extends Prisma.User$passwordResetTokensArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.User$passwordResetTokensArgs<ExtArgs>>): Prisma.PrismaPromise<runtime.Types.Result.GetResult<Prisma.$PasswordResetTokenPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
   deliveryAssignments<T extends Prisma.User$deliveryAssignmentsArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.User$deliveryAssignmentsArgs<ExtArgs>>): Prisma.PrismaPromise<runtime.Types.Result.GetResult<Prisma.$DeliveryAssignmentPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
   assignmentsMade<T extends Prisma.User$assignmentsMadeArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.User$assignmentsMadeArgs<ExtArgs>>): Prisma.PrismaPromise<runtime.Types.Result.GetResult<Prisma.$DeliveryAssignmentPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
   codCollections<T extends Prisma.User$codCollectionsArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.User$codCollectionsArgs<ExtArgs>>): Prisma.PrismaPromise<runtime.Types.Result.GetResult<Prisma.$CodCollectionPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
   variantCostChanges<T extends Prisma.User$variantCostChangesArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.User$variantCostChangesArgs<ExtArgs>>): Prisma.PrismaPromise<runtime.Types.Result.GetResult<Prisma.$VariantCostHistoryPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
   identities<T extends Prisma.User$identitiesArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.User$identitiesArgs<ExtArgs>>): Prisma.PrismaPromise<runtime.Types.Result.GetResult<Prisma.$UserIdentityPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
   feedback<T extends Prisma.User$feedbackArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.User$feedbackArgs<ExtArgs>>): Prisma.PrismaPromise<runtime.Types.Result.GetResult<Prisma.$FeedbackPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
+  notifications<T extends Prisma.User$notificationsArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.User$notificationsArgs<ExtArgs>>): Prisma.PrismaPromise<runtime.Types.Result.GetResult<Prisma.$NotificationPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
   /**
    * Attaches callbacks for the resolution and/or rejection of the Promise.
    * @param onfulfilled The callback to execute when the Promise is resolved.
@@ -2879,6 +3392,7 @@ export interface UserFieldRefs {
   readonly role: Prisma.FieldRef<"User", 'Role'>
   readonly emailVerifiedAt: Prisma.FieldRef<"User", 'DateTime'>
   readonly lastLoginAt: Prisma.FieldRef<"User", 'DateTime'>
+  readonly passwordChangedAt: Prisma.FieldRef<"User", 'DateTime'>
   readonly createdAt: Prisma.FieldRef<"User", 'DateTime'>
   readonly updatedAt: Prisma.FieldRef<"User", 'DateTime'>
 }
@@ -3408,6 +3922,30 @@ export type User$promotionUsagesArgs<ExtArgs extends runtime.Types.Extensions.In
 }
 
 /**
+ * User.passwordResetTokens
+ */
+export type User$passwordResetTokensArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
+  /**
+   * Select specific fields to fetch from the PasswordResetToken
+   */
+  select?: Prisma.PasswordResetTokenSelect<ExtArgs> | null
+  /**
+   * Omit specific fields from the PasswordResetToken
+   */
+  omit?: Prisma.PasswordResetTokenOmit<ExtArgs> | null
+  /**
+   * Choose, which related nodes to fetch as well
+   */
+  include?: Prisma.PasswordResetTokenInclude<ExtArgs> | null
+  where?: Prisma.PasswordResetTokenWhereInput
+  orderBy?: Prisma.PasswordResetTokenOrderByWithRelationInput | Prisma.PasswordResetTokenOrderByWithRelationInput[]
+  cursor?: Prisma.PasswordResetTokenWhereUniqueInput
+  take?: number
+  skip?: number
+  distinct?: Prisma.PasswordResetTokenScalarFieldEnum | Prisma.PasswordResetTokenScalarFieldEnum[]
+}
+
+/**
  * User.deliveryAssignments
  */
 export type User$deliveryAssignmentsArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
@@ -3549,6 +4087,30 @@ export type User$feedbackArgs<ExtArgs extends runtime.Types.Extensions.InternalA
   take?: number
   skip?: number
   distinct?: Prisma.FeedbackScalarFieldEnum | Prisma.FeedbackScalarFieldEnum[]
+}
+
+/**
+ * User.notifications
+ */
+export type User$notificationsArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
+  /**
+   * Select specific fields to fetch from the Notification
+   */
+  select?: Prisma.NotificationSelect<ExtArgs> | null
+  /**
+   * Omit specific fields from the Notification
+   */
+  omit?: Prisma.NotificationOmit<ExtArgs> | null
+  /**
+   * Choose, which related nodes to fetch as well
+   */
+  include?: Prisma.NotificationInclude<ExtArgs> | null
+  where?: Prisma.NotificationWhereInput
+  orderBy?: Prisma.NotificationOrderByWithRelationInput | Prisma.NotificationOrderByWithRelationInput[]
+  cursor?: Prisma.NotificationWhereUniqueInput
+  take?: number
+  skip?: number
+  distinct?: Prisma.NotificationScalarFieldEnum | Prisma.NotificationScalarFieldEnum[]
 }
 
 /**

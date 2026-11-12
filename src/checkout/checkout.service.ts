@@ -5,6 +5,7 @@ import {
   Injectable,
   Logger,
   NotFoundException,
+  Optional,
 } from '@nestjs/common';
 import { Prisma } from '../generated/prisma/client.js';
 import { AddressesService } from '../addresses/addresses.service.js';
@@ -43,6 +44,7 @@ import { CheckoutResponseDto } from './dto/checkout-response.dto.js';
 import type { CheckoutDto } from './dto/checkout.dto.js';
 import type { CreateCheckoutQuoteDto } from './dto/create-checkout-quote.dto.js';
 import { CheckoutQuotesRepository } from './repositories/checkout-quotes.repository.js';
+import { TelegramOrderAlertsService } from '../notifications/telegram/telegram-order-alerts.service.js';
 
 /**
  * A Prisma client bound to an interactive transaction.
@@ -178,6 +180,8 @@ export class CheckoutService {
     private readonly locationsService: AdministrativeLocationsService,
     private readonly promotionEvaluator: PromotionEvaluatorService,
     private readonly promotionsRepository: PromotionsRepository,
+    @Optional()
+    private readonly telegramOrderAlertsService?: TelegramOrderAlertsService,
   ) {}
 
   async createQuote(
@@ -390,6 +394,18 @@ export class CheckoutService {
                 runCheckout,
                 transactionOptions,
               );
+
+        // Enqueue post-commit only for a successfully created/committed checkout.
+        // Replays/idempotent hits return earlier and must not trigger duplicates.
+        void this.telegramOrderAlertsService
+          ?.enqueueNewOrderAlert(order.id)
+          .catch((error: unknown) => {
+            const message =
+              error instanceof Error ? error.message : 'unknown error';
+            this.logger.error(
+              `Failed to schedule Telegram order alert for order ${order.id}: ${message}`,
+            );
+          });
 
         return CheckoutResponseDto.fromOrder(order);
       } catch (error) {

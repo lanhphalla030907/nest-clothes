@@ -483,8 +483,10 @@ describe('CustomersRepository', () => {
         orderBy: [{ createdAt: 'desc' }, { id: 'desc' }],
         take: 5,
       });
-      const select = prisma.order.findMany.mock.calls[0][0]
-        .select as Record<string, { select: Record<string, boolean> }>;
+      const select = prisma.order.findMany.mock.calls[0][0].select as Record<
+        string,
+        { select: Record<string, boolean>; where?: Record<string, string>; take?: number }
+      >;
       // Payment evidence is read for existence only, never the QR artifacts.
       expect(select.payments.select).toEqual({ id: true });
       expect(select.codCollections.select).toEqual({ id: true });

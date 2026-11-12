@@ -519,10 +519,11 @@ describe('Admin catalogue (PostgreSQL)', () => {
       ] as const;
 
       for (const operation of operations) {
+        const body = 'body' in operation ? operation.body : undefined;
         expect(
           (
             await api(operation.method, operation.adminPath, {
-              body: operation.body,
+              body,
             })
           ).status,
         ).toBe(HttpStatus.UNAUTHORIZED);
@@ -530,14 +531,14 @@ describe('Admin catalogue (PostgreSQL)', () => {
           (
             await api(operation.method, operation.adminPath, {
               user: customerId,
-              body: operation.body,
+              body,
             })
           ).status,
         ).toBe(HttpStatus.FORBIDDEN);
         expect(
           (
             await api(operation.method, operation.publicPath, {
-              body: operation.body,
+              body,
             })
           ).status,
         ).toBe(HttpStatus.NOT_FOUND);

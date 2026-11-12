@@ -44,6 +44,9 @@ model User {
   role            Role      @default(CUSTOMER)
   emailVerifiedAt DateTime? @map("email_verified_at") @db.Timestamptz
   lastLoginAt     DateTime? @map("last_login_at") @db.Timestamptz
+  /// Set whenever the local password is changed through the verified reset flow.
+  /// Access tokens issued before this instant are refused by `JwtAuthGuard`.
+  passwordChangedAt DateTime? @map("password_changed_at") @db.Timestamptz
   createdAt       DateTime  @default(now()) @map("created_at") @db.Timestamptz
   updatedAt       DateTime  @updatedAt @map("updated_at") @db.Timestamptz
 
@@ -54,6 +57,8 @@ model User {
   checkoutQuotes CheckoutQuote[]
   /// Every promotion this user has consumed, kept as financial history.
   promotionUsages PromotionUsage[]
+  /// Short-lived, single-use links for setting or changing a local password.
+  passwordResetTokens PasswordResetToken[]
 
   /// Assignments where this user is the courier, and history is never overwritten.
   deliveryAssignments DeliveryAssignment[] @relation("DeliveryStaffAssignments")
@@ -66,11 +71,82 @@ model User {
   /// Linked external federated identities (e.g. Google OAuth/OIDC).
   identities          UserIdentity[]
   feedback            Feedback[]
+  /// In-app notifications addressed to this user (customer or administrator).
+  notifications       Notification[]
 
   @@index([status])
   @@index([role])
   @@map("users")
 }
+
+/// The closed set of in-app notification kinds.
+enum NotificationType {
+  ORDER_PLACED
+  PAYMENT_CONFIRMED
+  ORDER_SHIPPED
+  ORDER_DELIVERED
+  ORDER_CANCELLED
+  ADMIN_NEW_ORDER
+  ADMIN_NEW_FEEDBACK
+}
+
+/// One in-app notification addressed to exactly one user.
+///
+/// `dedupe_key` is the idempotency guarantee: event handlers run after a
+/// transaction commits, but webhooks and status endpoints can be called more
+/// than once, so a unique key makes a repeated event a no-op rather than a
+/// second row. It is internal and never returned by the API.
+model Notification {
+  id        String           @id @default(uuid()) @db.Uuid
+  userId    String           @map("user_id") @db.Uuid
+  type      NotificationType
+  title     String           @db.VarChar(160)
+  message   String           @db.Text
+  data      Json?            @db.JsonB
+  readAt    DateTime?        @map("read_at") @db.Timestamptz
+  createdAt DateTime         @default(now()) @map("created_at") @db.Timestamptz
+  dedupeKey String?          @unique @map("dedupe_key") @db.VarChar(191)
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade, onUpdate: Cascade)
+
+  // Serves the paginated list "this user's notifications, newest first".
+  @@index([userId, createdAt(sort: Desc), id(sort: Desc)])
+  // Serves the unread count for one user.
+  @@index([userId, readAt])
+  @@map("notifications")
+}
+
+/// Durable outbox for the one Telegram alert each order may produce.
+///
+/// New-order alerts are enqueued after the order commits, then delivered by a
+/// scheduler. The unique `order_id` is what makes "one alert per order" true
+/// even when checkout retries or an event is processed twice. Failures are
+/// retried with backoff; a terminal failure stays `FAILED` for inspection.
+model TelegramOrderAlert {
+  id            String              @id @default(uuid()) @db.Uuid
+  orderId       String              @unique @map("order_id") @db.Uuid
+  payload       Json                @db.JsonB
+  status        TelegramAlertStatus @default(PENDING)
+  attempts      Int                 @default(0)
+  nextAttemptAt DateTime            @default(now()) @map("next_attempt_at") @db.Timestamptz
+  lastError     String?             @map("last_error") @db.VarChar(500)
+  sentAt        DateTime?           @map("sent_at") @db.Timestamptz
+  createdAt     DateTime            @default(now()) @map("created_at") @db.Timestamptz
+  updatedAt     DateTime            @updatedAt @map("updated_at") @db.Timestamptz
+
+  order Order @relation(fields: [orderId], references: [id], onDelete: Cascade, onUpdate: Cascade)
+
+  // Serves the scheduler's "due alerts" query.
+  @@index([status, nextAttemptAt])
+  @@map("telegram_order_alerts")
+}
+
+enum TelegramAlertStatus {
+  PENDING
+  SENT
+  FAILED
+}
+
 
 /// Feedback about the store and its services, owned by one customer.
 ///
@@ -113,6 +189,29 @@ model UserIdentity {
   @@unique([provider, providerSubject])
   @@index([userId])
   @@map("user_identities")
+}
+
+/// A single-use, short-lived password reset credential.
+///
+/// Only the SHA-256 digest of the random token is stored. The raw token travels
+/// by email and is never persisted, logged, or returned by an API. `usedAt`
+/// records consumption so a second attempt with the same link is refused, and
+/// the row is kept as an audit trail rather than deleted.
+model PasswordResetToken {
+  id        String    @id @default(uuid()) @db.Uuid
+  userId    String    @map("user_id") @db.Uuid
+  tokenHash String    @unique @map("token_hash") @db.VarChar(64)
+  expiresAt DateTime  @map("expires_at") @db.Timestamptz
+  usedAt    DateTime? @map("used_at") @db.Timestamptz
+  createdAt DateTime  @default(now()) @map("created_at") @db.Timestamptz
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade, onUpdate: Cascade)
+
+  // Serves "this user's outstanding tokens" during invalidation.
+  @@index([userId, createdAt(sort: Desc)])
+  // Serves cleanup of expired credentials.
+  @@index([expiresAt])
+  @@map("password_reset_tokens")
 }
 
 /// A catalog category. Categories form a tree through the `parent`/`children`
@@ -949,6 +1048,8 @@ model Order {
   /// The immutable promotion snapshot for this order. Restrict deletes so the
   /// financial record survives even if a promotion is archived.
   promotionUsages     PromotionUsage[]
+  /// The single Telegram new-order alert queued for this order, if any.
+  telegramOrderAlert  TelegramOrderAlert?
 
   // Serves `GET /orders` — "this user's orders, newest first" — and matches the
   // query's `ORDER BY` column for column, so the listing walks the index instead

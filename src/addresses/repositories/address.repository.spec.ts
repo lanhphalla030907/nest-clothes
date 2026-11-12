@@ -157,7 +157,7 @@ describe('AddressRepository', () => {
 
     it('reads through the transaction client when one is given', async () => {
       const txFindMany = vi.fn().mockResolvedValue([]);
-      const tx = { address: { findMany: txFindMany } };
+      const tx = { address: { findMany: txFindMany } } as never;
 
       await expect(repository.findAllByUserId(USER_ID, tx)).resolves.toEqual(
         [],
@@ -382,7 +382,7 @@ describe('AddressRepository', () => {
           delete: txDelete,
           updateMany: txUpdateMany,
         },
-      };
+      } as never;
 
       await repository.create(buildCreateData(), tx);
       await repository.updateByIdAndUserId(ADDRESS_ID, USER_ID, {}, tx);

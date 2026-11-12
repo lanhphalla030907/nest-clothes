@@ -12,6 +12,7 @@ import { AuthController } from './auth.controller.js';
 import { AuthService } from './auth.service.js';
 import { LoginResponseDto } from './dto/login-response.dto.js';
 import { LoginDto } from './dto/login.dto.js';
+import { PasswordResetService } from './password-reset/password-reset.service.js';
 
 const VALID_PASSWORD = 'Str0ng!Passw0rd';
 const USER_ID = '3f2504e0-4f89-41d3-9a0c-0305e82c3301';
@@ -53,6 +54,10 @@ describe('AuthController', () => {
     linkGoogle: ReturnType<typeof vi.fn>;
     getLinkedIdentities: ReturnType<typeof vi.fn>;
   };
+  let passwordResetService: {
+    requestReset: ReturnType<typeof vi.fn>;
+    resetPassword: ReturnType<typeof vi.fn>;
+  };
 
   beforeEach(async () => {
     authService = {
@@ -62,6 +67,10 @@ describe('AuthController', () => {
       linkGoogle: vi.fn(),
       getLinkedIdentities: vi.fn(),
     };
+    passwordResetService = {
+      requestReset: vi.fn(),
+      resetPassword: vi.fn(),
+    };
     const identities = new TestIdentityRegistry();
 
     const module: TestingModule = await Test.createTestingModule({
@@ -69,6 +78,7 @@ describe('AuthController', () => {
       providers: [
         ...identities.providers(),
         { provide: AuthService, useValue: authService },
+        { provide: PasswordResetService, useValue: passwordResetService },
       ],
     }).compile();
 
@@ -171,6 +181,10 @@ describe('AuthController', () => {
 describe('AuthController (HTTP)', () => {
   let app: INestApplication;
   let authService: { login: ReturnType<typeof vi.fn>; currentUser: ReturnType<typeof vi.fn> };
+  let passwordResetService: {
+    requestReset: ReturnType<typeof vi.fn>;
+    resetPassword: ReturnType<typeof vi.fn>;
+  };
   let identities: TestIdentityRegistry;
   let base: string;
 
@@ -178,6 +192,14 @@ describe('AuthController (HTTP)', () => {
     authService = {
       login: vi.fn().mockResolvedValue(buildLoginResponse()),
       currentUser: vi.fn().mockResolvedValue(buildUserResponse()),
+    };
+    passwordResetService = {
+      requestReset: vi
+        .fn()
+        .mockResolvedValue({ message: 'If an account exists for that email, a password reset link has been sent.' }),
+      resetPassword: vi
+        .fn()
+        .mockResolvedValue({ message: 'Your password has been reset. You can now sign in with your new password.' }),
     };
     identities = new TestIdentityRegistry();
     identities.register({
@@ -190,6 +212,7 @@ describe('AuthController (HTTP)', () => {
       providers: [
         ...identities.providers(),
         { provide: AuthService, useValue: authService },
+        { provide: PasswordResetService, useValue: passwordResetService },
       ],
     }).compile();
 
@@ -332,6 +355,14 @@ describe('AuthController (HTTP)', () => {
       .filter((name) => name !== 'constructor')
       .map((name) => Reflect.getMetadata('path', prototype[name]) as string);
 
-    expect(paths).toEqual(['login', 'google', 'google/link', 'identities', 'me']);
+    expect(paths).toEqual([
+      'login',
+      'google',
+      'forgot-password',
+      'reset-password',
+      'google/link',
+      'identities',
+      'me',
+    ]);
   });
 });

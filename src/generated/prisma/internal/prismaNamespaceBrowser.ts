@@ -52,8 +52,11 @@ export const AnyNull = runtime.AnyNull
 
 export const ModelName = {
   User: 'User',
+  Notification: 'Notification',
+  TelegramOrderAlert: 'TelegramOrderAlert',
   Feedback: 'Feedback',
   UserIdentity: 'UserIdentity',
+  PasswordResetToken: 'PasswordResetToken',
   Category: 'Category',
   Poster: 'Poster',
   Collection: 'Collection',
@@ -115,11 +118,43 @@ export const UserScalarFieldEnum = {
   role: 'role',
   emailVerifiedAt: 'emailVerifiedAt',
   lastLoginAt: 'lastLoginAt',
+  passwordChangedAt: 'passwordChangedAt',
   createdAt: 'createdAt',
   updatedAt: 'updatedAt'
 } as const
 
 export type UserScalarFieldEnum = (typeof UserScalarFieldEnum)[keyof typeof UserScalarFieldEnum]
+
+
+export const NotificationScalarFieldEnum = {
+  id: 'id',
+  userId: 'userId',
+  type: 'type',
+  title: 'title',
+  message: 'message',
+  data: 'data',
+  readAt: 'readAt',
+  createdAt: 'createdAt',
+  dedupeKey: 'dedupeKey'
+} as const
+
+export type NotificationScalarFieldEnum = (typeof NotificationScalarFieldEnum)[keyof typeof NotificationScalarFieldEnum]
+
+
+export const TelegramOrderAlertScalarFieldEnum = {
+  id: 'id',
+  orderId: 'orderId',
+  payload: 'payload',
+  status: 'status',
+  attempts: 'attempts',
+  nextAttemptAt: 'nextAttemptAt',
+  lastError: 'lastError',
+  sentAt: 'sentAt',
+  createdAt: 'createdAt',
+  updatedAt: 'updatedAt'
+} as const
+
+export type TelegramOrderAlertScalarFieldEnum = (typeof TelegramOrderAlertScalarFieldEnum)[keyof typeof TelegramOrderAlertScalarFieldEnum]
 
 
 export const FeedbackScalarFieldEnum = {
@@ -144,6 +179,18 @@ export const UserIdentityScalarFieldEnum = {
 } as const
 
 export type UserIdentityScalarFieldEnum = (typeof UserIdentityScalarFieldEnum)[keyof typeof UserIdentityScalarFieldEnum]
+
+
+export const PasswordResetTokenScalarFieldEnum = {
+  id: 'id',
+  userId: 'userId',
+  tokenHash: 'tokenHash',
+  expiresAt: 'expiresAt',
+  usedAt: 'usedAt',
+  createdAt: 'createdAt'
+} as const
+
+export type PasswordResetTokenScalarFieldEnum = (typeof PasswordResetTokenScalarFieldEnum)[keyof typeof PasswordResetTokenScalarFieldEnum]
 
 
 export const CategoryScalarFieldEnum = {

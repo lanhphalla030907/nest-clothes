@@ -74,6 +74,13 @@ export class JwtAuthGuard implements CanActivate {
       throw new UnauthorizedException(UNAUTHENTICATED_MESSAGE);
     }
 
+    // A password reset rotates this value, so tokens issued before the reset —
+    // including ones held by someone who knew the old password — stop working.
+    const currentPasswordVersion = user.passwordChangedAt?.getTime() ?? 0;
+    if ((payload.pwd ?? 0) !== currentPasswordVersion) {
+      throw new UnauthorizedException(UNAUTHENTICATED_MESSAGE);
+    }
+
     request.user = { id: user.id, email: user.email, role: user.role };
 
     return true;

@@ -29,6 +29,12 @@ export interface AccessTokenPayload {
   sub: string;
   email: string;
   role: Role;
+  /**
+   * The account's `passwordChangedAt` at issue time, in milliseconds, or 0.
+   * Compared against the database on every guarded request so a password reset
+   * revokes tokens that were already in circulation.
+   */
+  pwd?: number;
 }
 
 /**
@@ -61,9 +67,19 @@ export class AccessTokenService {
   }
 
   /** Signs an access token for `user`. The secret is never part of the result. */
-  sign(user: { id: string; email: string; role: Role }): string {
+  sign(user: {
+    id: string;
+    email: string;
+    role: Role;
+    passwordChangedAt?: Date | null;
+  }): string {
     return this.jwtService.sign(
-      { sub: user.id, email: user.email, role: user.role },
+      {
+        sub: user.id,
+        email: user.email,
+        role: user.role,
+        pwd: user.passwordChangedAt?.getTime() ?? 0,
+      },
       {
         secret: this.#settings.secret,
         expiresIn: this.#settings.expiresIn as ExpiresIn,
@@ -124,6 +140,7 @@ function isAccessTokenPayload(payload: unknown): payload is AccessTokenPayload {
     typeof candidate.sub === 'string' &&
     candidate.sub.length > 0 &&
     typeof candidate.email === 'string' &&
+    (candidate.pwd === undefined || typeof candidate.pwd === 'number') &&
     (candidate.role === Role.CUSTOMER ||
       candidate.role === Role.ADMIN ||
       candidate.role === Role.DELIVERY_MANAGER ||

@@ -1,4 +1,4 @@
-import { HttpStatus, type INestApplication } from '@nestjs/common';
+﻿import { HttpStatus, type INestApplication } from '@nestjs/common';
 import { ValidationPipe } from '@nestjs/common';
 import { Test, TestingModule } from '@nestjs/testing';
 import { ProductsController } from './products.controller.js';
@@ -62,7 +62,7 @@ describe('ProductsController', () => {
     expect(controller).toBeDefined();
   });
 
-  it('delegates creation', () => {
+    it('delegates creation', async () => {
     const dto = Object.assign(new CreateProductDto(), {
       name: 'Tee',
       slug: 'tee',
@@ -70,13 +70,13 @@ describe('ProductsController', () => {
       categoryId: CATEGORY_ID,
     });
     const expected = buildResponse();
-    service.create.mockReturnValue(expected);
-    expect(controller.create(dto)).toBe(expected);
+    service.create.mockResolvedValue(expected);
+    await expect(controller.create(dto)).resolves.toBe(expected);
     expect(service.create).toHaveBeenCalledWith(dto);
   });
 
-  it('GET → 200', () => {
-    service.findPublicProducts.mockReturnValue({
+  it('GET → 200', async () => {
+    service.findPublicProducts.mockResolvedValue({
       data: [buildResponse()],
       total: 1,
       page: 1,
@@ -84,30 +84,30 @@ describe('ProductsController', () => {
       totalPages: 1,
       filterOptions: { categories: [], priceRange: { min: 0, max: 100 }, sizes: [], colors: [] },
     });
-    const result = controller.findAll({});
+    const result = await controller.findAll({} as never);
     expect(result.data).toHaveLength(1);
     expect(result.total).toBe(1);
   });
 
-  it('GET /filters → 200', () => {
+  it('GET /filters → 200', async () => {
     const filterOptions = { categories: [], priceRange: { min: 0, max: 100 }, sizes: [], colors: [] };
-    service.getFilterOptions.mockReturnValue(filterOptions);
-    expect(controller.getFilterOptions()).toBe(filterOptions);
+    service.getFilterOptions.mockResolvedValue(filterOptions);
+    await expect(controller.getFilterOptions()).resolves.toBe(filterOptions);
   });
 
-  it('GET /:id', () => {
-    service.findOne.mockReturnValue(buildResponse());
-    expect(controller.findOne(PRODUCT_ID)).toBeDefined();
+  it('GET /:id', async () => {
+    service.findOne.mockResolvedValue(buildResponse());
+    await expect(controller.findOne(PRODUCT_ID)).resolves.toBeDefined();
     expect(service.findOne).toHaveBeenCalledWith(PRODUCT_ID);
   });
 
-  it('PATCH → 200', () => {
+  it('PATCH → 200', async () => {
     const dto = Object.assign(new UpdateProductDto(), { name: 'New' });
-    service.update.mockReturnValue(buildResponse({ name: 'New' }));
-    expect(controller.update(PRODUCT_ID, dto)).toBeDefined();
+    service.update.mockResolvedValue(buildResponse({ name: 'New' }));
+    await expect(controller.update(PRODUCT_ID, dto)).resolves.toBeDefined();
   });
 
-  it('DELETE → 204', async () => {
+  it('DELETE â†’ 204', async () => {
     service.remove.mockResolvedValue(undefined);
     await expect(controller.remove(PRODUCT_ID)).resolves.toBeUndefined();
   });
