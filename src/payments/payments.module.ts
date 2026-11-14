@@ -1,6 +1,7 @@
 import { forwardRef, Module } from '@nestjs/common';
 import { JwtAuthModule } from '../auth/jwt/jwt-auth.module.js';
 import { OrderModule } from '../orders/order.module.js';
+import { NotificationsModule } from '../notifications/notifications.module.js';
 import { TransactionIdGenerator } from './payment-transaction-id.generator.js';
 import { PaymentsController } from './payments.controller.js';
 import { PaymentsService } from './payments.service.js';
@@ -82,7 +83,7 @@ const paywayHttpClientProvider: {
  * callback path. Only `PaymentsService` and the repository are exported.
  */
 @Module({
-  imports: [JwtAuthModule, forwardRef(() => OrderModule)],
+  imports: [JwtAuthModule, NotificationsModule, forwardRef(() => OrderModule)],
   controllers: [PaymentsController],
   providers: [
     paywayConfigProvider,

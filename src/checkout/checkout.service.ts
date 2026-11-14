@@ -5,7 +5,6 @@ import {
   Injectable,
   Logger,
   NotFoundException,
-  Optional,
 } from '@nestjs/common';
 import { Prisma } from '../generated/prisma/client.js';
 import { AddressesService } from '../addresses/addresses.service.js';
@@ -44,7 +43,13 @@ import { CheckoutResponseDto } from './dto/checkout-response.dto.js';
 import type { CheckoutDto } from './dto/checkout.dto.js';
 import type { CreateCheckoutQuoteDto } from './dto/create-checkout-quote.dto.js';
 import { CheckoutQuotesRepository } from './repositories/checkout-quotes.repository.js';
+import { NotificationsService } from '../notifications/notifications.service.js';
 import { TelegramOrderAlertsService } from '../notifications/telegram/telegram-order-alerts.service.js';
+import {
+  availableStock,
+  stockStatusFor,
+  type StockStatus,
+} from '../common/utils/available-stock.js';
 
 /**
  * A Prisma client bound to an interactive transaction.
@@ -55,6 +60,12 @@ import { TelegramOrderAlertsService } from '../notifications/telegram/telegram-o
  * commit.
  */
 export type CheckoutTransactionClient = Prisma.TransactionClient;
+
+type StockReservationTransition = {
+  variantId: string;
+  previous: StockStatus;
+  next: StockStatus;
+};
 
 /**
  * How many times the whole checkout is retried after losing a race it cannot win.
@@ -180,8 +191,8 @@ export class CheckoutService {
     private readonly locationsService: AdministrativeLocationsService,
     private readonly promotionEvaluator: PromotionEvaluatorService,
     private readonly promotionsRepository: PromotionsRepository,
-    @Optional()
-    private readonly telegramOrderAlertsService?: TelegramOrderAlertsService,
+    private readonly telegramOrderAlertsService: TelegramOrderAlertsService,
+    private readonly notificationsService: NotificationsService,
   ) {}
 
   async createQuote(
@@ -380,13 +391,20 @@ export class CheckoutService {
     // emptied cart behind it.
     for (let attempt = 1; attempt <= CHECKOUT_ATTEMPTS; attempt += 1) {
       const orderNumber = await this.orderService.drawOrderNumber();
+      const stockTransitions: StockReservationTransition[] = [];
 
       try {
         const transactionOptions = hasLegacyAddress
           ? undefined
           : { isolationLevel: Prisma.TransactionIsolationLevel.Serializable };
         const runCheckout = (tx: CheckoutTransactionClient) =>
-          this.checkoutInTransaction(userId, dto, orderNumber, tx);
+          this.checkoutInTransaction(
+            userId,
+            dto,
+            orderNumber,
+            tx,
+            stockTransitions,
+          );
         const order =
           transactionOptions === undefined
             ? await this.orderRepositoryTransaction(runCheckout)
@@ -398,7 +416,7 @@ export class CheckoutService {
         // Enqueue post-commit only for a successfully created/committed checkout.
         // Replays/idempotent hits return earlier and must not trigger duplicates.
         void this.telegramOrderAlertsService
-          ?.enqueueNewOrderAlert(order.id)
+          .enqueueNewOrderAlert(order.id)
           .catch((error: unknown) => {
             const message =
               error instanceof Error ? error.message : 'unknown error';
@@ -406,6 +424,17 @@ export class CheckoutService {
               `Failed to schedule Telegram order alert for order ${order.id}: ${message}`,
             );
           });
+
+        // The order is now durable. The notification handler owns its own
+        // idempotency and absorbs failures, so this cannot affect checkout.
+        void this.notificationsService.notifyNewOrder(order.id);
+        for (const transition of stockTransitions) {
+          void this.notificationsService.notifyStockTransition(
+            transition.variantId,
+            transition.previous,
+            transition.next,
+          );
+        }
 
         return CheckoutResponseDto.fromOrder(order);
       } catch (error) {
@@ -461,6 +490,7 @@ export class CheckoutService {
     dto: CheckoutDto,
     orderNumber: string,
     tx: CheckoutTransactionClient,
+    stockTransitions: StockReservationTransition[] = [],
   ): Promise<OrderWithItems> {
     if (dto.quoteId !== undefined && dto.idempotencyKey !== undefined) {
       return this.checkoutFromQuoteInTransaction(
@@ -469,6 +499,7 @@ export class CheckoutService {
         dto.idempotencyKey,
         orderNumber,
         tx,
+        stockTransitions,
       );
     }
 
@@ -489,7 +520,13 @@ export class CheckoutService {
       tx,
     );
 
+    const stockBeforeReservation = await this.requireAvailableStock(resolved, tx);
     await this.reserveStockForLines(resolved, tx);
+    this.recordStockReservationTransitions(
+      resolved,
+      stockBeforeReservation,
+      stockTransitions,
+    );
 
     const order = await this.orderService.writeOrder(
       input,
@@ -511,6 +548,7 @@ export class CheckoutService {
     idempotencyKey: string,
     orderNumber: string,
     tx: CheckoutTransactionClient,
+    stockTransitions: StockReservationTransition[],
   ): Promise<OrderWithItems> {
     const quote = await this.checkoutQuotesRepository.findForOwner(
       quoteId,
@@ -613,7 +651,7 @@ export class CheckoutService {
     ) {
       throw new ConflictException(QUOTE_EXPIRED_MESSAGE);
     }
-    await this.requireAvailableStock(resolved, tx);
+    const stockBeforeReservation = await this.requireAvailableStock(resolved, tx);
 
     const subtotal = sumLineTotals(resolved.map((line) => line.lineTotal));
     const evaluation = await this.promotionEvaluator.evaluate(
@@ -649,6 +687,11 @@ export class CheckoutService {
     }
 
     await this.reserveStockForLines(resolved, tx);
+    this.recordStockReservationTransitions(
+      resolved,
+      stockBeforeReservation,
+      stockTransitions,
+    );
     const input = this.buildOrderInput(
       userId,
       address,
@@ -741,7 +784,8 @@ export class CheckoutService {
   private async requireAvailableStock(
     lines: ResolvedOrderLine[],
     tx: CheckoutTransactionClient,
-  ): Promise<void> {
+  ): Promise<Map<string, { available: number; status: StockStatus }>> {
+    const availability = new Map<string, { available: number; status: StockStatus }>();
     for (const line of lines) {
       if (!Number.isInteger(line.quantity) || line.quantity <= 0) {
         throw new BadRequestException(NON_POSITIVE_QUANTITY_MESSAGE);
@@ -753,11 +797,36 @@ export class CheckoutService {
       if (inventory === null) {
         throw new ConflictException(`${NOT_STOCKED_MESSAGE}: ${line.sku}`);
       }
-      if (inventory.quantity - inventory.reservedQuantity < line.quantity) {
+      const available = availableStock(inventory);
+      if (available < line.quantity) {
         throw new ConflictException(
           `${INSUFFICIENT_STOCK_MESSAGE}: ${line.sku}`,
         );
       }
+      availability.set(line.variantId, {
+        available,
+        status: stockStatusFor(available),
+      });
+    }
+    return availability;
+  }
+
+  private recordStockReservationTransitions(
+    lines: ResolvedOrderLine[],
+    stockBeforeReservation: Map<
+      string,
+      { available: number; status: StockStatus }
+    >,
+    transitions: StockReservationTransition[],
+  ): void {
+    for (const line of lines) {
+      const before = stockBeforeReservation.get(line.variantId);
+      if (before === undefined) continue;
+      transitions.push({
+        variantId: line.variantId,
+        previous: before.status,
+        next: stockStatusFor(before.available - line.quantity),
+      });
     }
   }
 

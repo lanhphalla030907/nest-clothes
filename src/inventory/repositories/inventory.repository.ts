@@ -1,6 +1,7 @@
 import { Injectable } from '@nestjs/common';
-import type { Inventory, Prisma } from '../../generated/prisma/client.js';
+import { Prisma, type Inventory } from '../../generated/prisma/client.js';
 import { PrismaService } from '../../prisma/prisma.service.js';
+import type { StockAlertFilter } from '../../inventory/dto/stock-alerts-response.dto.js';
 
 /**
  * The exact columns `InventoryRepository.create` is allowed to write.
@@ -43,6 +44,43 @@ export interface UpdateInventoryData {
  * two statements.
  */
 export type InventoryTransactionClient = Prisma.TransactionClient;
+
+/** Parameters for the paginated stock alert query. */
+export interface StockAlertsPageParams {
+  page: number;
+  limit: number;
+  search: string | undefined;
+  status: StockAlertFilter;
+}
+
+/**
+ * The relations a stock alert row needs: the owning variant, its product (for the
+ * name and the primary image) and the variant's option pairs (for colour/size).
+ *
+ * A single query rather than three: the alert table is one row per variant and
+ * every column it renders lives on this path. The image ordering matches the
+ * storefront's "primary first, then sort order" rule so the thumbnail is the one
+ * a customer would see.
+ */
+const STOCK_ALERT_INCLUDE = {
+  variant: {
+    include: {
+      product: {
+        include: {
+          images: {
+            orderBy: [{ isPrimary: 'desc' }, { sortOrder: 'asc' }],
+            take: 1,
+          },
+        },
+      },
+      options: { orderBy: [{ optionName: 'asc' }] },
+    },
+  },
+} satisfies Prisma.InventoryInclude;
+
+export type InventoryWithVariant = Prisma.InventoryGetPayload<{
+  include: typeof STOCK_ALERT_INCLUDE;
+}>;
 
 /**
  * The only place in the inventory feature that talks to the database.
@@ -127,6 +165,135 @@ export class InventoryRepository {
     return client.inventory.findMany({
       where: { variantId: { in: variantIds } },
     });
+  }
+
+  /**
+   * Returns one page of the stock alert rows plus the summary counts and the
+   * matching total.
+   *
+   * The page, the count and the summary are produced from one shared `where`
+   * clause, so they can never describe different filters. Filtering happens in
+   * the database before pagination: the `WHERE` clause (search plus the derived
+   * stock status) is evaluated first, then the result is ordered and sliced with
+   * `LIMIT`/`OFFSET`. Only variants that have an inventory row are returned.
+   *
+   * `available = quantity - reserved_quantity` and the stock status are derived
+   * in SQL, so the same thresholds the service applies elsewhere (`available >
+   * 10` in stock, `1..10` low, `<= 0` out of stock) drive both the filter and
+   * the summary. The summary covers every record matching the search filter,
+   * not only the current page.
+   *
+   * The ids are fetched in their final database order and hydrated through a
+   * single typed Prisma query, so the variant/product/image/option relations
+   * are loaded without N+1 queries.
+   */
+  async findStockAlertsPage(
+    params: StockAlertsPageParams,
+  ): Promise<{
+    items: InventoryWithVariant[];
+    total: number;
+    inStock: number;
+    lowStock: number;
+    outOfStock: number;
+  }> {
+    const { page, limit, search, status } = params;
+    const skip = (page - 1) * limit;
+
+    const itemsWhere = this.stockAlertsWhere(search, status);
+    const idRows = await this.prisma.$queryRaw<{ id: string }[]>`
+      SELECT i.id
+      FROM "inventory" i
+      JOIN "product_variants" v ON v.id = i."variant_id"
+      JOIN "products" p ON p.id = v."product_id"
+      WHERE ${itemsWhere}
+      ORDER BY
+        CASE
+          WHEN i.quantity - i.reserved_quantity <= 0 THEN 0
+          WHEN i.quantity - i.reserved_quantity <= 10 THEN 1
+          ELSE 2
+        END,
+        (i.quantity - i.reserved_quantity),
+        p.name,
+        v.sku
+      LIMIT ${limit} OFFSET ${skip}
+    `;
+
+    const summaryWhere = this.stockAlertsWhere(search, 'all');
+    const [summaryRow] = await this.prisma.$queryRaw<{
+      total: string;
+      in_stock: string;
+      low_stock: string;
+      out_of_stock: string;
+    }[]>`
+      SELECT
+        COUNT(*) AS total,
+        COUNT(*) FILTER (WHERE i.quantity - i.reserved_quantity > 10) AS in_stock,
+        COUNT(*) FILTER (WHERE i.quantity - i.reserved_quantity BETWEEN 1 AND 10) AS low_stock,
+        COUNT(*) FILTER (WHERE i.quantity - i.reserved_quantity <= 0) AS out_of_stock
+      FROM "inventory" i
+      JOIN "product_variants" v ON v.id = i."variant_id"
+      JOIN "products" p ON p.id = v."product_id"
+      WHERE ${summaryWhere}
+    `;
+
+    const ids = idRows.map((row) => row.id);
+    let items: InventoryWithVariant[] = [];
+    if (ids.length > 0) {
+      const hydrated = await this.prisma.inventory.findMany({
+        where: { id: { in: ids } },
+        include: STOCK_ALERT_INCLUDE,
+      });
+      const byId = new Map(hydrated.map((item) => [item.id, item]));
+      items = ids
+        .map((id) => byId.get(id))
+        .filter((item): item is InventoryWithVariant => item !== undefined);
+    }
+
+    return {
+      items,
+      total: Number(summaryRow?.total ?? 0),
+      inStock: Number(summaryRow?.in_stock ?? 0),
+      lowStock: Number(summaryRow?.low_stock ?? 0),
+      outOfStock: Number(summaryRow?.out_of_stock ?? 0),
+    };
+  }
+
+  /**
+   * Builds the `WHERE` fragment for the stock alert query.
+   *
+   * Search matches the product name or the variant SKU, case-insensitively.
+   * The status filter constrains the derived available stock (`quantity -
+   * reserved_quantity`); `all` applies no status constraint so the summary can
+   * count every matching record regardless of the table's tab.
+   */
+  private stockAlertsWhere(
+    search: string | undefined,
+    status: StockAlertFilter,
+  ): Prisma.Sql {
+    const conditions: Prisma.Sql[] = [];
+
+    if (search) {
+      const term = `%${search}%`;
+      conditions.push(Prisma.sql`(p.name ILIKE ${term} OR v.sku ILIKE ${term})`);
+    }
+
+    switch (status) {
+      case 'in':
+        conditions.push(Prisma.sql`i.quantity - i.reserved_quantity > 10`);
+        break;
+      case 'low':
+        conditions.push(Prisma.sql`i.quantity - i.reserved_quantity BETWEEN 1 AND 10`);
+        break;
+      case 'out':
+        conditions.push(Prisma.sql`i.quantity - i.reserved_quantity <= 0`);
+        break;
+      case 'alerts':
+        conditions.push(Prisma.sql`i.quantity - i.reserved_quantity <= 10`);
+        break;
+    }
+
+    if (conditions.length === 0) return Prisma.sql`TRUE`;
+    return Prisma.join(conditions, ' AND ');
   }
 
   async lockByVariantIds(

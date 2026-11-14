@@ -6,6 +6,8 @@ import {
 import { Test, TestingModule } from '@nestjs/testing';
 import { Prisma } from '../generated/prisma/client.js';
 import { UsersRepository } from '../users/repositories/users.repository.js';
+import { PaymentsService } from '../payments/payments.service.js';
+import { NotificationsService } from '../notifications/notifications.service.js';
 import { DEFAULT_ORDER_CURRENCY } from './constants/order-status.constants.js';
 import { OrderResponseDto } from './dto/order-response.dto.js';
 import { OrderInventoryService } from './order-inventory.service.js';
@@ -259,6 +261,18 @@ describe('OrderService', () => {
           useValue: {
             releaseReservedForOrder: inventoryReleaseReserved,
             commitReservedForOrder: inventoryCommitReserved,
+          },
+        },
+        {
+          provide: PaymentsService,
+          useValue: { verifyOrderPayment: vi.fn().mockResolvedValue(false) },
+        },
+        {
+          provide: NotificationsService,
+          useValue: {
+            notifyOrderCancelled: vi.fn().mockResolvedValue(undefined),
+            notifyOrderConfirmed: vi.fn().mockResolvedValue(undefined),
+            notifyOrderShipped: vi.fn().mockResolvedValue(undefined),
           },
         },
       ],

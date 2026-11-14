@@ -1,6 +1,7 @@
 import { Module } from '@nestjs/common';
 import { ProductVariantsModule } from '../product-variants/product-variants.module.js';
 import { ProductsModule } from '../products/products.module.js';
+import { NotificationsModule } from '../notifications/notifications.module.js';
 import { InventoryController } from './inventory.controller.js';
 import { InventoryService } from './inventory.service.js';
 import { InventoryRepository } from './repositories/inventory.repository.js';
@@ -35,7 +36,7 @@ import { InventoryRepository } from './repositories/inventory.repository.js';
  * `@Global`.
  */
 @Module({
-  imports: [ProductsModule, ProductVariantsModule],
+  imports: [ProductsModule, ProductVariantsModule, NotificationsModule],
   controllers: [InventoryController],
   providers: [InventoryService, InventoryRepository],
   exports: [InventoryRepository, InventoryService],

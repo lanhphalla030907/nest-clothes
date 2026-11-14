@@ -13,6 +13,7 @@ import type { PaywayTransactionCheck } from './payway/payway.types.js';
 import type { TransactionIdGenerator } from './payment-transaction-id.generator.js';
 import type { PaymentRepository } from './repositories/payment.repository.js';
 import type { OrderRepository } from '../orders/repositories/order.repository.js';
+import type { NotificationsService } from '../notifications/notifications.service.js';
 
 /**
  * The orchestration rules, with both repositories and the provider stubbed.
@@ -176,6 +177,10 @@ describe('PaymentsService', () => {
       orders as unknown as OrderRepository,
       transactionIds as unknown as TransactionIdGenerator,
       payway as unknown as PaywayService,
+      {
+        notifyPaymentSuccess: vi.fn().mockResolvedValue(undefined),
+        notifyOrderConfirmed: vi.fn().mockResolvedValue(undefined),
+      } as unknown as NotificationsService,
     );
   });
 

@@ -3,6 +3,7 @@ import { PrismaService } from '../../prisma/prisma.service.js';
 import {
   InventoryRepository,
   type CreateInventoryData,
+  type InventoryWithVariant,
 } from './inventory.repository.js';
 
 const buildInventoryData = (
@@ -32,6 +33,7 @@ describe('InventoryRepository', () => {
   let update: ReturnType<typeof vi.fn>;
   let transaction: ReturnType<typeof vi.fn>;
   let executeRaw: ReturnType<typeof vi.fn>;
+  let queryRaw: ReturnType<typeof vi.fn>;
 
   beforeEach(async () => {
     create = vi.fn();
@@ -40,6 +42,7 @@ describe('InventoryRepository', () => {
     update = vi.fn();
     transaction = vi.fn();
     executeRaw = vi.fn().mockResolvedValue(1);
+    queryRaw = vi.fn().mockResolvedValue([]);
 
     const module: TestingModule = await Test.createTestingModule({
       providers: [
@@ -50,6 +53,7 @@ describe('InventoryRepository', () => {
             inventory: { create, findUnique, findMany, update },
             $transaction: transaction,
             $executeRaw: executeRaw,
+            $queryRaw: queryRaw,
           },
         },
       ],
@@ -441,6 +445,200 @@ describe('InventoryRepository', () => {
       ).resolves.toBe(1);
       expect(txExecuteRaw).toHaveBeenCalledTimes(1);
       expect(executeRaw).not.toHaveBeenCalled();
+    });
+  });
+
+  describe('findStockAlertsPage', () => {
+    const buildRow = (
+      id: string,
+      overrides: { quantity: number; reservedQuantity: number } & Record<string, unknown>,
+    ) =>
+      ({
+        id,
+        variantId: `v-${id}`,
+        createdAt: new Date('2026-01-01T00:00:00.000Z'),
+        updatedAt: new Date('2026-01-01T00:00:00.000Z'),
+        variant: {
+          id: `v-${id}`,
+          productId: 'p-1',
+          sku: 'SKU-1',
+          options: [],
+          product: { id: 'p-1', name: 'Product 1', images: [] },
+        },
+        ...overrides,
+      }) as unknown as InventoryWithVariant;
+
+    const readQueryRaw = (callIndex = 0) => {
+      const [strings, ...values] = queryRaw.mock.calls[callIndex] as [
+        TemplateStringsArray,
+        ...unknown[],
+      ];
+      const inline = (value: unknown): string => {
+        if (value && typeof value === 'object' && 'strings' in value) {
+          return (value as { strings: TemplateStringsArray }).strings.join('');
+        }
+        return String(value ?? '');
+      };
+      const sql = strings.reduce((acc, str, i) => acc + str + inline(values[i]), '');
+      return { sql, values };
+    };
+
+    beforeEach(() => {
+      queryRaw.mockReset();
+      findMany.mockReset();
+    });
+
+    it('in filter returns only available stock greater than 10', async () => {
+      queryRaw
+        .mockResolvedValueOnce([{ id: 'i-in' }])
+        .mockResolvedValueOnce([
+          { total: '3', in_stock: '3', low_stock: '0', out_of_stock: '0' },
+        ]);
+      findMany.mockResolvedValue([
+        buildRow('i-in', { quantity: 20, reservedQuantity: 5 }),
+      ]);
+
+      const result = await repository.findStockAlertsPage({
+        page: 1,
+        limit: 10,
+        search: undefined,
+        status: 'in',
+      });
+
+      expect(result.items).toHaveLength(1);
+      expect(result.items[0]!.quantity - result.items[0]!.reservedQuantity).toBeGreaterThan(10);
+      expect(result.inStock).toBe(3);
+      expect(result.lowStock).toBe(0);
+      expect(result.outOfStock).toBe(0);
+      expect(result.total).toBe(3);
+      expect(readQueryRaw(0).sql).toMatch(/i\.quantity - i\.reserved_quantity > 10/);
+      // Summary uses `all` so every matching record is counted regardless of tab.
+      expect(readQueryRaw(1).sql).toMatch(/WHERE TRUE/);
+    });
+
+    it('low filter returns available between 1 and 10 inclusive', async () => {
+      queryRaw
+        .mockResolvedValueOnce([{ id: 'i-low' }])
+        .mockResolvedValueOnce([
+          { total: '2', in_stock: '1', low_stock: '2', out_of_stock: '0' },
+        ]);
+      findMany.mockResolvedValue([
+        buildRow('i-low', { quantity: 8, reservedQuantity: 2 }),
+      ]);
+
+      const result = await repository.findStockAlertsPage({
+        page: 1,
+        limit: 10,
+        search: undefined,
+        status: 'low',
+      });
+
+      expect(result.items).toHaveLength(1);
+      expect(result.items[0]!.quantity - result.items[0]!.reservedQuantity).toBe(6);
+      expect(result.inStock).toBe(1);
+      expect(result.lowStock).toBe(2);
+      expect(result.outOfStock).toBe(0);
+      expect(result.total).toBe(2);
+      expect(readQueryRaw(0).sql).toMatch(/i\.quantity - i\.reserved_quantity BETWEEN 1 AND 10/);
+    });
+
+    it('out filter returns available at or below zero', async () => {
+      queryRaw
+        .mockResolvedValueOnce([{ id: 'i-out' }])
+        .mockResolvedValueOnce([
+          { total: '1', in_stock: '0', low_stock: '0', out_of_stock: '1' },
+        ]);
+      findMany.mockResolvedValue([
+        buildRow('i-out', { quantity: 4, reservedQuantity: 4 }),
+      ]);
+
+      const result = await repository.findStockAlertsPage({
+        page: 1,
+        limit: 10,
+        search: undefined,
+        status: 'out',
+      });
+
+      expect(result.items).toHaveLength(1);
+      expect(result.items[0]!.quantity - result.items[0]!.reservedQuantity).toBeLessThanOrEqual(0);
+      expect(result.inStock).toBe(0);
+      expect(result.lowStock).toBe(0);
+      expect(result.outOfStock).toBe(1);
+      expect(result.total).toBe(1);
+      expect(readQueryRaw(0).sql).toMatch(/i\.quantity - i\.reserved_quantity <= 0/);
+    });
+
+    it('alerts filter returns only low and out of stock', async () => {
+      queryRaw
+        .mockResolvedValueOnce([{ id: 'i-low' }, { id: 'i-out' }])
+        .mockResolvedValueOnce([
+          { total: '4', in_stock: '1', low_stock: '2', out_of_stock: '1' },
+        ]);
+      findMany.mockResolvedValue([
+        buildRow('i-low', { quantity: 8, reservedQuantity: 2 }),
+        buildRow('i-out', { quantity: 3, reservedQuantity: 3 }),
+      ]);
+
+      const result = await repository.findStockAlertsPage({
+        page: 1,
+        limit: 10,
+        search: undefined,
+        status: 'alerts',
+      });
+
+      expect(result.items).toHaveLength(2);
+      expect(result.inStock).toBe(1);
+      expect(result.lowStock).toBe(2);
+      expect(result.outOfStock).toBe(1);
+      expect(result.total).toBe(4);
+      expect(readQueryRaw(0).sql).toMatch(/i\.quantity - i\.reserved_quantity <= 10/);
+      expect(result.items.some((item) => item.quantity - item.reservedQuantity > 10)).toBe(false);
+    });
+
+    it('all filter returns every matching variant and counts all statuses', async () => {
+      queryRaw
+        .mockResolvedValueOnce([{ id: 'i-1' }, { id: 'i-2' }])
+        .mockResolvedValueOnce([
+          { total: '5', in_stock: '3', low_stock: '1', out_of_stock: '1' },
+        ]);
+      findMany.mockResolvedValue([
+        buildRow('i-1', { quantity: 20, reservedQuantity: 5 }),
+        buildRow('i-2', { quantity: 3, reservedQuantity: 0 }),
+      ]);
+
+      const result = await repository.findStockAlertsPage({
+        page: 1,
+        limit: 10,
+        search: undefined,
+        status: 'all',
+      });
+
+      expect(result.items).toHaveLength(2);
+      expect(result.inStock).toBe(3);
+      expect(result.lowStock).toBe(1);
+      expect(result.outOfStock).toBe(1);
+      expect(result.total).toBe(5);
+      expect(readQueryRaw(0).sql).toMatch(/WHERE TRUE/);
+    });
+
+    it('paginates with limit and offset in the ids query', async () => {
+      queryRaw
+        .mockResolvedValueOnce([{ id: 'i-1' }])
+        .mockResolvedValueOnce([
+          { total: '25', in_stock: '10', low_stock: '5', out_of_stock: '1' },
+        ]);
+      findMany.mockResolvedValue([buildRow('i-1', { quantity: 15, reservedQuantity: 3 })]);
+
+      await repository.findStockAlertsPage({
+        page: 3,
+        limit: 25,
+        search: undefined,
+        status: 'in',
+      });
+
+      expect(readQueryRaw(0).values).toContain(25);
+      expect(readQueryRaw(0).values).toContain(50);
+      expect(readQueryRaw(0).sql).toMatch(/LIMIT 25 OFFSET 50/);
     });
   });
 });

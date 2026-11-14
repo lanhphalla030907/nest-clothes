@@ -47,6 +47,21 @@ export interface FeedbackNotificationSummary {
   customer: { firstName: string; lastName: string };
 }
 
+/**
+ * The narrow stock projection the low/out-of-stock handlers need.
+ *
+ * Only the counters and the labels an administrator recognises the variant by are
+ * read. The available amount is deliberately absent: it is derived by the caller
+ * through `availableStock`, so this layer never owns a second definition of it.
+ */
+export interface VariantStockSummary {
+  variantId: string;
+  sku: string;
+  productName: string;
+  quantity: number;
+  reservedQuantity: number;
+}
+
 export interface TelegramOrderAlertRow {
   id: string;
   orderId: string;
@@ -169,6 +184,21 @@ export class NotificationsRepository {
       .then((result) => result.count);
   }
 
+  /**
+   * Deletes one of the caller's notifications.
+   *
+   * `deleteMany` rather than `delete` on purpose: the `where` clause carries the
+   * ownership predicate, so a row that exists but belongs to somebody else matches
+   * nothing and is reported as `false` — the caller turns that into the same 404
+   * as an absent row, and a cross-account delete is unrepresentable.
+   */
+  async deleteByIdForUser(userId: string, id: string): Promise<boolean> {
+    const result = await this.prisma.notification.deleteMany({
+      where: { id, userId },
+    });
+    return result.count > 0;
+  }
+
   findOrderSummary(orderId: string): Promise<OrderNotificationSummary | null> {
     return this.prisma.order.findUnique({
       where: { id: orderId },
@@ -203,6 +233,42 @@ export class NotificationsRepository {
         customer: { select: { firstName: true, lastName: true } },
       },
     });
+  }
+
+  /**
+   * Loads the committed stock row for a variant, joined to the labels a stock
+   * alert renders.
+   *
+   * The stock handlers run *after* the inventory transaction commits and re-read
+   * the row here rather than trusting the counters they were handed, so a
+   * notification always describes persisted state. `null` means the variant has no
+   * inventory row (or no longer exists), which the caller treats as "nothing to
+   * alert about" rather than inventing a row.
+   */
+  async findVariantStockSummary(
+    variantId: string,
+  ): Promise<VariantStockSummary | null> {
+    const row = await this.prisma.inventory.findUnique({
+      where: { variantId },
+      select: {
+        variantId: true,
+        quantity: true,
+        reservedQuantity: true,
+        variant: {
+          select: { sku: true, product: { select: { name: true } } },
+        },
+      },
+    });
+
+    if (row === null) return null;
+
+    return {
+      variantId: row.variantId,
+      sku: row.variant.sku,
+      productName: row.variant.product.name,
+      quantity: row.quantity,
+      reservedQuantity: row.reservedQuantity,
+    };
   }
 
   /** Active administrators are the audience for operational notifications. */

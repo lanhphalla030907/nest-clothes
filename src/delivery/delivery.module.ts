@@ -1,5 +1,6 @@
 import { Module } from '@nestjs/common';
 import { JwtAuthModule } from '../auth/jwt/jwt-auth.module.js';
+import { NotificationsModule } from '../notifications/notifications.module.js';
 import { DeliveryRepository } from './repositories/delivery.repository.js';
 import { DeliveryService } from './delivery.service.js';
 import { DeliveryController } from './delivery.controller.js';
@@ -10,7 +11,7 @@ import { ReconciliationService } from './reconciliation.service.js';
 import { ReconciliationScheduler } from './reconciliation.scheduler.js';
 
 @Module({
-  imports: [JwtAuthModule],
+  imports: [JwtAuthModule, NotificationsModule],
   controllers: [DeliveryController, DeliveryManagerController, DeliveryStaffController],
   providers: [
     DeliveryRepository,

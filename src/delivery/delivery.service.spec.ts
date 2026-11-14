@@ -14,6 +14,7 @@ import {
 } from '@nestjs/common';
 import { ACTIVE_USER_STATUS } from '../common/constants/user-status.constants.js';
 import { CloudinaryService } from '../cloudinary/cloudinary.service.js';
+import { NotificationsService } from '../notifications/notifications.service.js';
 import { vi } from 'vitest';
 
 const MANAGER_ID = 'manager-1';
@@ -389,6 +390,13 @@ describe('DeliveryService', () => {
         {
           provide: CloudinaryService,
           useValue: { upload: vi.fn(), deleteAsset: vi.fn() },
+        },
+        {
+          provide: NotificationsService,
+          useValue: {
+            notifyOutForDelivery: vi.fn().mockResolvedValue(undefined),
+            notifyOrderDelivered: vi.fn().mockResolvedValue(undefined),
+          },
         },
       ],
     }).compile();

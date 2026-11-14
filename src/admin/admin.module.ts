@@ -34,6 +34,7 @@ import { AdminProductVariantsController } from './controllers/admin-product-vari
 import { AdminProductOptionsController } from './controllers/admin-product-options.controller.js';
 import { AdminProductsController } from './controllers/admin-products.controller.js';
 import { AdminShippingProvidersController } from './controllers/admin-shipping-providers.controller.js';
+import { AdminStockAlertsController } from './controllers/admin-stock-alerts.controller.js';
 import { AdminVariantOptionsController } from './controllers/admin-variant-options.controller.js';
 import { PromotionsModule } from '../promotions/promotions.module.js';
 import { AdminPromotionsController } from './controllers/admin-promotions.controller.js';
@@ -132,6 +133,7 @@ import { CustomersModule } from '../customers/customers.module.js';
     AdminOrdersController,
     AdminPostersController,
     AdminShippingProvidersController,
+    AdminStockAlertsController,
     AdminPromotionsController,
   ],
 })

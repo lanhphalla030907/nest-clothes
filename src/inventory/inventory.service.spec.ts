@@ -1,855 +1,259 @@
-import {
-  BadRequestException,
-  ConflictException,
-  NotFoundException,
-} from '@nestjs/common';
-import { Test, TestingModule } from '@nestjs/testing';
-import { Prisma } from '../generated/prisma/client.js';
-import { ProductVariantsRepository } from '../product-variants/repositories/product-variants.repository.js';
-import { ProductsRepository } from '../products/repositories/products.repository.js';
-import { CreateInventoryDto } from './dto/create-inventory.dto.js';
-import {
-  BulkInventoryOperation,
-  type BulkInventoryDto,
-} from './dto/bulk-inventory.dto.js';
-import { UpdateInventoryDto } from './dto/update-inventory.dto.js';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { InventoryService } from './inventory.service.js';
-import { InventoryRepository } from './repositories/inventory.repository.js';
+import type { InventoryWithVariant } from './repositories/inventory.repository.js';
 
-const PRODUCT_ID = 'a1b2c3d4-e5f6-4f70-8a9b-0c1d2e3f4a5b';
-const VARIANT_ID = 'b2c3d4e5-f6a0-4a1b-9c2d-3e4f5a6b7c8d';
-const SECOND_VARIANT_ID = 'c3d4e5f6-a7b8-4c92-8d1e-2f3a4b5c6d7e';
+interface RowInput {
+  variantId: string;
+  sku: string;
+  productName: string;
+  image?: string | null;
+  options?: Array<{ optionName: string; optionValue: string }>;
+  quantity: number;
+  reservedQuantity: number;
+}
 
-const buildCreateDto = (
-  overrides: Partial<CreateInventoryDto> = {},
-): CreateInventoryDto => Object.assign(new CreateInventoryDto(), overrides);
+const buildRow = (input: RowInput): InventoryWithVariant =>
+  ({
+    id: `inventory-${input.variantId}`,
+    variantId: input.variantId,
+    quantity: input.quantity,
+    reservedQuantity: input.reservedQuantity,
+    createdAt: new Date('2026-01-01T00:00:00.000Z'),
+    updatedAt: new Date('2026-01-01T00:00:00.000Z'),
+    variant: {
+      id: input.variantId,
+      productId: `product-${input.variantId}`,
+      sku: input.sku,
+      product: {
+        id: `product-${input.variantId}`,
+        name: input.productName,
+        images:
+          input.image === undefined || input.image === null
+            ? []
+            : [{ imageUrl: input.image }],
+      },
+      options: input.options ?? [],
+    },
+  }) as unknown as InventoryWithVariant;
 
-const buildUpdateDto = (
-  overrides: Partial<UpdateInventoryDto> = {},
-): UpdateInventoryDto => Object.assign(new UpdateInventoryDto(), overrides);
-
-const buildBulkDto = (
-  overrides: Partial<BulkInventoryDto> = {},
-): BulkInventoryDto => {
-  const variantIds = overrides.variantIds ?? [VARIANT_ID];
-  return {
-    variantIds,
-    operation: BulkInventoryOperation.SET,
+const STOCK_ROWS: RowInput[] = [
+  {
+    variantId: 'v1',
+    sku: 'ALPHA',
+    productName: 'Alpha tee',
+    quantity: 100,
+    reservedQuantity: 0,
+  },
+  {
+    variantId: 'v2',
+    sku: 'BETA',
+    productName: 'Beta tee',
+    quantity: 10,
+    reservedQuantity: 0,
+  },
+  {
+    variantId: 'v3',
+    sku: 'GAMMA',
+    productName: 'Gamma tee',
+    quantity: 0,
+    reservedQuantity: 0,
+  },
+  {
+    variantId: 'v4',
+    sku: 'DELTA',
+    productName: 'Delta tee',
     quantity: 12,
-    expectedInventory: variantIds.map((variantId) => ({
-      variantId,
-      inventoryExists: true,
-      quantity: variantId === SECOND_VARIANT_ID ? 7 : 10,
-      reservedQuantity: variantId === SECOND_VARIANT_ID ? 3 : 2,
-    })),
-    ...overrides,
-  };
-};
+    reservedQuantity: 5,
+  },
+];
 
-const buildProduct = (overrides: Record<string, unknown> = {}) => ({
-  id: PRODUCT_ID,
-  categoryId: 'c-1',
-  name: 'Oversized T-Shirt',
-  slug: 'oversized-t-shirt',
-  description: null,
-  basePrice: '19.99',
-  status: 'DRAFT',
-  isActive: true,
-  createdAt: new Date('2026-01-01T00:00:00.000Z'),
-  updatedAt: new Date('2026-01-01T00:00:00.000Z'),
-  ...overrides,
-});
-
-const buildVariant = (overrides: Record<string, unknown> = {}) => ({
-  id: VARIANT_ID,
-  productId: PRODUCT_ID,
-  sku: 'TSHIRT-BLK-M',
-  price: '19.99',
-  isActive: true,
-  createdAt: new Date('2026-01-01T00:00:00.000Z'),
-  updatedAt: new Date('2026-01-01T00:00:00.000Z'),
-  ...overrides,
-});
-
-const buildInventory = (overrides: Record<string, unknown> = {}) => ({
-  id: 'i-1',
-  variantId: VARIANT_ID,
-  quantity: 10,
-  reservedQuantity: 2,
-  createdAt: new Date('2026-01-01T00:00:00.000Z'),
-  updatedAt: new Date('2026-01-01T00:00:00.000Z'),
-  ...overrides,
-});
-
-const buildUniqueViolation = (meta?: Record<string, unknown>) =>
-  new Prisma.PrismaClientKnownRequestError('Unique constraint failed', {
-    code: 'P2002',
-    clientVersion: '7.10.0',
-    meta: {
-      modelName: 'Inventory',
-      driverAdapterError: {
-        name: 'DriverAdapterError',
-        cause: {
-          originalCode: '23505',
-          kind: 'UniqueConstraintViolation',
-          constraint: { index: 'inventory_variant_id_key' },
-          table: 'inventory',
-        },
-      },
-      ...meta,
-    },
-  });
-
-const buildCheckViolation = () =>
-  new Prisma.PrismaClientKnownRequestError('Check constraint failed', {
-    code: 'P2004',
-    clientVersion: '7.10.0',
-    meta: {
-      modelName: 'Inventory',
-      driverAdapterError: {
-        name: 'DriverAdapterError',
-        cause: {
-          originalCode: '23514',
-          kind: 'CheckConstraintViolation',
-          constraint: {
-            index: 'inventory_reserved_not_above_quantity',
-          },
-          table: 'inventory',
-        },
-      },
-    },
-  });
-
-describe('InventoryService', () => {
+describe('InventoryService.findStockAlerts', () => {
+  let repository: { findStockAlertsPage: ReturnType<typeof vi.fn> };
   let service: InventoryService;
-  let inventoryRepoCreate: ReturnType<typeof vi.fn>;
-  let inventoryRepoFindByVariantId: ReturnType<typeof vi.fn>;
-  let inventoryRepoFindByVariantIds: ReturnType<typeof vi.fn>;
-  let inventoryRepoLockByVariantIds: ReturnType<typeof vi.fn>;
-  let inventoryRepoUpdate: ReturnType<typeof vi.fn>;
-  let inventoryRepoRunInTransaction: ReturnType<typeof vi.fn>;
-  let variantRepoFindByIdAndProductId: ReturnType<typeof vi.fn>;
-  let variantRepoFindByIdsAndProductId: ReturnType<typeof vi.fn>;
-  let productRepoFindById: ReturnType<typeof vi.fn>;
 
-  beforeEach(async () => {
-    inventoryRepoCreate = vi.fn();
-    inventoryRepoFindByVariantId = vi.fn();
-    inventoryRepoFindByVariantIds = vi.fn();
-    inventoryRepoLockByVariantIds = vi.fn();
-    inventoryRepoUpdate = vi.fn();
-    inventoryRepoRunInTransaction = vi
-      .fn()
-      .mockImplementation((work: (tx: unknown) => Promise<unknown>) =>
-        work({ tx: true }),
-      );
-    variantRepoFindByIdAndProductId = vi.fn();
-    variantRepoFindByIdsAndProductId = vi.fn();
-    productRepoFindById = vi.fn();
-
-    const module: TestingModule = await Test.createTestingModule({
-      providers: [
-        InventoryService,
-        {
-          provide: InventoryRepository,
-          useValue: {
-            create: inventoryRepoCreate,
-            findByVariantId: inventoryRepoFindByVariantId,
-            findByVariantIds: inventoryRepoFindByVariantIds,
-            lockByVariantIds: inventoryRepoLockByVariantIds,
-            update: inventoryRepoUpdate,
-            runInTransaction: inventoryRepoRunInTransaction,
-          },
-        },
-        {
-          provide: ProductVariantsRepository,
-          useValue: {
-            findByIdAndProductId: variantRepoFindByIdAndProductId,
-            findByIdsAndProductId: variantRepoFindByIdsAndProductId,
-          },
-        },
-        {
-          provide: ProductsRepository,
-          useValue: { findById: productRepoFindById },
-        },
-      ],
-    }).compile();
-
-    service = module.get<InventoryService>(InventoryService);
+  beforeEach(() => {
+    repository = { findStockAlertsPage: vi.fn() };
+    service = new InventoryService(
+      repository as never,
+      {} as never,
+      {} as never,
+      {} as never,
+    );
   });
 
-  it('should be defined', () => {
-    expect(service).toBeDefined();
+  const paginated = (rows: RowInput[], counts: { inStock: number; lowStock: number; outOfStock: number; total: number }) => ({
+    items: rows.map(buildRow),
+    ...counts,
   });
 
-  describe('create', () => {
-    beforeEach(() => {
-      productRepoFindById.mockResolvedValue(buildProduct());
-      variantRepoFindByIdAndProductId.mockResolvedValue(buildVariant());
-      inventoryRepoFindByVariantId.mockResolvedValue(null);
-      inventoryRepoCreate.mockImplementation((data: Record<string, unknown>) =>
-        Promise.resolve(buildInventory(data)),
-      );
-    });
-
-    it('creates an inventory row with the variant id from the path', async () => {
-      const result = await service.create(
-        PRODUCT_ID,
-        VARIANT_ID,
-        buildCreateDto(),
-      );
-
-      expect(inventoryRepoCreate).toHaveBeenCalledTimes(1);
-      expect(inventoryRepoCreate.mock.calls[0][0]).toMatchObject({
-        variantId: VARIANT_ID,
-      });
-      expect(result.variantId).toBe(VARIANT_ID);
-    });
-
-    it('defaults both counters to zero when the body is empty', async () => {
-      await service.create(PRODUCT_ID, VARIANT_ID, buildCreateDto());
-
-      expect(inventoryRepoCreate.mock.calls[0][0]).toMatchObject({
-        quantity: 0,
-        reservedQuantity: 0,
-      });
-    });
-
-    it('honours supplied counters and computes available', async () => {
-      const result = await service.create(
-        PRODUCT_ID,
-        VARIANT_ID,
-        buildCreateDto({ quantity: 10, reservedQuantity: 2 }),
-      );
-
-      expect(inventoryRepoCreate.mock.calls[0][0]).toMatchObject({
-        quantity: 10,
-        reservedQuantity: 2,
-      });
-      expect(result.available).toBe(8);
-    });
-
-    it('available is quantity minus reservedQuantity', async () => {
-      inventoryRepoCreate.mockResolvedValue(
-        buildInventory({ quantity: 5, reservedQuantity: 5 }),
-      );
-
-      const result = await service.create(
-        PRODUCT_ID,
-        VARIANT_ID,
-        buildCreateDto({ quantity: 5, reservedQuantity: 5 }),
-      );
-
-      expect(result.available).toBe(0);
-    });
-
-    it('missing product → 404 and nothing is written', async () => {
-      productRepoFindById.mockResolvedValue(null);
-
-      await expect(
-        service.create(PRODUCT_ID, VARIANT_ID, buildCreateDto()),
-      ).rejects.toBeInstanceOf(NotFoundException);
-      expect(inventoryRepoCreate).not.toHaveBeenCalled();
-    });
-
-    it('variant of another product → 404 and nothing is written', async () => {
-      variantRepoFindByIdAndProductId.mockResolvedValue(null);
-
-      await expect(
-        service.create(PRODUCT_ID, VARIANT_ID, buildCreateDto()),
-      ).rejects.toBeInstanceOf(NotFoundException);
-      expect(inventoryRepoCreate).not.toHaveBeenCalled();
-    });
-
-    it('negative quantity → 400 and nothing is written', async () => {
-      await expect(
-        service.create(
-          PRODUCT_ID,
-          VARIANT_ID,
-          buildCreateDto({ quantity: -1 }),
-        ),
-      ).rejects.toBeInstanceOf(BadRequestException);
-      expect(inventoryRepoCreate).not.toHaveBeenCalled();
-    });
-
-    it('negative reservedQuantity → 400 and nothing is written', async () => {
-      await expect(
-        service.create(
-          PRODUCT_ID,
-          VARIANT_ID,
-          buildCreateDto({ reservedQuantity: -1 }),
-        ),
-      ).rejects.toBeInstanceOf(BadRequestException);
-      expect(inventoryRepoCreate).not.toHaveBeenCalled();
-    });
-
-    it('reservedQuantity greater than quantity → 400 and nothing is written', async () => {
-      await expect(
-        service.create(
-          PRODUCT_ID,
-          VARIANT_ID,
-          buildCreateDto({ quantity: 1, reservedQuantity: 2 }),
-        ),
-      ).rejects.toBeInstanceOf(BadRequestException);
-      expect(inventoryRepoCreate).not.toHaveBeenCalled();
-    });
-
-    it('duplicate inventory → 409 before writing', async () => {
-      inventoryRepoFindByVariantId.mockResolvedValue(buildInventory());
-
-      await expect(
-        service.create(PRODUCT_ID, VARIANT_ID, buildCreateDto()),
-      ).rejects.toBeInstanceOf(ConflictException);
-      expect(inventoryRepoCreate).not.toHaveBeenCalled();
-    });
-
-    it('maps Prisma P2002 on variant_id → 409', async () => {
-      inventoryRepoCreate.mockRejectedValue(buildUniqueViolation());
-
-      await expect(
-        service.create(PRODUCT_ID, VARIANT_ID, buildCreateDto()),
-      ).rejects.toBeInstanceOf(ConflictException);
-    });
-
-    it('P2002 resolved by the target array → 409', async () => {
-      inventoryRepoCreate.mockRejectedValue(
-        buildUniqueViolation({ target: ['variantId'] }),
-      );
-
-      await expect(
-        service.create(PRODUCT_ID, VARIANT_ID, buildCreateDto()),
-      ).rejects.toBeInstanceOf(ConflictException);
-    });
-
-    it('P2002 on an unrelated model propagates', async () => {
-      const failure = buildUniqueViolation({ modelName: 'SomethingElse' });
-      inventoryRepoCreate.mockRejectedValue(failure);
-
-      await expect(
-        service.create(PRODUCT_ID, VARIANT_ID, buildCreateDto()),
-      ).rejects.toBe(failure);
-    });
-
-    it('translates a database check-constraint violation → 400', async () => {
-      inventoryRepoCreate.mockRejectedValue(buildCheckViolation());
-
-      await expect(
-        service.create(PRODUCT_ID, VARIANT_ID, buildCreateDto()),
-      ).rejects.toBeInstanceOf(BadRequestException);
-    });
-
-    it('a non-constraint Prisma error propagates untouched', async () => {
-      const failure = new Prisma.PrismaClientKnownRequestError('boom', {
-        code: 'P2003',
-        clientVersion: '7.10.0',
-        meta: { modelName: 'Inventory' },
-      });
-      inventoryRepoCreate.mockRejectedValue(failure);
-
-      await expect(
-        service.create(PRODUCT_ID, VARIANT_ID, buildCreateDto()),
-      ).rejects.toBe(failure);
-    });
-
-    it('never forwards database-owned or client-supplied identity fields', async () => {
-      const dto = buildCreateDto({ quantity: 3 }) as CreateInventoryDto & {
-        id?: string;
-        variantId?: string;
-        createdAt?: Date;
-        updatedAt?: Date;
-      };
-      dto.id = 'attacker';
-      dto.variantId = 'other-variant';
-      dto.createdAt = new Date();
-      dto.updatedAt = new Date();
-
-      await service.create(PRODUCT_ID, VARIANT_ID, dto);
-
-      const payload = inventoryRepoCreate.mock.calls[0][0];
-      expect(payload.variantId).toBe(VARIANT_ID);
-      expect(payload).not.toHaveProperty('id');
-      expect(payload).not.toHaveProperty('createdAt');
-      expect(payload).not.toHaveProperty('updatedAt');
-    });
-  });
-
-  describe('read', () => {
-    beforeEach(() => {
-      productRepoFindById.mockResolvedValue(buildProduct());
-      variantRepoFindByIdAndProductId.mockResolvedValue(buildVariant());
-    });
-
-    it('findOne returns the owned inventory with available computed', async () => {
-      inventoryRepoFindByVariantId.mockResolvedValue(buildInventory());
-
-      const result = await service.findOne(PRODUCT_ID, VARIANT_ID);
-
-      expect(inventoryRepoFindByVariantId).toHaveBeenCalledWith(VARIANT_ID);
-      expect(result).toMatchObject({
-        variantId: VARIANT_ID,
-        quantity: 10,
-        reservedQuantity: 2,
-        available: 8,
-      });
-    });
-
-    it('findOne missing product → 404', async () => {
-      productRepoFindById.mockResolvedValue(null);
-
-      await expect(
-        service.findOne(PRODUCT_ID, VARIANT_ID),
-      ).rejects.toBeInstanceOf(NotFoundException);
-    });
-
-    it('findOne variant of another product → 404', async () => {
-      variantRepoFindByIdAndProductId.mockResolvedValue(null);
-
-      await expect(
-        service.findOne(PRODUCT_ID, VARIANT_ID),
-      ).rejects.toBeInstanceOf(NotFoundException);
-    });
-
-    it('findOne with no inventory row → 404', async () => {
-      inventoryRepoFindByVariantId.mockResolvedValue(null);
-
-      await expect(
-        service.findOne(PRODUCT_ID, VARIANT_ID),
-      ).rejects.toBeInstanceOf(NotFoundException);
-    });
-  });
-
-  describe('update', () => {
-    beforeEach(() => {
-      productRepoFindById.mockResolvedValue(buildProduct());
-      variantRepoFindByIdAndProductId.mockResolvedValue(buildVariant());
-      inventoryRepoFindByVariantId.mockResolvedValue(buildInventory());
-      inventoryRepoUpdate.mockImplementation(
-        (variantId: string, data: Record<string, unknown>) =>
-          Promise.resolve(buildInventory({ variantId, ...data })),
-      );
-    });
-
-    it('runs the read-merge-write inside a transaction', async () => {
-      await service.update(
-        PRODUCT_ID,
-        VARIANT_ID,
-        buildUpdateDto({ quantity: 7 }),
-      );
-
-      expect(inventoryRepoRunInTransaction).toHaveBeenCalledTimes(1);
-    });
-
-    it('updates quantity and sends only that counter to the repository', async () => {
-      const result = await service.update(
-        PRODUCT_ID,
-        VARIANT_ID,
-        buildUpdateDto({ quantity: 7 }),
-      );
-
-      expect(inventoryRepoUpdate).toHaveBeenCalledWith(
-        VARIANT_ID,
-        { quantity: 7 },
-        expect.anything(),
-      );
-      expect(result.quantity).toBe(7);
-      expect(result.reservedQuantity).toBe(2);
-      expect(result.available).toBe(5);
-    });
-
-    it('updates reservedQuantity and sends only that counter', async () => {
-      await service.update(
-        PRODUCT_ID,
-        VARIANT_ID,
-        buildUpdateDto({ reservedQuantity: 4 }),
-      );
-
-      expect(inventoryRepoUpdate).toHaveBeenCalledWith(
-        VARIANT_ID,
-        { reservedQuantity: 4 },
-        expect.anything(),
-      );
-    });
-
-    it('merges the omitted counter from the current row before validating', async () => {
-      inventoryRepoFindByVariantId.mockResolvedValue(
-        buildInventory({ quantity: 10, reservedQuantity: 2 }),
-      );
-
-      await expect(
-        service.update(
-          PRODUCT_ID,
-          VARIANT_ID,
-          buildUpdateDto({ reservedQuantity: 10 }),
-        ),
-      ).resolves.toBeDefined();
-      expect(inventoryRepoUpdate).toHaveBeenCalledWith(
-        VARIANT_ID,
-        { reservedQuantity: 10 },
-        expect.anything(),
-      );
-    });
-
-    it('reservedQuantity greater than quantity → 400 and nothing is written', async () => {
-      inventoryRepoFindByVariantId.mockResolvedValue(
-        buildInventory({ quantity: 10, reservedQuantity: 2 }),
-      );
-
-      await expect(
-        service.update(
-          PRODUCT_ID,
-          VARIANT_ID,
-          buildUpdateDto({ quantity: 4, reservedQuantity: 5 }),
-        ),
-      ).rejects.toBeInstanceOf(BadRequestException);
-      expect(inventoryRepoUpdate).not.toHaveBeenCalled();
-    });
-
-    it('negative counter → 400 and nothing is written', async () => {
-      await expect(
-        service.update(
-          PRODUCT_ID,
-          VARIANT_ID,
-          buildUpdateDto({ quantity: -5 }),
-        ),
-      ).rejects.toBeInstanceOf(BadRequestException);
-      expect(inventoryRepoUpdate).not.toHaveBeenCalled();
-    });
-
-    it('missing or non-owned variant → 404 and nothing is written', async () => {
-      variantRepoFindByIdAndProductId.mockResolvedValue(null);
-
-      await expect(
-        service.update(PRODUCT_ID, VARIANT_ID, buildUpdateDto({ quantity: 7 })),
-      ).rejects.toBeInstanceOf(NotFoundException);
-      expect(inventoryRepoUpdate).not.toHaveBeenCalled();
-    });
-
-    it('no inventory row → 404', async () => {
-      inventoryRepoFindByVariantId.mockResolvedValue(null);
-
-      await expect(
-        service.update(PRODUCT_ID, VARIANT_ID, buildUpdateDto({ quantity: 7 })),
-      ).rejects.toBeInstanceOf(NotFoundException);
-      expect(inventoryRepoUpdate).not.toHaveBeenCalled();
-    });
-
-    it('translates a concurrent database check-constraint violation → 400', async () => {
-      inventoryRepoUpdate.mockRejectedValue(buildCheckViolation());
-
-      await expect(
-        service.update(PRODUCT_ID, VARIANT_ID, buildUpdateDto({ quantity: 7 })),
-      ).rejects.toBeInstanceOf(BadRequestException);
-    });
-
-    it('never forwards variantId present on the dto', async () => {
-      const dto = buildUpdateDto({ quantity: 7 }) as UpdateInventoryDto & {
-        variantId?: string;
-      };
-      dto.variantId = 'other-variant';
-
-      await service.update(PRODUCT_ID, VARIANT_ID, dto);
-
-      expect(inventoryRepoUpdate.mock.calls[0][1]).not.toHaveProperty(
-        'variantId',
-      );
-    });
-  });
-
-  describe('bulkUpdate', () => {
-    const currentRows = [
-      buildInventory({
-        variantId: VARIANT_ID,
-        quantity: 10,
-        reservedQuantity: 2,
-      }),
-      buildInventory({
-        id: 'i-2',
-        variantId: SECOND_VARIANT_ID,
-        quantity: 7,
-        reservedQuantity: 3,
-      }),
-    ];
-
-    beforeEach(() => {
-      productRepoFindById.mockResolvedValue(buildProduct());
-      variantRepoFindByIdsAndProductId.mockResolvedValue([
-        buildVariant({ id: VARIANT_ID }),
-        buildVariant({ id: SECOND_VARIANT_ID }),
-      ]);
-      inventoryRepoFindByVariantIds.mockResolvedValue(currentRows);
-      inventoryRepoCreate.mockImplementation((data: Record<string, unknown>) =>
-        Promise.resolve(buildInventory({ ...data, id: 'created-inventory' })),
-      );
-      inventoryRepoUpdate.mockImplementation(
-        (variantId: string, data: Record<string, unknown>) =>
-          Promise.resolve(
-            buildInventory({
-              ...currentRows.find((row) => row.variantId === variantId),
-              ...data,
-              variantId,
-            }),
-          ),
-      );
-    });
-
-    it('sets stock in one transaction without changing reservations', async () => {
-      const result = await service.bulkUpdate(
-        PRODUCT_ID,
-        buildBulkDto({
-          variantIds: [VARIANT_ID, SECOND_VARIANT_ID],
-          operation: BulkInventoryOperation.SET,
-          quantity: 15,
-        }),
-      );
-
-      expect(inventoryRepoRunInTransaction).toHaveBeenCalledTimes(1);
-      expect(inventoryRepoLockByVariantIds).toHaveBeenCalledWith(
-        [VARIANT_ID, SECOND_VARIANT_ID],
-        { tx: true },
-      );
-      expect(inventoryRepoUpdate).toHaveBeenNthCalledWith(
-        1,
-        VARIANT_ID,
-        { quantity: 15 },
-        { tx: true },
-      );
-      expect(inventoryRepoUpdate).toHaveBeenNthCalledWith(
-        2,
-        SECOND_VARIANT_ID,
-        { quantity: 15 },
-        { tx: true },
-      );
-      expect(result.map(({ reservedQuantity }) => reservedQuantity)).toEqual([
-        2, 3,
-      ]);
-    });
-
-    it.each([
-      {
-        operation: BulkInventoryOperation.INCREASE,
-        quantity: 4,
-        expected: [14, 11],
-      },
-      {
-        operation: BulkInventoryOperation.DECREASE,
-        quantity: 3,
-        expected: [7, 4],
-      },
-    ])(
-      'applies $operation relative to each current quantity',
-      async ({ operation, quantity, expected }) => {
-        const result = await service.bulkUpdate(
-          PRODUCT_ID,
-          buildBulkDto({
-            variantIds: [VARIANT_ID, SECOND_VARIANT_ID],
-            operation,
-            quantity,
-          }),
-        );
-
-        expect(result.map(({ quantity: value }) => value)).toEqual(expected);
-      },
+  it('derives available and status from the counters and counts every row', async () => {
+    repository.findStockAlertsPage.mockResolvedValue(
+      paginated(STOCK_ROWS, { inStock: 1, lowStock: 2, outOfStock: 1, total: 4 }),
     );
 
-    it.each([
-      {
-        operation: BulkInventoryOperation.SET,
-        quantity: 15,
-        expected: [15, 15],
-      },
-      {
-        operation: BulkInventoryOperation.INCREASE,
-        quantity: 4,
-        expected: [14, 4],
-      },
-    ])(
-      'applies $operation to a mixed batch and initializes new reservations to zero',
-      async ({ operation, quantity, expected }) => {
-        inventoryRepoFindByVariantIds.mockResolvedValue([currentRows[0]]);
+    const result = await service.findStockAlerts({ page: 1, limit: 10 });
 
-        const result = await service.bulkUpdate(
-          PRODUCT_ID,
-          buildBulkDto({
-            variantIds: [VARIANT_ID, SECOND_VARIANT_ID],
-            operation,
-            quantity,
-            expectedInventory: [
-              {
-                variantId: VARIANT_ID,
-                inventoryExists: true,
-                quantity: 10,
-                reservedQuantity: 2,
-              },
-              {
-                variantId: SECOND_VARIANT_ID,
-                inventoryExists: false,
-                quantity: 0,
-                reservedQuantity: 0,
-              },
-            ],
-          }),
-        );
+    expect(result.summary).toEqual({
+      inStock: 1,
+      lowStock: 2,
+      outOfStock: 1,
+      total: 4,
+    });
 
-        expect(result.map(({ quantity: value }) => value)).toEqual(expected);
-        expect(result.map(({ reservedQuantity }) => reservedQuantity)).toEqual([
-          2, 0,
-        ]);
-        expect(inventoryRepoUpdate).toHaveBeenCalledWith(
-          VARIANT_ID,
-          { quantity: expected[0] },
-          { tx: true },
-        );
-        expect(inventoryRepoCreate).toHaveBeenCalledWith(
-          {
-            variantId: SECOND_VARIANT_ID,
-            quantity: expected[1],
-            reservedQuantity: 0,
-          },
-          { tx: true },
-        );
-      },
+    const bySku = new Map(result.items.map((item) => [item.sku, item]));
+    expect(bySku.get('ALPHA')?.available).toBe(100);
+    expect(bySku.get('ALPHA')?.status).toBe('IN_STOCK');
+    expect(bySku.get('BETA')?.available).toBe(10);
+    expect(bySku.get('BETA')?.status).toBe('LOW_STOCK');
+    expect(bySku.get('GAMMA')?.available).toBe(0);
+    expect(bySku.get('GAMMA')?.status).toBe('OUT_OF_STOCK');
+  });
+
+  it('subtracts reserved stock before choosing a status', async () => {
+    repository.findStockAlertsPage.mockResolvedValue(
+      paginated(STOCK_ROWS, { inStock: 1, lowStock: 2, outOfStock: 1, total: 4 }),
     );
 
-    it('rejects decreasing a mixed batch when the missing row would go negative', async () => {
-      inventoryRepoFindByVariantIds.mockResolvedValue([currentRows[0]]);
+    const result = await service.findStockAlerts({ page: 1, limit: 10 });
+    const delta = result.items.find((item) => item.sku === 'DELTA');
 
-      await expect(
-        service.bulkUpdate(
-          PRODUCT_ID,
-          buildBulkDto({
-            variantIds: [VARIANT_ID, SECOND_VARIANT_ID],
-            operation: BulkInventoryOperation.DECREASE,
-            quantity: 1,
-            expectedInventory: [
-              {
-                variantId: VARIANT_ID,
-                inventoryExists: true,
-                quantity: 10,
-                reservedQuantity: 2,
-              },
-              {
-                variantId: SECOND_VARIANT_ID,
-                inventoryExists: false,
-                quantity: 0,
-                reservedQuantity: 0,
-              },
-            ],
-          }),
-        ),
-      ).rejects.toBeInstanceOf(BadRequestException);
-      expect(inventoryRepoCreate).not.toHaveBeenCalled();
-      expect(inventoryRepoUpdate).not.toHaveBeenCalled();
+    expect(delta?.quantity).toBe(12);
+    expect(delta?.reservedQuantity).toBe(5);
+    expect(delta?.available).toBe(7);
+    expect(delta?.status).toBe('LOW_STOCK');
+  });
+
+  it('counts every matching record while the page only shows the filtered rows', async () => {
+    repository.findStockAlertsPage.mockResolvedValue(
+      paginated(STOCK_ROWS.slice(1, 3), { inStock: 1, lowStock: 2, outOfStock: 1, total: 4 }),
+    );
+
+    const result = await service.findStockAlerts({
+      page: 1,
+      limit: 10,
+      status: 'alerts',
     });
 
-    it('rolls back the batch when a missing-row create conflicts after an existing-row update', async () => {
-      inventoryRepoFindByVariantIds.mockResolvedValue([currentRows[0]]);
-      inventoryRepoCreate.mockRejectedValueOnce(buildUniqueViolation());
+    expect(result.summary.total).toBe(4);
+    expect(result.items).toHaveLength(2);
+    expect(result.pagination.total).toBe(4);
+    expect(result.items.some((item) => item.status === 'IN_STOCK')).toBe(false);
+  });
 
-      await expect(
-        service.bulkUpdate(
-          PRODUCT_ID,
-          buildBulkDto({
-            variantIds: [VARIANT_ID, SECOND_VARIANT_ID],
-            operation: BulkInventoryOperation.SET,
-            quantity: 15,
-            expectedInventory: [
-              {
-                variantId: VARIANT_ID,
-                inventoryExists: true,
-                quantity: 10,
-                reservedQuantity: 2,
-              },
-              {
-                variantId: SECOND_VARIANT_ID,
-                inventoryExists: false,
-                quantity: 0,
-                reservedQuantity: 0,
-              },
-            ],
-          }),
-        ),
-      ).rejects.toBeInstanceOf(ConflictException);
+  it('passes the status filter to the repository', async () => {
+    repository.findStockAlertsPage.mockResolvedValue(
+      paginated([STOCK_ROWS[2]], { inStock: 1, lowStock: 2, outOfStock: 1, total: 4 }),
+    );
 
-      expect(inventoryRepoRunInTransaction).toHaveBeenCalledTimes(1);
-      expect(inventoryRepoUpdate).toHaveBeenCalledWith(
-        VARIANT_ID,
-        { quantity: 15 },
-        { tx: true },
-      );
-      expect(inventoryRepoCreate).toHaveBeenCalledWith(
-        {
-          variantId: SECOND_VARIANT_ID,
-          quantity: 15,
-          reservedQuantity: 0,
-        },
-        { tx: true },
-      );
+    await service.findStockAlerts({ page: 1, limit: 10, status: 'out' });
+
+    expect(repository.findStockAlertsPage).toHaveBeenCalledWith({
+      page: 1,
+      limit: 10,
+      search: undefined,
+      status: 'out',
+    });
+  });
+
+  it('defaults page to 1 and limit to 10', async () => {
+    repository.findStockAlertsPage.mockResolvedValue(
+      paginated([], { inStock: 0, lowStock: 0, outOfStock: 0, total: 0 }),
+    );
+
+    await service.findStockAlerts({ page: 1, limit: 10 });
+
+    expect(repository.findStockAlertsPage).toHaveBeenCalledWith({
+      page: 1,
+      limit: 10,
+      search: undefined,
+      status: 'alerts',
+    });
+  });
+
+  it('passes the search term to the repository', async () => {
+    repository.findStockAlertsPage.mockResolvedValue(
+      paginated([], { inStock: 0, lowStock: 0, outOfStock: 0, total: 0 }),
+    );
+
+    await service.findStockAlerts({ page: 1, limit: 10, search: 'Alpha' });
+
+    expect(repository.findStockAlertsPage).toHaveBeenCalledWith({
+      page: 1,
+      limit: 10,
+      search: 'Alpha',
+      status: 'alerts',
+    });
+  });
+
+  it('computes totalPages from total and limit', async () => {
+    repository.findStockAlertsPage.mockResolvedValue(
+      paginated(STOCK_ROWS, { inStock: 1, lowStock: 2, outOfStock: 1, total: 25 }),
+    );
+
+    const result = await service.findStockAlerts({ page: 3, limit: 10 });
+
+    expect(result.pagination).toEqual({
+      page: 3,
+      limit: 10,
+      total: 25,
+      totalPages: 3,
+    });
+  });
+
+  it('returns an empty page when nothing matches', async () => {
+    repository.findStockAlertsPage.mockResolvedValue({
+      items: [],
+      total: 0,
+      inStock: 0,
+      lowStock: 0,
+      outOfStock: 0,
     });
 
-    it('rejects a decrease below reserved stock before writing any rows', async () => {
-      await expect(
-        service.bulkUpdate(
-          PRODUCT_ID,
-          buildBulkDto({
-            variantIds: [VARIANT_ID, SECOND_VARIANT_ID],
-            operation: BulkInventoryOperation.DECREASE,
-            quantity: 6,
-          }),
-        ),
-      ).rejects.toBeInstanceOf(BadRequestException);
-      expect(inventoryRepoUpdate).not.toHaveBeenCalled();
-    });
+    const result = await service.findStockAlerts({ page: 1, limit: 10 });
 
-    it('rejects stale quantities or reservations after the preview', async () => {
-      await expect(
-        service.bulkUpdate(
-          PRODUCT_ID,
-          buildBulkDto({
-            variantIds: [VARIANT_ID, SECOND_VARIANT_ID],
-            expectedInventory: [
-              {
-                variantId: VARIANT_ID,
-                inventoryExists: true,
-                quantity: 9,
-                reservedQuantity: 2,
-              },
-              {
-                variantId: SECOND_VARIANT_ID,
-                inventoryExists: true,
-                quantity: 7,
-                reservedQuantity: 3,
-              },
-            ],
-          }),
-        ),
-      ).rejects.toBeInstanceOf(ConflictException);
-      expect(inventoryRepoUpdate).not.toHaveBeenCalled();
-    });
+    expect(result.items).toEqual([]);
+    expect(result.summary.total).toBe(0);
+    expect(result.pagination.totalPages).toBe(0);
+  });
 
-    it('rejects invalid ownership and duplicate IDs', async () => {
-      variantRepoFindByIdsAndProductId.mockResolvedValue([]);
-      await expect(
-        service.bulkUpdate(PRODUCT_ID, buildBulkDto()),
-      ).rejects.toBeInstanceOf(NotFoundException);
+  it('reads colour and size case-insensitively and returns null when absent', async () => {
+    repository.findStockAlertsPage.mockResolvedValue(
+      paginated(
+        [
+          { ...STOCK_ROWS[0], image: 'https://cdn.example/alpha.jpg', options: [
+            { optionName: 'Color', optionValue: 'Black' },
+            { optionName: 'size', optionValue: 'M' },
+          ] },
+          { ...STOCK_ROWS[1] },
+        ],
+        { inStock: 1, lowStock: 1, outOfStock: 0, total: 2 },
+      ),
+    );
 
-      await expect(
-        service.bulkUpdate(
-          PRODUCT_ID,
-          buildBulkDto({ variantIds: [VARIANT_ID, VARIANT_ID] }),
-        ),
-      ).rejects.toBeInstanceOf(BadRequestException);
-    });
+    const result = await service.findStockAlerts({ page: 1, limit: 10, status: 'all' });
+    const alpha = result.items.find((item) => item.sku === 'ALPHA');
+    const beta = result.items.find((item) => item.sku === 'BETA');
 
-    it('rejects zero movement amounts for increase and decrease', async () => {
-      await expect(
-        service.bulkUpdate(
-          PRODUCT_ID,
-          buildBulkDto({
-            operation: BulkInventoryOperation.INCREASE,
-            quantity: 0,
-          }),
-        ),
-      ).rejects.toBeInstanceOf(BadRequestException);
-    });
+    expect(alpha?.productImage).toBe('https://cdn.example/alpha.jpg');
+    expect(alpha?.color).toBe('Black');
+    expect(alpha?.size).toBe('M');
+    expect(beta?.productImage).toBeNull();
+    expect(beta?.color).toBeNull();
+    expect(beta?.size).toBeNull();
+  });
+
+  it('preserves the repository order (severity, then smallest available)', async () => {
+    repository.findStockAlertsPage.mockResolvedValue(
+      paginated([STOCK_ROWS[2], STOCK_ROWS[3], STOCK_ROWS[1]], {
+        inStock: 1,
+        lowStock: 2,
+        outOfStock: 1,
+        total: 4,
+      }),
+    );
+
+    const result = await service.findStockAlerts({ page: 1, limit: 10 });
+
+    expect(result.items.map((item) => item.sku)).toEqual(['GAMMA', 'DELTA', 'BETA']);
   });
 });

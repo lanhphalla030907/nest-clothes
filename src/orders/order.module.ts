@@ -2,6 +2,7 @@ import { forwardRef, Module } from '@nestjs/common';
 import { PaymentsModule } from '../payments/payments.module.js';
 import { JwtAuthModule } from '../auth/jwt/jwt-auth.module.js';
 import { InventoryModule } from '../inventory/inventory.module.js';
+import { NotificationsModule } from '../notifications/notifications.module.js';
 import { UsersModule } from '../users/users.module.js';
 import { OrderNumberGenerator } from './order-number.generator.js';
 import { OrderController } from './order.controller.js';
@@ -57,6 +58,7 @@ import { OrderRepository } from './repositories/order.repository.js';
     JwtAuthModule,
     UsersModule,
     InventoryModule,
+    NotificationsModule,
     forwardRef(() => PaymentsModule),
   ],
   controllers: [OrderController],

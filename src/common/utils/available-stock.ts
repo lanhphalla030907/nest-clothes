@@ -27,3 +27,28 @@ export interface StockCounters {
 export function availableStock(counters: StockCounters): number {
   return counters.quantity - counters.reservedQuantity;
 }
+
+/** The three stock states an administrator acts on. */
+export type StockStatus = 'IN_STOCK' | 'LOW_STOCK' | 'OUT_OF_STOCK';
+
+/**
+ * Available stock at or below this amount is low stock.
+ *
+ * The threshold is a display rule, not a stored fact: the counters stay the only
+ * source of truth and the status is derived on the way out.
+ */
+export const LOW_STOCK_THRESHOLD = 10;
+
+/**
+ * The stock state for a derived available amount.
+ *
+ * The order of the comparisons is the whole rule: `0` and below are out of
+ * stock, `1..LOW_STOCK_THRESHOLD` are low, and anything above is in stock.
+ * `availableStock` already guarantees a whole number, so there is no gap between
+ * the boundaries.
+ */
+export function stockStatusFor(available: number): StockStatus {
+  if (available <= 0) return 'OUT_OF_STOCK';
+  if (available <= LOW_STOCK_THRESHOLD) return 'LOW_STOCK';
+  return 'IN_STOCK';
+}

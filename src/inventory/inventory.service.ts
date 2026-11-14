@@ -5,6 +5,12 @@ import {
   NotFoundException,
 } from '@nestjs/common';
 import { Prisma } from '../generated/prisma/client.js';
+import {
+  availableStock,
+  stockStatusFor,
+  type StockStatus,
+} from '../common/utils/available-stock.js';
+import { NotificationsService } from '../notifications/notifications.service.js';
 import { ProductVariantsRepository } from '../product-variants/repositories/product-variants.repository.js';
 import { ProductsRepository } from '../products/repositories/products.repository.js';
 import { CreateInventoryDto } from './dto/create-inventory.dto.js';
@@ -15,7 +21,15 @@ import {
 import { InventoryResponseDto } from './dto/inventory-response.dto.js';
 import { UpdateInventoryDto } from './dto/update-inventory.dto.js';
 import {
+  StockAlertItemDto,
+  StockAlertSummaryDto,
+  StockAlertsPaginationDto,
+  StockAlertsResponseDto,
+} from './dto/stock-alerts-response.dto.js';
+import { StockAlertsQueryDto } from './dto/stock-alerts-query.dto.js';
+import {
   InventoryRepository,
+  type InventoryWithVariant,
   type UpdateInventoryData,
 } from './repositories/inventory.repository.js';
 
@@ -34,6 +48,20 @@ const MAX_INVENTORY_QUANTITY = 2_147_483_647;
 const MAX_BULK_VARIANTS = 500;
 const STALE_BULK_INVENTORY_MESSAGE =
   'Stock changed after the preview. Refresh the matrix and review the changes again.';
+
+/**
+ * Reads one option pair by name, case-insensitively.
+ *
+ * The legacy `VariantOption` rows are kept in sync by the product option matrix,
+ * so they are the one place colour/size can be read for every variant. A variant
+ * without that option returns `null` rather than an empty string.
+ */
+const optionValue = (
+  options: Array<{ optionName: string; optionValue: string }>,
+  name: string,
+): string | null =>
+  options.find((option) => option.optionName.toLowerCase() === name)
+    ?.optionValue ?? null;
 
 /**
  * All inventory business rules live here; the repository only knows about SQL and
@@ -86,6 +114,7 @@ export class InventoryService {
     private readonly inventoryRepository: InventoryRepository,
     private readonly productVariantsRepository: ProductVariantsRepository,
     private readonly productsRepository: ProductsRepository,
+    private readonly notificationsService: NotificationsService,
   ) {}
 
   async create(
@@ -109,6 +138,13 @@ export class InventoryService {
         quantity,
         reservedQuantity,
       });
+
+      const next = stockStatusFor(availableStock(inventory));
+      void this.notificationsService.notifyStockTransition(
+        variantId,
+        'IN_STOCK',
+        next,
+      );
 
       return InventoryResponseDto.fromEntity(inventory);
     } catch (error) {
@@ -134,6 +170,51 @@ export class InventoryService {
     return InventoryResponseDto.fromEntity(inventory);
   }
 
+  async findStockAlerts(
+    query: StockAlertsQueryDto,
+  ): Promise<StockAlertsResponseDto> {
+    const { page = 1, limit = 10, search, status = 'alerts' } = query;
+
+    const result = await this.inventoryRepository.findStockAlertsPage({
+      page,
+      limit,
+      search,
+      status,
+    });
+
+    const response = new StockAlertsResponseDto();
+    response.summary = new StockAlertSummaryDto();
+    response.summary.inStock = result.inStock;
+    response.summary.lowStock = result.lowStock;
+    response.summary.outOfStock = result.outOfStock;
+    response.summary.total = result.total;
+    response.items = result.items.map((row) => this.toStockAlertItem(row));
+    response.pagination = new StockAlertsPaginationDto();
+    response.pagination.page = page;
+    response.pagination.limit = limit;
+    response.pagination.total = result.total;
+    response.pagination.totalPages = Math.ceil(result.total / limit);
+    return response;
+  }
+
+  private toStockAlertItem(row: InventoryWithVariant): StockAlertItemDto {
+    const available = availableStock(row);
+
+    const item = new StockAlertItemDto();
+    item.variantId = row.variantId;
+    item.productId = row.variant.productId;
+    item.productName = row.variant.product.name;
+    item.productImage = row.variant.product.images[0]?.imageUrl ?? null;
+    item.sku = row.variant.sku;
+    item.color = optionValue(row.variant.options, 'color');
+    item.size = optionValue(row.variant.options, 'size');
+    item.quantity = row.quantity;
+    item.reservedQuantity = row.reservedQuantity;
+    item.available = available;
+    item.status = stockStatusFor(available);
+    return item;
+  }
+
   async update(
     productId: string,
     variantId: string,
@@ -142,7 +223,7 @@ export class InventoryService {
     await this.requireProduct(productId);
     await this.requireOwnedVariant(productId, variantId);
 
-    return this.inventoryRepository.runInTransaction(async (tx) => {
+    const result = await this.inventoryRepository.runInTransaction(async (tx) => {
       const current = await this.inventoryRepository.findByVariantId(
         variantId,
         tx,
@@ -166,11 +247,22 @@ export class InventoryService {
           tx,
         );
 
-        return InventoryResponseDto.fromEntity(inventory);
+        return {
+          response: InventoryResponseDto.fromEntity(inventory),
+          previous: stockStatusFor(availableStock(current)),
+          next: stockStatusFor(availableStock(inventory)),
+        };
       } catch (error) {
         this.rethrowAsHttpError(error);
       }
     });
+
+    void this.notificationsService.notifyStockTransition(
+      variantId,
+      result.previous,
+      result.next,
+    );
+    return result.response;
   }
 
   async bulkUpdate(
@@ -214,7 +306,7 @@ export class InventoryService {
     }
 
     try {
-      return await this.inventoryRepository.runInTransaction(async (tx) => {
+      const result = await this.inventoryRepository.runInTransaction(async (tx) => {
         await this.inventoryRepository.lockByVariantIds(dto.variantIds, tx);
         const currentRows = await this.inventoryRepository.findByVariantIds(
           dto.variantIds,
@@ -273,7 +365,11 @@ export class InventoryService {
           };
         });
 
-        const updated: InventoryResponseDto[] = [];
+        const updated: Array<{
+          response: InventoryResponseDto;
+          previous: StockStatus;
+          next: StockStatus;
+        }> = [];
         for (const { variantId, quantity, inventoryExists } of quantities) {
           const inventory = inventoryExists
             ? await this.inventoryRepository.update(variantId, { quantity }, tx)
@@ -285,10 +381,26 @@ export class InventoryService {
                 },
                 tx,
               );
-          updated.push(InventoryResponseDto.fromEntity(inventory));
+          updated.push({
+            response: InventoryResponseDto.fromEntity(inventory),
+            previous: stockStatusFor(
+              currentByVariant.has(variantId)
+                ? availableStock(currentByVariant.get(variantId)!)
+                : DEFAULT_COUNTER,
+            ),
+            next: stockStatusFor(availableStock(inventory)),
+          });
         }
         return updated;
       });
+      for (const { response, previous, next } of result) {
+        void this.notificationsService.notifyStockTransition(
+          response.variantId,
+          previous,
+          next,
+        );
+      }
+      return result.map(({ response }) => response);
     } catch (error) {
       this.rethrowAsHttpError(error);
     }

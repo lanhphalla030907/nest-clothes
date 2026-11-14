@@ -29,6 +29,7 @@ import {
   isValidPaywayTransactionId,
 } from './payway/payway-hash.js';
 import { PaywayService } from './payway/payway.service.js';
+import { NotificationsService } from '../notifications/notifications.service.js';
 
 const PRISMA_UNIQUE_CONSTRAINT_VIOLATION = 'P2002';
 
@@ -102,6 +103,7 @@ export class PaymentsService {
     private readonly orders: OrderRepository,
     private readonly transactionIds: TransactionIdGenerator,
     private readonly payway: PaywayService,
+    private readonly notificationsService: NotificationsService,
   ) {}
 
   /**
@@ -305,6 +307,15 @@ export class PaymentsService {
           : `Payment ${payment.id} verified as collected but order ${order.id} was not confirmed because it is no longer PENDING`,
     );
 
+    if (outcome.recorded) {
+      // The database transaction has committed. This verified provider payment is
+      // independent of whether a late cancellation prevented order confirmation.
+      void this.notificationsService.notifyPaymentSuccess(order.id);
+    }
+    if (outcome.promoted) {
+      void this.notificationsService.notifyOrderConfirmed(order.id);
+    }
+
     return PaywayCallbackAckDto.recorded();
   }
 
@@ -355,19 +366,28 @@ export class PaymentsService {
         );
 
         if (!marked) {
-          return false;
+          return { recorded: false, promoted: false } as const;
         }
 
-        return this.orders.confirmPaid(order.id, tx);
+        return {
+          recorded: true,
+          promoted: await this.orders.confirmPaid(order.id, tx),
+        } as const;
       });
 
-      if (outcome) {
+      if (outcome.recorded) {
+        // This fallback path is still a provider-verified online payment. It
+        // must create the same post-commit events as the webhook path.
+        void this.notificationsService.notifyPaymentSuccess(order.id);
+      }
+      if (outcome.promoted) {
+        void this.notificationsService.notifyOrderConfirmed(order.id);
         this.logger.log(
           `Payment ${payment.id} verified as collected via checkTransaction; order ${orderId} confirmed`,
         );
       }
 
-      return outcome;
+      return outcome.promoted;
     } catch (error) {
       this.logger.warn(
         `Failed to verify PayWay transaction ${payment.transactionId} for order ${orderId}: ${error instanceof Error ? error.message : String(error)}`,

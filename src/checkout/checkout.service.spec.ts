@@ -18,6 +18,8 @@ import { UsersRepository } from '../users/repositories/users.repository.js';
 import { AdministrativeLocationsService } from '../locations/administrative-locations.service.js';
 import { PromotionEvaluatorService } from '../promotions/promotion-evaluator.service.js';
 import { PromotionsRepository } from '../promotions/repositories/promotions.repository.js';
+import { NotificationsService } from '../notifications/notifications.service.js';
+import { TelegramOrderAlertsService } from '../notifications/telegram/telegram-order-alerts.service.js';
 import { CheckoutService } from './checkout.service.js';
 import { CheckoutQuotesRepository } from './repositories/checkout-quotes.repository.js';
 
@@ -252,6 +254,17 @@ describe('CheckoutService', () => {
         {
           provide: PromotionsRepository,
           useValue: { createUsages: vi.fn() },
+        },
+        {
+          provide: NotificationsService,
+          useValue: {
+            notifyNewOrder: vi.fn().mockResolvedValue(undefined),
+            notifyStockTransition: vi.fn().mockResolvedValue(undefined),
+          },
+        },
+        {
+          provide: TelegramOrderAlertsService,
+          useValue: { enqueueNewOrderAlert: vi.fn().mockResolvedValue(undefined) },
         },
       ],
     }).compile();

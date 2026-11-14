@@ -6,9 +6,9 @@ import {
   Injectable,
   Logger,
   NotFoundException,
-  Optional,
 } from '@nestjs/common';
 import { PaymentsService } from '../payments/payments.service.js';
+import { NotificationsService } from '../notifications/notifications.service.js';
 import { Prisma } from '../generated/prisma/client.js';
 import { UsersRepository } from '../users/repositories/users.repository.js';
 import {
@@ -211,8 +211,8 @@ export class OrderService {
     private readonly orderNumberGenerator: OrderNumberGenerator,
     private readonly orderInventory: OrderInventoryService,
     @Inject(forwardRef(() => PaymentsService))
-    @Optional()
-    private readonly paymentsService?: PaymentsService,
+    private readonly paymentsService: PaymentsService,
+    private readonly notificationsService: NotificationsService,
   ) {}
 
   /**
@@ -384,12 +384,21 @@ export class OrderService {
    * needs manual reconciliation/refund. Fixing that requires a refund workflow and
    * is deliberately outside this phase.
    */
-  cancelOrderForAdmin(orderId: string): Promise<AdminOrderDetailResponseDto> {
-    return this.orderRepository.runInTransaction(async (tx) => {
+  async cancelOrderForAdmin(
+    orderId: string,
+  ): Promise<AdminOrderDetailResponseDto> {
+    const order = await this.orderRepository.runInTransaction(async (tx) => {
       await this.cancelPendingUnpaidOrder(orderId, tx);
 
       return this.readAdminOrder(orderId, tx);
     });
+
+    // Emitted after the transaction commits, so neither the customer nor the
+    // operators are told about a cancellation that later rolled back. The handler
+    // never throws, which is what makes the fire-and-forget call safe here.
+    void this.notificationsService.notifyOrderCancelled(orderId);
+
+    return order;
   }
 
   /**
@@ -397,26 +406,26 @@ export class OrderService {
    * authorized delivery collection flow records it. The guarded update is the
    * concurrency control, and confirmation deliberately does not move inventory.
    */
-  confirmCodOrderForAdmin(
+  async confirmCodOrderForAdmin(
     orderId: string,
   ): Promise<AdminOrderDetailResponseDto> {
-    return this.orderRepository.runInTransaction(async (tx) => {
-      const order = await this.orderRepository.findOrderConfirmationState(
+    const order = await this.orderRepository.runInTransaction(async (tx) => {
+      const confirmationState = await this.orderRepository.findOrderConfirmationState(
         orderId,
         tx,
       );
 
-      if (order === null) {
+      if (confirmationState === null) {
         throw this.orderNotFound(orderId);
       }
 
-      if (order.status !== ORDER_STATUS.PENDING) {
+      if (confirmationState.status !== ORDER_STATUS.PENDING) {
         throw new ConflictException(
-          `Order ${orderId} is ${order.status} and cannot be confirmed`,
+          `Order ${orderId} is ${confirmationState.status} and cannot be confirmed`,
         );
       }
 
-      if (order.paymentMethod !== 'COD') {
+      if (confirmationState.paymentMethod !== 'COD') {
         throw new ConflictException(
           `Order ${orderId} is not a COD order and cannot use COD confirmation`,
         );
@@ -433,6 +442,13 @@ export class OrderService {
 
       return this.readAdminOrder(orderId, tx);
     });
+
+    // A COD confirmation is a real `PENDING -> CONFIRMED` transition, so the
+    // customer is told exactly as they would be after a verified online payment.
+    // Emitted after commit; the handler never throws.
+    void this.notificationsService.notifyOrderConfirmed(orderId);
+
+    return order;
   }
 
   /**
@@ -454,19 +470,25 @@ export class OrderService {
   ): Promise<OrderResponseDto> {
     await this.requireUser(userId);
 
-    return this.orderRepository.runInTransaction(async (tx) => {
+    const updated = await this.orderRepository.runInTransaction(async (tx) => {
       await this.cancelPendingUnpaidOrder(orderId, tx, userId);
 
-      const updated = await this.orderRepository.findById(orderId, tx);
+      const order = await this.orderRepository.findById(orderId, tx);
 
       // The owner-scoped update above makes this unreachable; the check keeps a
       // future repository change from turning it into a cross-account read.
-      if (updated === null || updated.userId !== userId) {
+      if (order === null || order.userId !== userId) {
         throw this.orderNotFound(orderId);
       }
 
-      return OrderResponseDto.fromEntity(updated);
+      return OrderResponseDto.fromEntity(order);
     });
+
+    // Post-commit: the customer and the operators are told only once the
+    // cancellation is durable. The handler never throws.
+    void this.notificationsService.notifyOrderCancelled(orderId);
+
+    return updated;
   }
 
   /**
@@ -489,20 +511,20 @@ export class OrderService {
    * inventory commitment all happen in this transaction, so assignment and
    * shipment cannot race past one another.
    */
-  shipOrderForAdmin(orderId: string): Promise<AdminOrderDetailResponseDto> {
-    return this.orderRepository.runInTransaction(async (tx) => {
-      const order = await this.orderRepository.lockShippingStateById(
+  async shipOrderForAdmin(orderId: string): Promise<AdminOrderDetailResponseDto> {
+    const order = await this.orderRepository.runInTransaction(async (tx) => {
+      const shippingState = await this.orderRepository.lockShippingStateById(
         orderId,
         tx,
       );
 
-      if (order === null) {
+      if (shippingState === null) {
         throw this.orderNotFound(orderId);
       }
 
-      if (order.status !== SHIPPABLE_ORDER_STATUS) {
+      if (shippingState.status !== SHIPPABLE_ORDER_STATUS) {
         throw new ConflictException(
-          `Order ${orderId} is ${order.status} and cannot be shipped`,
+          `Order ${orderId} is ${shippingState.status} and cannot be shipped`,
         );
       }
 
@@ -515,7 +537,7 @@ export class OrderService {
       }
 
       if (
-        order.paymentMethod !== 'COD' &&
+        shippingState.paymentMethod !== 'COD' &&
         !(await this.orderRepository.hasPaidPayment(orderId, tx))
       ) {
         throw new ConflictException(
@@ -525,7 +547,7 @@ export class OrderService {
 
       const transitioned = await this.orderRepository.transitionStatus(
         orderId,
-        order.status,
+        shippingState.status,
         ORDER_STATUS.SHIPPED,
         tx,
       );
@@ -538,6 +560,12 @@ export class OrderService {
 
       return this.readAdminOrder(orderId, tx);
     });
+
+    // Post-commit: the customer learns the parcel is on its way only after the
+    // shipment is durable. The handler never throws.
+    void this.notificationsService.notifyOrderShipped(orderId);
+
+    return order;
   }
 
   /**

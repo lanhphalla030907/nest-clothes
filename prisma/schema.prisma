@@ -80,6 +80,11 @@ model User {
 }
 
 /// The closed set of in-app notification kinds.
+///
+/// The `ADMIN_*` values address the operator audience (active administrators);
+/// the rest address the customer who owns the related order. The set is additive:
+/// new kinds are appended, never renumbered or removed, so historical rows keep
+/// meaning what they meant when they were written.
 enum NotificationType {
   ORDER_PLACED
   PAYMENT_CONFIRMED
@@ -88,6 +93,18 @@ enum NotificationType {
   ORDER_CANCELLED
   ADMIN_NEW_ORDER
   ADMIN_NEW_FEEDBACK
+  /// Customer: the order moved from PENDING to CONFIRMED.
+  ORDER_CONFIRMED
+  /// Customer: the parcel left the warehouse and is out for delivery.
+  ORDER_OUT_FOR_DELIVERY
+  /// Administrator: a verified online payment was recorded.
+  ADMIN_PAYMENT_SUCCESS
+  /// Administrator: an order was cancelled.
+  ADMIN_ORDER_CANCELLED
+  /// Administrator: a variant's available stock dropped to or below the low threshold.
+  ADMIN_LOW_STOCK
+  /// Administrator: a variant's available stock reached zero.
+  ADMIN_OUT_OF_STOCK
 }
 
 /// One in-app notification addressed to exactly one user.

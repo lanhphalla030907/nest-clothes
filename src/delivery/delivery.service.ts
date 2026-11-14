@@ -49,6 +49,7 @@ import {
   ELIGIBLE_ORDER_STATUSES_FOR_ASSIGNMENT,
   isValidDeliveryTransition,
 } from './constants/delivery-status.constants.js';
+import { NotificationsService } from '../notifications/notifications.service.js';
 
 @Injectable()
 export class DeliveryService {
@@ -57,6 +58,7 @@ export class DeliveryService {
   constructor(
     private readonly deliveryRepo: DeliveryRepository,
     private readonly cloudinaryService: CloudinaryService,
+    private readonly notificationsService: NotificationsService,
   ) {}
 
   /**
@@ -212,7 +214,7 @@ export class DeliveryService {
     );
 
     try {
-      return await this.deliveryRepo.runInTransaction(async (tx: any) => {
+      const updated = await this.deliveryRepo.runInTransaction(async (tx: any) => {
         const orderRows = await tx.$queryRaw`
           SELECT * FROM "orders" WHERE "id" = ${orderId}::uuid FOR UPDATE
         `;
@@ -301,6 +303,7 @@ export class DeliveryService {
         );
         return assignment;
       });
+      return updated;
     } catch (error: any) {
       if (error.code === 'P2002' || error.code === '23505') {
         throw new ConflictException('Order already has an active assignment');
@@ -371,7 +374,7 @@ export class DeliveryService {
     }
 
     try {
-      return await this.deliveryRepo.runInTransaction(async (tx: any) => {
+      const updated = await this.deliveryRepo.runInTransaction(async (tx: any) => {
         let assignment;
         if (deliveryOrderId !== null) {
           const order = await this.deliveryRepo.lockOrderForUpdate(
@@ -439,6 +442,14 @@ export class DeliveryService {
         );
         return updated;
       });
+
+      // These handlers run only after the status/order transaction commits.
+      if (dto.status === DeliveryStatus.OUT_FOR_DELIVERY) {
+        void this.notificationsService.notifyOutForDelivery(updated.orderId);
+      } else if (dto.status === DeliveryStatus.DELIVERED) {
+        void this.notificationsService.notifyOrderDelivered(updated.orderId);
+      }
+      return updated;
     } catch (error: any) {
       if (error.code === 'P2002' || error.code === '23505') {
         throw new ConflictException('Assignment conflict');
