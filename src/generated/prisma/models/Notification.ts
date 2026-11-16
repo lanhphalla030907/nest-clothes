@@ -216,6 +216,7 @@ export type NotificationWhereInput = {
   createdAt?: Prisma.DateTimeFilter<"Notification"> | Date | string
   dedupeKey?: Prisma.StringNullableFilter<"Notification"> | string | null
   user?: Prisma.XOR<Prisma.UserScalarRelationFilter, Prisma.UserWhereInput>
+  pushDeliveryJobs?: Prisma.PushDeliveryJobListRelationFilter
 }
 
 export type NotificationOrderByWithRelationInput = {
@@ -229,6 +230,7 @@ export type NotificationOrderByWithRelationInput = {
   createdAt?: Prisma.SortOrder
   dedupeKey?: Prisma.SortOrderInput | Prisma.SortOrder
   user?: Prisma.UserOrderByWithRelationInput
+  pushDeliveryJobs?: Prisma.PushDeliveryJobOrderByRelationAggregateInput
 }
 
 export type NotificationWhereUniqueInput = Prisma.AtLeast<{
@@ -245,6 +247,7 @@ export type NotificationWhereUniqueInput = Prisma.AtLeast<{
   readAt?: Prisma.DateTimeNullableFilter<"Notification"> | Date | string | null
   createdAt?: Prisma.DateTimeFilter<"Notification"> | Date | string
   user?: Prisma.XOR<Prisma.UserScalarRelationFilter, Prisma.UserWhereInput>
+  pushDeliveryJobs?: Prisma.PushDeliveryJobListRelationFilter
 }, "id" | "dedupeKey">
 
 export type NotificationOrderByWithAggregationInput = {
@@ -287,6 +290,7 @@ export type NotificationCreateInput = {
   createdAt?: Date | string
   dedupeKey?: string | null
   user: Prisma.UserCreateNestedOneWithoutNotificationsInput
+  pushDeliveryJobs?: Prisma.PushDeliveryJobCreateNestedManyWithoutNotificationInput
 }
 
 export type NotificationUncheckedCreateInput = {
@@ -299,6 +303,7 @@ export type NotificationUncheckedCreateInput = {
   readAt?: Date | string | null
   createdAt?: Date | string
   dedupeKey?: string | null
+  pushDeliveryJobs?: Prisma.PushDeliveryJobUncheckedCreateNestedManyWithoutNotificationInput
 }
 
 export type NotificationUpdateInput = {
@@ -311,6 +316,7 @@ export type NotificationUpdateInput = {
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   dedupeKey?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   user?: Prisma.UserUpdateOneRequiredWithoutNotificationsNestedInput
+  pushDeliveryJobs?: Prisma.PushDeliveryJobUpdateManyWithoutNotificationNestedInput
 }
 
 export type NotificationUncheckedUpdateInput = {
@@ -323,6 +329,7 @@ export type NotificationUncheckedUpdateInput = {
   readAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   dedupeKey?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  pushDeliveryJobs?: Prisma.PushDeliveryJobUncheckedUpdateManyWithoutNotificationNestedInput
 }
 
 export type NotificationCreateManyInput = {
@@ -404,6 +411,11 @@ export type NotificationMinOrderByAggregateInput = {
   dedupeKey?: Prisma.SortOrder
 }
 
+export type NotificationNullableScalarRelationFilter = {
+  is?: Prisma.NotificationWhereInput | null
+  isNot?: Prisma.NotificationWhereInput | null
+}
+
 export type NotificationCreateNestedManyWithoutUserInput = {
   create?: Prisma.XOR<Prisma.NotificationCreateWithoutUserInput, Prisma.NotificationUncheckedCreateWithoutUserInput> | Prisma.NotificationCreateWithoutUserInput[] | Prisma.NotificationUncheckedCreateWithoutUserInput[]
   connectOrCreate?: Prisma.NotificationCreateOrConnectWithoutUserInput | Prisma.NotificationCreateOrConnectWithoutUserInput[]
@@ -450,6 +462,22 @@ export type EnumNotificationTypeFieldUpdateOperationsInput = {
   set?: $Enums.NotificationType
 }
 
+export type NotificationCreateNestedOneWithoutPushDeliveryJobsInput = {
+  create?: Prisma.XOR<Prisma.NotificationCreateWithoutPushDeliveryJobsInput, Prisma.NotificationUncheckedCreateWithoutPushDeliveryJobsInput>
+  connectOrCreate?: Prisma.NotificationCreateOrConnectWithoutPushDeliveryJobsInput
+  connect?: Prisma.NotificationWhereUniqueInput
+}
+
+export type NotificationUpdateOneWithoutPushDeliveryJobsNestedInput = {
+  create?: Prisma.XOR<Prisma.NotificationCreateWithoutPushDeliveryJobsInput, Prisma.NotificationUncheckedCreateWithoutPushDeliveryJobsInput>
+  connectOrCreate?: Prisma.NotificationCreateOrConnectWithoutPushDeliveryJobsInput
+  upsert?: Prisma.NotificationUpsertWithoutPushDeliveryJobsInput
+  disconnect?: Prisma.NotificationWhereInput | boolean
+  delete?: Prisma.NotificationWhereInput | boolean
+  connect?: Prisma.NotificationWhereUniqueInput
+  update?: Prisma.XOR<Prisma.XOR<Prisma.NotificationUpdateToOneWithWhereWithoutPushDeliveryJobsInput, Prisma.NotificationUpdateWithoutPushDeliveryJobsInput>, Prisma.NotificationUncheckedUpdateWithoutPushDeliveryJobsInput>
+}
+
 export type NotificationCreateWithoutUserInput = {
   id?: string
   type: $Enums.NotificationType
@@ -459,6 +487,7 @@ export type NotificationCreateWithoutUserInput = {
   readAt?: Date | string | null
   createdAt?: Date | string
   dedupeKey?: string | null
+  pushDeliveryJobs?: Prisma.PushDeliveryJobCreateNestedManyWithoutNotificationInput
 }
 
 export type NotificationUncheckedCreateWithoutUserInput = {
@@ -470,6 +499,7 @@ export type NotificationUncheckedCreateWithoutUserInput = {
   readAt?: Date | string | null
   createdAt?: Date | string
   dedupeKey?: string | null
+  pushDeliveryJobs?: Prisma.PushDeliveryJobUncheckedCreateNestedManyWithoutNotificationInput
 }
 
 export type NotificationCreateOrConnectWithoutUserInput = {
@@ -513,6 +543,70 @@ export type NotificationScalarWhereInput = {
   dedupeKey?: Prisma.StringNullableFilter<"Notification"> | string | null
 }
 
+export type NotificationCreateWithoutPushDeliveryJobsInput = {
+  id?: string
+  type: $Enums.NotificationType
+  title: string
+  message: string
+  data?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
+  readAt?: Date | string | null
+  createdAt?: Date | string
+  dedupeKey?: string | null
+  user: Prisma.UserCreateNestedOneWithoutNotificationsInput
+}
+
+export type NotificationUncheckedCreateWithoutPushDeliveryJobsInput = {
+  id?: string
+  userId: string
+  type: $Enums.NotificationType
+  title: string
+  message: string
+  data?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
+  readAt?: Date | string | null
+  createdAt?: Date | string
+  dedupeKey?: string | null
+}
+
+export type NotificationCreateOrConnectWithoutPushDeliveryJobsInput = {
+  where: Prisma.NotificationWhereUniqueInput
+  create: Prisma.XOR<Prisma.NotificationCreateWithoutPushDeliveryJobsInput, Prisma.NotificationUncheckedCreateWithoutPushDeliveryJobsInput>
+}
+
+export type NotificationUpsertWithoutPushDeliveryJobsInput = {
+  update: Prisma.XOR<Prisma.NotificationUpdateWithoutPushDeliveryJobsInput, Prisma.NotificationUncheckedUpdateWithoutPushDeliveryJobsInput>
+  create: Prisma.XOR<Prisma.NotificationCreateWithoutPushDeliveryJobsInput, Prisma.NotificationUncheckedCreateWithoutPushDeliveryJobsInput>
+  where?: Prisma.NotificationWhereInput
+}
+
+export type NotificationUpdateToOneWithWhereWithoutPushDeliveryJobsInput = {
+  where?: Prisma.NotificationWhereInput
+  data: Prisma.XOR<Prisma.NotificationUpdateWithoutPushDeliveryJobsInput, Prisma.NotificationUncheckedUpdateWithoutPushDeliveryJobsInput>
+}
+
+export type NotificationUpdateWithoutPushDeliveryJobsInput = {
+  id?: Prisma.StringFieldUpdateOperationsInput | string
+  type?: Prisma.EnumNotificationTypeFieldUpdateOperationsInput | $Enums.NotificationType
+  title?: Prisma.StringFieldUpdateOperationsInput | string
+  message?: Prisma.StringFieldUpdateOperationsInput | string
+  data?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
+  readAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  dedupeKey?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  user?: Prisma.UserUpdateOneRequiredWithoutNotificationsNestedInput
+}
+
+export type NotificationUncheckedUpdateWithoutPushDeliveryJobsInput = {
+  id?: Prisma.StringFieldUpdateOperationsInput | string
+  userId?: Prisma.StringFieldUpdateOperationsInput | string
+  type?: Prisma.EnumNotificationTypeFieldUpdateOperationsInput | $Enums.NotificationType
+  title?: Prisma.StringFieldUpdateOperationsInput | string
+  message?: Prisma.StringFieldUpdateOperationsInput | string
+  data?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
+  readAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  dedupeKey?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+}
+
 export type NotificationCreateManyUserInput = {
   id?: string
   type: $Enums.NotificationType
@@ -533,6 +627,7 @@ export type NotificationUpdateWithoutUserInput = {
   readAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   dedupeKey?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  pushDeliveryJobs?: Prisma.PushDeliveryJobUpdateManyWithoutNotificationNestedInput
 }
 
 export type NotificationUncheckedUpdateWithoutUserInput = {
@@ -544,6 +639,7 @@ export type NotificationUncheckedUpdateWithoutUserInput = {
   readAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   dedupeKey?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  pushDeliveryJobs?: Prisma.PushDeliveryJobUncheckedUpdateManyWithoutNotificationNestedInput
 }
 
 export type NotificationUncheckedUpdateManyWithoutUserInput = {
@@ -558,6 +654,35 @@ export type NotificationUncheckedUpdateManyWithoutUserInput = {
 }
 
 
+/**
+ * Count Type NotificationCountOutputType
+ */
+
+export type NotificationCountOutputType = {
+  pushDeliveryJobs: number
+}
+
+export type NotificationCountOutputTypeSelect<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
+  pushDeliveryJobs?: boolean | NotificationCountOutputTypeCountPushDeliveryJobsArgs
+}
+
+/**
+ * NotificationCountOutputType without action
+ */
+export type NotificationCountOutputTypeDefaultArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
+  /**
+   * Select specific fields to fetch from the NotificationCountOutputType
+   */
+  select?: Prisma.NotificationCountOutputTypeSelect<ExtArgs> | null
+}
+
+/**
+ * NotificationCountOutputType without action
+ */
+export type NotificationCountOutputTypeCountPushDeliveryJobsArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
+  where?: Prisma.PushDeliveryJobWhereInput
+}
+
 
 export type NotificationSelect<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetSelect<{
   id?: boolean
@@ -570,6 +695,8 @@ export type NotificationSelect<ExtArgs extends runtime.Types.Extensions.Internal
   createdAt?: boolean
   dedupeKey?: boolean
   user?: boolean | Prisma.UserDefaultArgs<ExtArgs>
+  pushDeliveryJobs?: boolean | Prisma.Notification$pushDeliveryJobsArgs<ExtArgs>
+  _count?: boolean | Prisma.NotificationCountOutputTypeDefaultArgs<ExtArgs>
 }, ExtArgs["result"]["notification"]>
 
 export type NotificationSelectCreateManyAndReturn<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetSelect<{
@@ -613,6 +740,8 @@ export type NotificationSelectScalar = {
 export type NotificationOmit<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetOmit<"id" | "userId" | "type" | "title" | "message" | "data" | "readAt" | "createdAt" | "dedupeKey", ExtArgs["result"]["notification"]>
 export type NotificationInclude<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
   user?: boolean | Prisma.UserDefaultArgs<ExtArgs>
+  pushDeliveryJobs?: boolean | Prisma.Notification$pushDeliveryJobsArgs<ExtArgs>
+  _count?: boolean | Prisma.NotificationCountOutputTypeDefaultArgs<ExtArgs>
 }
 export type NotificationIncludeCreateManyAndReturn<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
   user?: boolean | Prisma.UserDefaultArgs<ExtArgs>
@@ -625,6 +754,7 @@ export type $NotificationPayload<ExtArgs extends runtime.Types.Extensions.Intern
   name: "Notification"
   objects: {
     user: Prisma.$UserPayload<ExtArgs>
+    pushDeliveryJobs: Prisma.$PushDeliveryJobPayload<ExtArgs>[]
   }
   scalars: runtime.Types.Extensions.GetPayloadResult<{
     id: string
@@ -1031,6 +1161,7 @@ readonly fields: NotificationFieldRefs;
 export interface Prisma__NotificationClient<T, Null = never, ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs, GlobalOmitOptions = {}> extends Prisma.PrismaPromise<T> {
   readonly [Symbol.toStringTag]: "PrismaPromise"
   user<T extends Prisma.UserDefaultArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.UserDefaultArgs<ExtArgs>>): Prisma.Prisma__UserClient<runtime.Types.Result.GetResult<Prisma.$UserPayload<ExtArgs>, T, "findUniqueOrThrow", GlobalOmitOptions> | Null, Null, ExtArgs, GlobalOmitOptions>
+  pushDeliveryJobs<T extends Prisma.Notification$pushDeliveryJobsArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.Notification$pushDeliveryJobsArgs<ExtArgs>>): Prisma.PrismaPromise<runtime.Types.Result.GetResult<Prisma.$PushDeliveryJobPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
   /**
    * Attaches callbacks for the resolution and/or rejection of the Promise.
    * @param onfulfilled The callback to execute when the Promise is resolved.
@@ -1467,6 +1598,30 @@ export type NotificationDeleteManyArgs<ExtArgs extends runtime.Types.Extensions.
    * Limit how many Notifications to delete.
    */
   limit?: number
+}
+
+/**
+ * Notification.pushDeliveryJobs
+ */
+export type Notification$pushDeliveryJobsArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
+  /**
+   * Select specific fields to fetch from the PushDeliveryJob
+   */
+  select?: Prisma.PushDeliveryJobSelect<ExtArgs> | null
+  /**
+   * Omit specific fields from the PushDeliveryJob
+   */
+  omit?: Prisma.PushDeliveryJobOmit<ExtArgs> | null
+  /**
+   * Choose, which related nodes to fetch as well
+   */
+  include?: Prisma.PushDeliveryJobInclude<ExtArgs> | null
+  where?: Prisma.PushDeliveryJobWhereInput
+  orderBy?: Prisma.PushDeliveryJobOrderByWithRelationInput | Prisma.PushDeliveryJobOrderByWithRelationInput[]
+  cursor?: Prisma.PushDeliveryJobWhereUniqueInput
+  take?: number
+  skip?: number
+  distinct?: Prisma.PushDeliveryJobScalarFieldEnum | Prisma.PushDeliveryJobScalarFieldEnum[]
 }
 
 /**

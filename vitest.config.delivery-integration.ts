@@ -16,6 +16,7 @@ export default defineConfig({
     root: './',
     include: [
       'test/delivery.integration.test.ts',
+      'test/push-worker.integration.test.ts',
       'test/delivery-cod.integration.test.ts',
       'test/admin-cod-reconciliation.integration.test.ts',
       'test/cod-reconciliation.repository.integration.test.ts',

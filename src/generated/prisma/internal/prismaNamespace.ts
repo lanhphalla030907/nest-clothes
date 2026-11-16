@@ -400,6 +400,8 @@ export const ModelName = {
   User: 'User',
   Notification: 'Notification',
   TelegramOrderAlert: 'TelegramOrderAlert',
+  PushSubscription: 'PushSubscription',
+  PushDeliveryJob: 'PushDeliveryJob',
   Feedback: 'Feedback',
   UserIdentity: 'UserIdentity',
   PasswordResetToken: 'PasswordResetToken',
@@ -450,7 +452,7 @@ export type TypeMap<ExtArgs extends runtime.Types.Extensions.InternalArgs = runt
     omit: GlobalOmitOptions
   }
   meta: {
-    modelProps: "user" | "notification" | "telegramOrderAlert" | "feedback" | "userIdentity" | "passwordResetToken" | "category" | "poster" | "collection" | "collectionProduct" | "product" | "productImage" | "productVariant" | "variantCostHistory" | "productOption" | "productOptionValue" | "variantOptionValue" | "variantOption" | "productAttribute" | "inventory" | "cart" | "cartItem" | "wishlist" | "wishlistItem" | "address" | "administrativeLocation" | "shippingProvider" | "codArea" | "order" | "deliveryAssignment" | "checkoutQuote" | "orderItem" | "payment" | "codCollection" | "codReconciliationRun" | "codReconciliationRunItem" | "promotion" | "promotionUsage"
+    modelProps: "user" | "notification" | "telegramOrderAlert" | "pushSubscription" | "pushDeliveryJob" | "feedback" | "userIdentity" | "passwordResetToken" | "category" | "poster" | "collection" | "collectionProduct" | "product" | "productImage" | "productVariant" | "variantCostHistory" | "productOption" | "productOptionValue" | "variantOptionValue" | "variantOption" | "productAttribute" | "inventory" | "cart" | "cartItem" | "wishlist" | "wishlistItem" | "address" | "administrativeLocation" | "shippingProvider" | "codArea" | "order" | "deliveryAssignment" | "checkoutQuote" | "orderItem" | "payment" | "codCollection" | "codReconciliationRun" | "codReconciliationRunItem" | "promotion" | "promotionUsage"
     txIsolationLevel: TransactionIsolationLevel
   }
   model: {
@@ -673,6 +675,154 @@ export type TypeMap<ExtArgs extends runtime.Types.Extensions.InternalArgs = runt
         count: {
           args: Prisma.TelegramOrderAlertCountArgs<ExtArgs>
           result: runtime.Types.Utils.Optional<Prisma.TelegramOrderAlertCountAggregateOutputType> | number
+        }
+      }
+    }
+    PushSubscription: {
+      payload: Prisma.$PushSubscriptionPayload<ExtArgs>
+      fields: Prisma.PushSubscriptionFieldRefs
+      operations: {
+        findUnique: {
+          args: Prisma.PushSubscriptionFindUniqueArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$PushSubscriptionPayload> | null
+        }
+        findUniqueOrThrow: {
+          args: Prisma.PushSubscriptionFindUniqueOrThrowArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$PushSubscriptionPayload>
+        }
+        findFirst: {
+          args: Prisma.PushSubscriptionFindFirstArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$PushSubscriptionPayload> | null
+        }
+        findFirstOrThrow: {
+          args: Prisma.PushSubscriptionFindFirstOrThrowArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$PushSubscriptionPayload>
+        }
+        findMany: {
+          args: Prisma.PushSubscriptionFindManyArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$PushSubscriptionPayload>[]
+        }
+        create: {
+          args: Prisma.PushSubscriptionCreateArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$PushSubscriptionPayload>
+        }
+        createMany: {
+          args: Prisma.PushSubscriptionCreateManyArgs<ExtArgs>
+          result: BatchPayload
+        }
+        createManyAndReturn: {
+          args: Prisma.PushSubscriptionCreateManyAndReturnArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$PushSubscriptionPayload>[]
+        }
+        delete: {
+          args: Prisma.PushSubscriptionDeleteArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$PushSubscriptionPayload>
+        }
+        update: {
+          args: Prisma.PushSubscriptionUpdateArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$PushSubscriptionPayload>
+        }
+        deleteMany: {
+          args: Prisma.PushSubscriptionDeleteManyArgs<ExtArgs>
+          result: BatchPayload
+        }
+        updateMany: {
+          args: Prisma.PushSubscriptionUpdateManyArgs<ExtArgs>
+          result: BatchPayload
+        }
+        updateManyAndReturn: {
+          args: Prisma.PushSubscriptionUpdateManyAndReturnArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$PushSubscriptionPayload>[]
+        }
+        upsert: {
+          args: Prisma.PushSubscriptionUpsertArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$PushSubscriptionPayload>
+        }
+        aggregate: {
+          args: Prisma.PushSubscriptionAggregateArgs<ExtArgs>
+          result: runtime.Types.Utils.Optional<Prisma.AggregatePushSubscription>
+        }
+        groupBy: {
+          args: Prisma.PushSubscriptionGroupByArgs<ExtArgs>
+          result: runtime.Types.Utils.Optional<Prisma.PushSubscriptionGroupByOutputType>[]
+        }
+        count: {
+          args: Prisma.PushSubscriptionCountArgs<ExtArgs>
+          result: runtime.Types.Utils.Optional<Prisma.PushSubscriptionCountAggregateOutputType> | number
+        }
+      }
+    }
+    PushDeliveryJob: {
+      payload: Prisma.$PushDeliveryJobPayload<ExtArgs>
+      fields: Prisma.PushDeliveryJobFieldRefs
+      operations: {
+        findUnique: {
+          args: Prisma.PushDeliveryJobFindUniqueArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$PushDeliveryJobPayload> | null
+        }
+        findUniqueOrThrow: {
+          args: Prisma.PushDeliveryJobFindUniqueOrThrowArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$PushDeliveryJobPayload>
+        }
+        findFirst: {
+          args: Prisma.PushDeliveryJobFindFirstArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$PushDeliveryJobPayload> | null
+        }
+        findFirstOrThrow: {
+          args: Prisma.PushDeliveryJobFindFirstOrThrowArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$PushDeliveryJobPayload>
+        }
+        findMany: {
+          args: Prisma.PushDeliveryJobFindManyArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$PushDeliveryJobPayload>[]
+        }
+        create: {
+          args: Prisma.PushDeliveryJobCreateArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$PushDeliveryJobPayload>
+        }
+        createMany: {
+          args: Prisma.PushDeliveryJobCreateManyArgs<ExtArgs>
+          result: BatchPayload
+        }
+        createManyAndReturn: {
+          args: Prisma.PushDeliveryJobCreateManyAndReturnArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$PushDeliveryJobPayload>[]
+        }
+        delete: {
+          args: Prisma.PushDeliveryJobDeleteArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$PushDeliveryJobPayload>
+        }
+        update: {
+          args: Prisma.PushDeliveryJobUpdateArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$PushDeliveryJobPayload>
+        }
+        deleteMany: {
+          args: Prisma.PushDeliveryJobDeleteManyArgs<ExtArgs>
+          result: BatchPayload
+        }
+        updateMany: {
+          args: Prisma.PushDeliveryJobUpdateManyArgs<ExtArgs>
+          result: BatchPayload
+        }
+        updateManyAndReturn: {
+          args: Prisma.PushDeliveryJobUpdateManyAndReturnArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$PushDeliveryJobPayload>[]
+        }
+        upsert: {
+          args: Prisma.PushDeliveryJobUpsertArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$PushDeliveryJobPayload>
+        }
+        aggregate: {
+          args: Prisma.PushDeliveryJobAggregateArgs<ExtArgs>
+          result: runtime.Types.Utils.Optional<Prisma.AggregatePushDeliveryJob>
+        }
+        groupBy: {
+          args: Prisma.PushDeliveryJobGroupByArgs<ExtArgs>
+          result: runtime.Types.Utils.Optional<Prisma.PushDeliveryJobGroupByOutputType>[]
+        }
+        count: {
+          args: Prisma.PushDeliveryJobCountArgs<ExtArgs>
+          result: runtime.Types.Utils.Optional<Prisma.PushDeliveryJobCountAggregateOutputType> | number
         }
       }
     }
@@ -3355,6 +3505,46 @@ export const TelegramOrderAlertScalarFieldEnum = {
 export type TelegramOrderAlertScalarFieldEnum = (typeof TelegramOrderAlertScalarFieldEnum)[keyof typeof TelegramOrderAlertScalarFieldEnum]
 
 
+export const PushSubscriptionScalarFieldEnum = {
+  id: 'id',
+  userId: 'userId',
+  endpoint: 'endpoint',
+  p256dh: 'p256dh',
+  auth: 'auth',
+  userAgent: 'userAgent',
+  isActive: 'isActive',
+  lastSeenAt: 'lastSeenAt',
+  revokedAt: 'revokedAt',
+  createdAt: 'createdAt',
+  updatedAt: 'updatedAt'
+} as const
+
+export type PushSubscriptionScalarFieldEnum = (typeof PushSubscriptionScalarFieldEnum)[keyof typeof PushSubscriptionScalarFieldEnum]
+
+
+export const PushDeliveryJobScalarFieldEnum = {
+  id: 'id',
+  notificationId: 'notificationId',
+  userId: 'userId',
+  pushSubscriptionId: 'pushSubscriptionId',
+  status: 'status',
+  attempts: 'attempts',
+  maxAttempts: 'maxAttempts',
+  nextAttemptAt: 'nextAttemptAt',
+  lockedAt: 'lockedAt',
+  lockedBy: 'lockedBy',
+  leaseExpiresAt: 'leaseExpiresAt',
+  lastErrorCode: 'lastErrorCode',
+  lastErrorMessage: 'lastErrorMessage',
+  payload: 'payload',
+  sentAt: 'sentAt',
+  createdAt: 'createdAt',
+  updatedAt: 'updatedAt'
+} as const
+
+export type PushDeliveryJobScalarFieldEnum = (typeof PushDeliveryJobScalarFieldEnum)[keyof typeof PushDeliveryJobScalarFieldEnum]
+
+
 export const FeedbackScalarFieldEnum = {
   id: 'id',
   customerId: 'customerId',
@@ -4076,6 +4266,20 @@ export type BooleanFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel,
 
 
 /**
+ * Reference to a field of type 'PushDeliveryStatus'
+ */
+export type EnumPushDeliveryStatusFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel, 'PushDeliveryStatus'>
+    
+
+
+/**
+ * Reference to a field of type 'PushDeliveryStatus[]'
+ */
+export type ListEnumPushDeliveryStatusFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel, 'PushDeliveryStatus[]'>
+    
+
+
+/**
  * Reference to a field of type 'Decimal'
  */
 export type DecimalFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel, 'Decimal'>
@@ -4270,6 +4474,8 @@ export type GlobalOmitConfig = {
   user?: Prisma.UserOmit
   notification?: Prisma.NotificationOmit
   telegramOrderAlert?: Prisma.TelegramOrderAlertOmit
+  pushSubscription?: Prisma.PushSubscriptionOmit
+  pushDeliveryJob?: Prisma.PushDeliveryJobOmit
   feedback?: Prisma.FeedbackOmit
   userIdentity?: Prisma.UserIdentityOmit
   passwordResetToken?: Prisma.PasswordResetTokenOmit

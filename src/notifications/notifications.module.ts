@@ -7,24 +7,28 @@ import { NotificationsService } from './notifications.service.js';
 import { TelegramOrderAlertsService } from './telegram/telegram-order-alerts.service.js';
 import { readTelegramSettings, TELEGRAM_SETTINGS } from './telegram/telegram.config.js';
 import { TelegramService } from './telegram/telegram.service.js';
+import { PushSubscriptionController } from './push-subscription.controller.js';
+import { PushSubscriptionRepository } from './push-subscription.repository.js';
+import { PushDeliveryRepository } from './push-delivery.repository.js';
+import { PushSubscriptionService } from './push-subscription.service.js';
+import { PushEnqueueService } from './push-enqueue.service.js';
+import { readVapidSettings, VAPID_SETTINGS } from './vapid/vapid.config.js';
+import { PushDeliveryWorker } from './push-delivery.worker.js';
+import { readPushWorkerConfig } from './push-worker.config.js';
+
+const PUSH_WORKER_CONFIG = 'PUSH_WORKER_CONFIG';
 
 /**
- * Owns in-app notifications and the Telegram order-alert outbox.
+ * Owns in-app notifications, Telegram order-alert outbox, and Web Push
+ * subscription management plus delivery enqueue.
  *
- * `JwtAuthModule` is imported for `JwtAuthGuard`, which the shared notification
- * controller mounts on all five routes. `PrismaModule` is `@Global`, so the
- * explicit import is redundant but keeps the repository's dependency visible.
- *
- * `NotificationsService` is exported because the features that own an event — the
- * checkout, the orders, the payments, the delivery and the inventory — call its
- * `notify*` handlers *after* their own transaction commits. They inject the service
- * rather than the repository so the audience fan-out, the dedupe keys and the
- * fire-and-forget error handling stay in exactly one place. `TelegramOrderAlertsService`
- * is re-exported unchanged for the same post-commit reason.
+ * Phase 2B additions: `PushSubscriptionController`, `PushSubscriptionService`,
+ * `PushDeliveryRepository`, `PushEnqueueService`, and VAPID configuration.
+ * Phase 1 notifications and Telegram behaviour are unchanged.
  */
 @Module({
   imports: [PrismaModule, JwtAuthModule],
-  controllers: [NotificationsController],
+  controllers: [NotificationsController, PushSubscriptionController],
   providers: [
     NotificationsRepository,
     NotificationsService,
@@ -34,8 +38,20 @@ import { TelegramService } from './telegram/telegram.service.js';
     },
     TelegramService,
     TelegramOrderAlertsService,
+    {
+      provide: VAPID_SETTINGS,
+      useFactory: readVapidSettings,
+    },
+    PushSubscriptionRepository,
+    PushDeliveryRepository,
+    PushSubscriptionService,
+    PushEnqueueService,
+    PushDeliveryWorker,
+    {
+      provide: PUSH_WORKER_CONFIG,
+      useFactory: readPushWorkerConfig,
+    },
   ],
-  exports: [NotificationsService, TelegramOrderAlertsService],
+  exports: [NotificationsService, TelegramOrderAlertsService, PushEnqueueService],
 })
 export class NotificationsModule {}
-

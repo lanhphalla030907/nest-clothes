@@ -17,6 +17,8 @@ import { CodAreasRepository } from '../cod-areas/repositories/cod-areas.reposito
 import { AdministrativeLocationsService } from '../locations/administrative-locations.service.js';
 import { PromotionEvaluatorService } from '../promotions/promotion-evaluator.service.js';
 import { PromotionsRepository } from '../promotions/repositories/promotions.repository.js';
+import { TelegramOrderAlertsService } from '../notifications/telegram/telegram-order-alerts.service.js';
+import { NotificationsService } from '../notifications/notifications.service.js';
 
 const USER_ID = 'a1b2c3d4-e5f6-4f70-8a9b-0c1d2e3f4a5b';
 const ADDRESS_ID = 'b2c3d4e5-f6a7-4b8c-9d0e-1f2a3b4c5d6e';
@@ -222,6 +224,19 @@ describe('Checkout quotes', () => {
     findUser: vi.fn(),
     evaluatePromotions: vi.fn(),
     createPromotionUsages: vi.fn(),
+    telegramOrderAlertsService: {
+      enqueueNewOrderAlert: vi.fn().mockResolvedValue(undefined),
+    },
+    notificationsService: {
+      notifyNewOrder: vi.fn(),
+      notifyPaymentSuccess: vi.fn(),
+      notifyStockTransition: vi.fn(),
+      notifyOrderConfirmed: vi.fn(),
+      notifyOrderShipped: vi.fn(),
+      notifyOutForDelivery: vi.fn(),
+      notifyOrderDelivered: vi.fn(),
+      notifyOrderCancelled: vi.fn(),
+    },
   };
   let service: CheckoutService;
 
@@ -257,6 +272,7 @@ describe('Checkout quotes', () => {
     mocks.findAreaForCheckout.mockResolvedValue(area);
     mocks.assertCodEligible.mockResolvedValue(address.administrativeLocationPath);
     mocks.findUser.mockResolvedValue({ id: USER_ID });
+    mocks.telegramOrderAlertsService.enqueueNewOrderAlert.mockResolvedValue(undefined);
     mocks.evaluatePromotions.mockResolvedValue({
       subtotal: new Prisma.Decimal('25.00'),
       shippingFee: new Prisma.Decimal('3.50'),
@@ -312,6 +328,8 @@ describe('Checkout quotes', () => {
       {
         createUsages: mocks.createPromotionUsages,
       } as unknown as PromotionsRepository,
+      { enqueueNewOrderAlert: mocks.telegramOrderAlertsService.enqueueNewOrderAlert } as unknown as TelegramOrderAlertsService,
+      mocks.notificationsService as unknown as NotificationsService,
     );
   });
 

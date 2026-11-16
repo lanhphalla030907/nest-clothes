@@ -11,6 +11,8 @@
 export type * from './models/User.js'
 export type * from './models/Notification.js'
 export type * from './models/TelegramOrderAlert.js'
+export type * from './models/PushSubscription.js'
+export type * from './models/PushDeliveryJob.js'
 export type * from './models/Feedback.js'
 export type * from './models/UserIdentity.js'
 export type * from './models/PasswordResetToken.js'

@@ -54,6 +54,8 @@ export const ModelName = {
   User: 'User',
   Notification: 'Notification',
   TelegramOrderAlert: 'TelegramOrderAlert',
+  PushSubscription: 'PushSubscription',
+  PushDeliveryJob: 'PushDeliveryJob',
   Feedback: 'Feedback',
   UserIdentity: 'UserIdentity',
   PasswordResetToken: 'PasswordResetToken',
@@ -155,6 +157,46 @@ export const TelegramOrderAlertScalarFieldEnum = {
 } as const
 
 export type TelegramOrderAlertScalarFieldEnum = (typeof TelegramOrderAlertScalarFieldEnum)[keyof typeof TelegramOrderAlertScalarFieldEnum]
+
+
+export const PushSubscriptionScalarFieldEnum = {
+  id: 'id',
+  userId: 'userId',
+  endpoint: 'endpoint',
+  p256dh: 'p256dh',
+  auth: 'auth',
+  userAgent: 'userAgent',
+  isActive: 'isActive',
+  lastSeenAt: 'lastSeenAt',
+  revokedAt: 'revokedAt',
+  createdAt: 'createdAt',
+  updatedAt: 'updatedAt'
+} as const
+
+export type PushSubscriptionScalarFieldEnum = (typeof PushSubscriptionScalarFieldEnum)[keyof typeof PushSubscriptionScalarFieldEnum]
+
+
+export const PushDeliveryJobScalarFieldEnum = {
+  id: 'id',
+  notificationId: 'notificationId',
+  userId: 'userId',
+  pushSubscriptionId: 'pushSubscriptionId',
+  status: 'status',
+  attempts: 'attempts',
+  maxAttempts: 'maxAttempts',
+  nextAttemptAt: 'nextAttemptAt',
+  lockedAt: 'lockedAt',
+  lockedBy: 'lockedBy',
+  leaseExpiresAt: 'leaseExpiresAt',
+  lastErrorCode: 'lastErrorCode',
+  lastErrorMessage: 'lastErrorMessage',
+  payload: 'payload',
+  sentAt: 'sentAt',
+  createdAt: 'createdAt',
+  updatedAt: 'updatedAt'
+} as const
+
+export type PushDeliveryJobScalarFieldEnum = (typeof PushDeliveryJobScalarFieldEnum)[keyof typeof PushDeliveryJobScalarFieldEnum]
 
 
 export const FeedbackScalarFieldEnum = {

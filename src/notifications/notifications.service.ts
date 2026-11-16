@@ -19,6 +19,7 @@ import {
   type NotificationRow,
   type OrderNotificationSummary,
 } from './notifications.repository.js';
+import { PushEnqueueService } from './push-enqueue.service.js';
 
 /** The audience a notification's navigation route is written for. */
 type NotificationAudience = 'ADMIN' | 'CUSTOMER';
@@ -66,7 +67,10 @@ interface NotificationNavigationData {
 export class NotificationsService {
   private readonly logger = new Logger(NotificationsService.name);
 
-  constructor(private readonly repository: NotificationsRepository) {}
+  constructor(
+    private readonly repository: NotificationsRepository,
+    private readonly pushEnqueue: PushEnqueueService,
+  ) {}
 
   // ---------------------------------------------------------------------------
   // Read API (scoped to the authenticated caller)
@@ -149,6 +153,7 @@ export class NotificationsService {
 
       const customerName = this.customerName(order);
 
+      const since = new Date();
       await this.repository.createMany(
         adminIds.map((adminId) => ({
           userId: adminId,
@@ -159,6 +164,8 @@ export class NotificationsService {
           dedupeKey: `admin:${adminId}:new-order:${orderId}`,
         })),
       );
+
+      await this.enqueuePushForUsers(adminIds, since, null);
     });
   }
 
@@ -185,7 +192,8 @@ export class NotificationsService {
         },
       ];
 
-      for (const adminId of await this.repository.findActiveAdminIds()) {
+      const adminIds = await this.repository.findActiveAdminIds();
+      for (const adminId of adminIds) {
         rows.push({
           userId: adminId,
           type: NotificationType.ADMIN_PAYMENT_SUCCESS,
@@ -197,6 +205,10 @@ export class NotificationsService {
       }
 
       await this.repository.createMany(rows);
+
+      const userIds = [order.userId, ...adminIds];
+      const since = new Date();
+      await this.enqueuePushForUsers(userIds, since, null);
     });
   }
 
@@ -275,7 +287,8 @@ export class NotificationsService {
         },
       ];
 
-      for (const adminId of await this.repository.findActiveAdminIds()) {
+      const adminIds = await this.repository.findActiveAdminIds();
+      for (const adminId of adminIds) {
         rows.push({
           userId: adminId,
           type: NotificationType.ADMIN_ORDER_CANCELLED,
@@ -287,6 +300,10 @@ export class NotificationsService {
       }
 
       await this.repository.createMany(rows);
+
+      const userIds = [order.userId, ...adminIds];
+      const since = new Date();
+      await this.enqueuePushForUsers(userIds, since, null);
     });
   }
 
@@ -335,6 +352,7 @@ export class NotificationsService {
       const state = isOut ? 'out-of-stock' : 'low-stock';
       const day = utcDayBucket(new Date());
 
+      const since = new Date();
       await this.repository.createMany(
         adminIds.map((adminId) => ({
           userId: adminId,
@@ -349,6 +367,8 @@ export class NotificationsService {
           dedupeKey: `admin:${adminId}:${state}:${variantId}:${day}`,
         })),
       );
+
+      await this.enqueuePushForUsers(adminIds, since, null);
     });
   }
 
@@ -369,6 +389,7 @@ export class NotificationsService {
       const order = await this.repository.findOrderSummary(orderId);
       if (order === null) return this.warnMissingOrder(orderId);
 
+      const since = new Date();
       await this.repository.createMany([
         {
           userId: order.userId,
@@ -379,6 +400,8 @@ export class NotificationsService {
           dedupeKey: `customer:${order.userId}:${dedupeEvent}:${orderId}`,
         },
       ]);
+
+      await this.enqueuePushForUsers([order.userId], since, null);
     });
   }
 
@@ -419,6 +442,21 @@ export class NotificationsService {
     this.logger.warn(
       `Skipped notification: order ${orderId} not found in committed state`,
     );
+  }
+
+  /**
+   * Enqueues push delivery jobs for one or more users after their
+   * notifications have been created. Best-effort: failures are swallowed by
+   * `PushEnqueueService` and never affect the original notification creation.
+   */
+  private async enqueuePushForUsers(
+    userIds: string[],
+    since: Date,
+    url: string | null | undefined,
+  ): Promise<void> {
+    for (const userId of userIds) {
+      await this.pushEnqueue.enqueueForUserSince(userId, since, url);
+    }
   }
 
   private customerName(order: OrderNotificationSummary): string {

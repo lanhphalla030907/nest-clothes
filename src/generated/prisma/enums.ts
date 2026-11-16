@@ -57,3 +57,13 @@ export const TelegramAlertStatus = {
 } as const
 
 export type TelegramAlertStatus = (typeof TelegramAlertStatus)[keyof typeof TelegramAlertStatus]
+
+
+export const PushDeliveryStatus = {
+  PENDING: 'PENDING',
+  PROCESSING: 'PROCESSING',
+  SENT: 'SENT',
+  FAILED: 'FAILED'
+} as const
+
+export type PushDeliveryStatus = (typeof PushDeliveryStatus)[keyof typeof PushDeliveryStatus]

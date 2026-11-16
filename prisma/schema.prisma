@@ -34,29 +34,29 @@ enum DeliveryStatus {
 }
 
 model User {
-  id              String    @id @default(uuid()) @db.Uuid
-  firstName       String    @map("first_name") @db.VarChar(100)
-  lastName        String    @map("last_name") @db.VarChar(100)
-  email           String    @unique @db.VarChar(255)
-  passwordHash    String    @map("password_hash") @db.VarChar(255)
-  phone           String?   @db.VarChar(30)
-  status          String    @db.VarChar(20)
-  role            Role      @default(CUSTOMER)
-  emailVerifiedAt DateTime? @map("email_verified_at") @db.Timestamptz
-  lastLoginAt     DateTime? @map("last_login_at") @db.Timestamptz
+  id                String    @id @default(uuid()) @db.Uuid
+  firstName         String    @map("first_name") @db.VarChar(100)
+  lastName          String    @map("last_name") @db.VarChar(100)
+  email             String    @unique @db.VarChar(255)
+  passwordHash      String    @map("password_hash") @db.VarChar(255)
+  phone             String?   @db.VarChar(30)
+  status            String    @db.VarChar(20)
+  role              Role      @default(CUSTOMER)
+  emailVerifiedAt   DateTime? @map("email_verified_at") @db.Timestamptz
+  lastLoginAt       DateTime? @map("last_login_at") @db.Timestamptz
   /// Set whenever the local password is changed through the verified reset flow.
   /// Access tokens issued before this instant are refused by `JwtAuthGuard`.
   passwordChangedAt DateTime? @map("password_changed_at") @db.Timestamptz
-  createdAt       DateTime  @default(now()) @map("created_at") @db.Timestamptz
-  updatedAt       DateTime  @updatedAt @map("updated_at") @db.Timestamptz
+  createdAt         DateTime  @default(now()) @map("created_at") @db.Timestamptz
+  updatedAt         DateTime  @updatedAt @map("updated_at") @db.Timestamptz
 
-  addresses      Address[]
-  cart           Cart?
-  wishlist       Wishlist?
-  orders         Order[]
-  checkoutQuotes CheckoutQuote[]
+  addresses           Address[]
+  cart                Cart?
+  wishlist            Wishlist?
+  orders              Order[]
+  checkoutQuotes      CheckoutQuote[]
   /// Every promotion this user has consumed, kept as financial history.
-  promotionUsages PromotionUsage[]
+  promotionUsages     PromotionUsage[]
   /// Short-lived, single-use links for setting or changing a local password.
   passwordResetTokens PasswordResetToken[]
 
@@ -73,6 +73,7 @@ model User {
   feedback            Feedback[]
   /// In-app notifications addressed to this user (customer or administrator).
   notifications       Notification[]
+  pushSubscriptions   PushSubscription[]
 
   @@index([status])
   @@index([role])
@@ -124,7 +125,8 @@ model Notification {
   createdAt DateTime         @default(now()) @map("created_at") @db.Timestamptz
   dedupeKey String?          @unique @map("dedupe_key") @db.VarChar(191)
 
-  user User @relation(fields: [userId], references: [id], onDelete: Cascade, onUpdate: Cascade)
+  user             User              @relation(fields: [userId], references: [id], onDelete: Cascade, onUpdate: Cascade)
+  pushDeliveryJobs PushDeliveryJob[]
 
   // Serves the paginated list "this user's notifications, newest first".
   @@index([userId, createdAt(sort: Desc), id(sort: Desc)])
@@ -164,6 +166,86 @@ enum TelegramAlertStatus {
   FAILED
 }
 
+/// A web push subscription for one user.
+///
+/// A subscription is bound to a browser/device via its push `endpoint`. The
+/// endpoint is globally unique: rebinding an endpoint to a different user
+/// transfers ownership (see ownership-transfer flow in the Phase 2 plan).
+/// `endpoint`, `p256dh` and `auth` are never returned in full by the API.
+///
+/// Soft-delete policy: subscriptions are never hard-deleted in normal
+/// operation. Use `isActive = false` and `revokedAt` to disable delivery,
+/// keeping the row (and any `PushDeliveryJob` history) intact.
+model PushSubscription {
+  id         String    @id @default(uuid()) @db.Uuid
+  userId     String    @map("user_id") @db.Uuid
+  endpoint   String    @unique @db.VarChar(2048)
+  p256dh     String    @db.VarChar(500)
+  auth       String    @db.VarChar(255)
+  userAgent  String?   @map("user_agent") @db.VarChar(1000)
+  isActive   Boolean   @default(true) @map("is_active")
+  lastSeenAt DateTime? @map("last_seen_at") @db.Timestamptz
+  revokedAt  DateTime? @map("revoked_at") @db.Timestamptz
+  createdAt  DateTime  @default(now()) @map("created_at") @db.Timestamptz
+  updatedAt  DateTime  @updatedAt @map("updated_at") @db.Timestamptz
+
+  user             User              @relation(fields: [userId], references: [id], onDelete: Cascade, onUpdate: Cascade)
+  pushDeliveryJobs PushDeliveryJob[]
+
+  // Serves "this user's active subscriptions" for enqueue fan-out.
+  @@index([userId, isActive])
+  @@map("push_subscriptions")
+}
+
+/// Durable web push delivery outbox.
+///
+/// One job per (notification, pushSubscription), idempotent on that pair.
+/// Statuses: PENDING -> PROCESSING -> SENT | FAILED (no RETRY value; retries
+/// are PENDING with a future nextAttemptAt). `attempts` counts reservation
+/// events and is incremented exactly once, inside the step-2 critical section.
+///
+/// The frozen `payload` is stored at enqueue time and contains no sensitive
+/// data, so `notificationId` can be SetNull when a notification is deleted
+/// without losing push audit history.
+model PushDeliveryJob {
+  id                 String             @id @default(uuid()) @db.Uuid
+  notificationId     String?            @map("notification_id") @db.Uuid
+  userId             String             @map("user_id") @db.Uuid
+  pushSubscriptionId String             @map("push_subscription_id") @db.Uuid
+  status             PushDeliveryStatus @default(PENDING)
+  attempts           Int                @default(0)
+  maxAttempts        Int                @default(5)
+  nextAttemptAt      DateTime           @default(now()) @map("next_attempt_at") @db.Timestamptz
+  lockedAt           DateTime?          @map("locked_at") @db.Timestamptz
+  lockedBy           String?            @map("locked_by") @db.VarChar(100)
+  leaseExpiresAt     DateTime?          @map("lease_expires_at") @db.Timestamptz
+  lastErrorCode      String?            @map("last_error_code") @db.VarChar(100)
+  lastErrorMessage   String?            @map("last_error_message") @db.VarChar(2000)
+  payload            Json?              @db.JsonB
+  sentAt             DateTime?          @map("sent_at") @db.Timestamptz
+  createdAt          DateTime           @default(now()) @map("created_at") @db.Timestamptz
+  updatedAt          DateTime           @updatedAt @map("updated_at") @db.Timestamptz
+
+  notification Notification?    @relation(fields: [notificationId], references: [id], onDelete: SetNull, onUpdate: Cascade)
+  subscription PushSubscription @relation(fields: [pushSubscriptionId], references: [id], onDelete: Restrict, onUpdate: Cascade)
+
+  // Idempotent enqueue: one job per (notification, subscription).
+  @@unique([notificationId, pushSubscriptionId], map: "push_delivery_jobs_notification_id_push_subscription_id_key")
+  // Worker claim: due PENDING jobs ordered by nextAttemptAt.
+  @@index([status, nextAttemptAt], map: "push_delivery_jobs_status_next_attempt_at_idx")
+  // Transfer: mark non-terminal jobs for a subscription.
+  @@index([pushSubscriptionId, status], map: "push_delivery_jobs_push_subscription_id_status_idx")
+  // Per-user job listing.
+  @@index([userId, status], map: "push_delivery_jobs_user_id_status_idx")
+  @@map("push_delivery_jobs")
+}
+
+enum PushDeliveryStatus {
+  PENDING
+  PROCESSING
+  SENT
+  FAILED
+}
 
 /// Feedback about the store and its services, owned by one customer.
 ///
@@ -171,13 +253,13 @@ enum TelegramAlertStatus {
 /// star rating, and has no approval or reply workflow beyond publishing and
 /// unpublishing. Only `PUBLISHED` rows reach the public website.
 model Feedback {
-  id          String   @id @default(uuid()) @db.Uuid
-  customerId  String   @map("customer_id") @db.Uuid
-  title       String   @db.VarChar(200)
-  message     String   @db.Text
-  status      String   @db.VarChar(20) @default("UNPUBLISHED") @map("status")
-  createdAt   DateTime @default(now()) @map("created_at") @db.Timestamptz
-  updatedAt   DateTime @updatedAt @map("updated_at") @db.Timestamptz
+  id         String   @id @default(uuid()) @db.Uuid
+  customerId String   @map("customer_id") @db.Uuid
+  title      String   @db.VarChar(200)
+  message    String   @db.Text
+  status     String   @default("UNPUBLISHED") @map("status") @db.VarChar(20)
+  createdAt  DateTime @default(now()) @map("created_at") @db.Timestamptz
+  updatedAt  DateTime @updatedAt @map("updated_at") @db.Timestamptz
 
   customer User @relation(fields: [customerId], references: [id], onDelete: Cascade, onUpdate: Cascade)
 
@@ -283,15 +365,15 @@ model Poster {
 /// deliberately do not own products: the explicit join model lets a product
 /// appear in any number of collections without changing catalogue ownership.
 model Collection {
-  id           String              @id @default(uuid()) @db.Uuid
-  title        String              @db.VarChar(255)
-  slug         String              @unique @db.VarChar(280)
-  description  String?             @db.VarChar(1000)
-  coverImage   String              @map("cover_image") @db.VarChar(2048)
-  isActive     Boolean             @default(true) @map("is_active")
-  displayOrder Int                 @default(0) @map("display_order")
-  createdAt    DateTime            @default(now()) @map("created_at") @db.Timestamptz
-  updatedAt    DateTime            @updatedAt @map("updated_at") @db.Timestamptz
+  id           String   @id @default(uuid()) @db.Uuid
+  title        String   @db.VarChar(255)
+  slug         String   @unique @db.VarChar(280)
+  description  String?  @db.VarChar(1000)
+  coverImage   String   @map("cover_image") @db.VarChar(2048)
+  isActive     Boolean  @default(true) @map("is_active")
+  displayOrder Int      @default(0) @map("display_order")
+  createdAt    DateTime @default(now()) @map("created_at") @db.Timestamptz
+  updatedAt    DateTime @updatedAt @map("updated_at") @db.Timestamptz
 
   products CollectionProduct[]
 
@@ -353,12 +435,12 @@ model Product {
   createdAt       DateTime @default(now()) @map("created_at") @db.Timestamptz
   updatedAt       DateTime @updatedAt @map("updated_at") @db.Timestamptz
 
-  category      Category           @relation("CategoryProducts", fields: [categoryId], references: [id], onDelete: Restrict, onUpdate: Cascade)
-  images        ProductImage[]     @relation("ProductImages")
-  variants      ProductVariant[]   @relation("ProductVariants")
-  options       ProductOption[]    @relation("ProductOptions")
-  attributes    ProductAttribute[] @relation("ProductAttributes")
-  wishlistItems WishlistItem[]     @relation("WishlistItemProduct")
+  category      Category            @relation("CategoryProducts", fields: [categoryId], references: [id], onDelete: Restrict, onUpdate: Cascade)
+  images        ProductImage[]      @relation("ProductImages")
+  variants      ProductVariant[]    @relation("ProductVariants")
+  options       ProductOption[]     @relation("ProductOptions")
+  attributes    ProductAttribute[]  @relation("ProductAttributes")
+  wishlistItems WishlistItem[]      @relation("WishlistItemProduct")
   collections   CollectionProduct[]
 
   @@index([categoryId])
@@ -436,19 +518,19 @@ model ProductImage {
 /// *incomplete* on purpose: a variant held by a cart or an order is restricted,
 /// so the product delete fails and the caller must clear those first.
 model ProductVariant {
-  id             String   @id @default(uuid()) @db.Uuid
-  productId      String   @map("product_id") @db.Uuid
-  sku            String   @unique @db.VarChar(100)
-  price          Decimal  @db.Decimal(12, 2)
+  id              String    @id @default(uuid()) @db.Uuid
+  productId       String    @map("product_id") @db.Uuid
+  sku             String    @unique @db.VarChar(100)
+  price           Decimal   @db.Decimal(12, 2)
   /// Internal purchase/landed cost. It is intentionally nullable: absence means
   /// unknown, never zero. Public catalogue projections must not expose it.
-  costPrice      Decimal? @map("cost_price") @db.Decimal(12, 2)
-  costCurrency   String?  @map("cost_currency") @db.Char(3)
+  costPrice       Decimal?  @map("cost_price") @db.Decimal(12, 2)
+  costCurrency    String?   @map("cost_currency") @db.Char(3)
   costEffectiveAt DateTime? @map("cost_effective_at") @db.Timestamptz
-  isActive       Boolean  @default(true) @map("is_active")
-  combinationKey String?  @map("combination_key") @db.VarChar(64)
-  createdAt      DateTime @default(now()) @map("created_at") @db.Timestamptz
-  updatedAt      DateTime @updatedAt @map("updated_at") @db.Timestamptz
+  isActive        Boolean   @default(true) @map("is_active")
+  combinationKey  String?   @map("combination_key") @db.VarChar(64)
+  createdAt       DateTime  @default(now()) @map("created_at") @db.Timestamptz
+  updatedAt       DateTime  @updatedAt @map("updated_at") @db.Timestamptz
 
   product             Product              @relation("ProductVariants", fields: [productId], references: [id], onDelete: Cascade, onUpdate: Cascade)
   options             VariantOption[]      @relation("VariantOptions")
@@ -525,7 +607,7 @@ model ProductOptionValue {
   createdAt       DateTime @default(now()) @map("created_at") @db.Timestamptz
   updatedAt       DateTime @updatedAt @map("updated_at") @db.Timestamptz
 
-  option            ProductOption        @relation("ProductOptionValues", fields: [productOptionId, productId], references: [id, productId], onDelete: Cascade, onUpdate: Cascade)
+  option          ProductOption        @relation("ProductOptionValues", fields: [productOptionId, productId], references: [id, productId], onDelete: Cascade, onUpdate: Cascade)
   variantMappings VariantOptionValue[] @relation("OptionValueVariantMappings")
 
   @@unique([id, productOptionId, productId])
@@ -1240,22 +1322,22 @@ model CheckoutQuote {
 /// the item listing and the cascade lookup; no second index on `order_id` is
 /// needed.
 model OrderItem {
-  id                     String   @id @default(uuid()) @db.Uuid
-  orderId                String   @map("order_id") @db.Uuid
-  variantId              String   @map("variant_id") @db.Uuid
-  productName            String   @map("product_name") @db.VarChar(255)
-  sku                    String   @db.VarChar(100)
-  variantOptionsSnapshot Json     @map("variant_options_snapshot") @db.JsonB
-  unitPrice              Decimal  @map("unit_price") @db.Decimal(12, 2)
+  id                     String    @id @default(uuid()) @db.Uuid
+  orderId                String    @map("order_id") @db.Uuid
+  variantId              String    @map("variant_id") @db.Uuid
+  productName            String    @map("product_name") @db.VarChar(255)
+  sku                    String    @db.VarChar(100)
+  variantOptionsSnapshot Json      @map("variant_options_snapshot") @db.JsonB
+  unitPrice              Decimal   @map("unit_price") @db.Decimal(12, 2)
   quantity               Int
-  lineTotal              Decimal  @map("line_total") @db.Decimal(12, 2)
+  lineTotal              Decimal   @map("line_total") @db.Decimal(12, 2)
   /// Cost is frozen at sale time; null remains an explicit unknown for legacy
   /// orders and variants without a recorded cost.
-  unitCostSnapshot       Decimal? @map("unit_cost_snapshot") @db.Decimal(12, 2)
-  costCurrency           String?  @map("cost_currency") @db.Char(3)
-  costSource             String?  @map("cost_source") @db.VarChar(30)
+  unitCostSnapshot       Decimal?  @map("unit_cost_snapshot") @db.Decimal(12, 2)
+  costCurrency           String?   @map("cost_currency") @db.Char(3)
+  costSource             String?   @map("cost_source") @db.VarChar(30)
   costCapturedAt         DateTime? @map("cost_captured_at") @db.Timestamptz
-  createdAt              DateTime @default(now()) @map("created_at") @db.Timestamptz
+  createdAt              DateTime  @default(now()) @map("created_at") @db.Timestamptz
 
   order   Order          @relation(fields: [orderId], references: [id], onDelete: Cascade, onUpdate: Cascade)
   variant ProductVariant @relation("OrderItemVariant", fields: [variantId], references: [id], onDelete: Restrict, onUpdate: Cascade)

@@ -67,6 +67,34 @@ export type Notification = Prisma.NotificationModel
  */
 export type TelegramOrderAlert = Prisma.TelegramOrderAlertModel
 /**
+ * Model PushSubscription
+ * A web push subscription for one user.
+ * 
+ * A subscription is bound to a browser/device via its push `endpoint`. The
+ * endpoint is globally unique: rebinding an endpoint to a different user
+ * transfers ownership (see ownership-transfer flow in the Phase 2 plan).
+ * `endpoint`, `p256dh` and `auth` are never returned in full by the API.
+ * 
+ * Soft-delete policy: subscriptions are never hard-deleted in normal
+ * operation. Use `isActive = false` and `revokedAt` to disable delivery,
+ * keeping the row (and any `PushDeliveryJob` history) intact.
+ */
+export type PushSubscription = Prisma.PushSubscriptionModel
+/**
+ * Model PushDeliveryJob
+ * Durable web push delivery outbox.
+ * 
+ * One job per (notification, pushSubscription), idempotent on that pair.
+ * Statuses: PENDING -> PROCESSING -> SENT | FAILED (no RETRY value; retries
+ * are PENDING with a future nextAttemptAt). `attempts` counts reservation
+ * events and is incremented exactly once, inside the step-2 critical section.
+ * 
+ * The frozen `payload` is stored at enqueue time and contains no sensitive
+ * data, so `notificationId` can be SetNull when a notification is deleted
+ * without losing push audit history.
+ */
+export type PushDeliveryJob = Prisma.PushDeliveryJobModel
+/**
  * Model Feedback
  * Feedback about the store and its services, owned by one customer.
  * 
