@@ -17,6 +17,7 @@ import { PaywayCallbackAckDto } from './dto/payway-callback-ack.dto.js';
 import { parsePaywayCallback } from './dto/payway-callback.parser.js';
 import { PaymentResponseDto } from './dto/payment-response.dto.js';
 import { PaymentsService } from './payments.service.js';
+import { SkipThrottle } from '@nestjs/throttler';
 
 /** The subset of an Express request this controller reads. */
 interface RawBodyRequest {
@@ -107,6 +108,7 @@ export class PaymentsController {
    * before anything is written. See `PaymentsService.handlePaywayCallback`.
    */
   @Post('payments/aba-payway/callback')
+  @SkipThrottle()
   @HttpCode(HttpStatus.OK)
   async handlePaywayCallback(
     @Req() request: RawBodyRequest,

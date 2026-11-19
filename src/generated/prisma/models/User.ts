@@ -253,6 +253,9 @@ export type UserWhereInput = {
   checkoutQuotes?: Prisma.CheckoutQuoteListRelationFilter
   promotionUsages?: Prisma.PromotionUsageListRelationFilter
   passwordResetTokens?: Prisma.PasswordResetTokenListRelationFilter
+  refreshSessions?: Prisma.RefreshSessionListRelationFilter
+  refreshRotationResults?: Prisma.RefreshRotationResultListRelationFilter
+  refreshOperationTombstones?: Prisma.RefreshOperationTombstoneListRelationFilter
   deliveryAssignments?: Prisma.DeliveryAssignmentListRelationFilter
   assignmentsMade?: Prisma.DeliveryAssignmentListRelationFilter
   codCollections?: Prisma.CodCollectionListRelationFilter
@@ -261,6 +264,8 @@ export type UserWhereInput = {
   feedback?: Prisma.FeedbackListRelationFilter
   notifications?: Prisma.NotificationListRelationFilter
   pushSubscriptions?: Prisma.PushSubscriptionListRelationFilter
+  roleChangesReceived?: Prisma.UserRoleChangeListRelationFilter
+  roleChangesMade?: Prisma.UserRoleChangeListRelationFilter
 }
 
 export type UserOrderByWithRelationInput = {
@@ -284,6 +289,9 @@ export type UserOrderByWithRelationInput = {
   checkoutQuotes?: Prisma.CheckoutQuoteOrderByRelationAggregateInput
   promotionUsages?: Prisma.PromotionUsageOrderByRelationAggregateInput
   passwordResetTokens?: Prisma.PasswordResetTokenOrderByRelationAggregateInput
+  refreshSessions?: Prisma.RefreshSessionOrderByRelationAggregateInput
+  refreshRotationResults?: Prisma.RefreshRotationResultOrderByRelationAggregateInput
+  refreshOperationTombstones?: Prisma.RefreshOperationTombstoneOrderByRelationAggregateInput
   deliveryAssignments?: Prisma.DeliveryAssignmentOrderByRelationAggregateInput
   assignmentsMade?: Prisma.DeliveryAssignmentOrderByRelationAggregateInput
   codCollections?: Prisma.CodCollectionOrderByRelationAggregateInput
@@ -292,6 +300,8 @@ export type UserOrderByWithRelationInput = {
   feedback?: Prisma.FeedbackOrderByRelationAggregateInput
   notifications?: Prisma.NotificationOrderByRelationAggregateInput
   pushSubscriptions?: Prisma.PushSubscriptionOrderByRelationAggregateInput
+  roleChangesReceived?: Prisma.UserRoleChangeOrderByRelationAggregateInput
+  roleChangesMade?: Prisma.UserRoleChangeOrderByRelationAggregateInput
 }
 
 export type UserWhereUniqueInput = Prisma.AtLeast<{
@@ -318,6 +328,9 @@ export type UserWhereUniqueInput = Prisma.AtLeast<{
   checkoutQuotes?: Prisma.CheckoutQuoteListRelationFilter
   promotionUsages?: Prisma.PromotionUsageListRelationFilter
   passwordResetTokens?: Prisma.PasswordResetTokenListRelationFilter
+  refreshSessions?: Prisma.RefreshSessionListRelationFilter
+  refreshRotationResults?: Prisma.RefreshRotationResultListRelationFilter
+  refreshOperationTombstones?: Prisma.RefreshOperationTombstoneListRelationFilter
   deliveryAssignments?: Prisma.DeliveryAssignmentListRelationFilter
   assignmentsMade?: Prisma.DeliveryAssignmentListRelationFilter
   codCollections?: Prisma.CodCollectionListRelationFilter
@@ -326,6 +339,8 @@ export type UserWhereUniqueInput = Prisma.AtLeast<{
   feedback?: Prisma.FeedbackListRelationFilter
   notifications?: Prisma.NotificationListRelationFilter
   pushSubscriptions?: Prisma.PushSubscriptionListRelationFilter
+  roleChangesReceived?: Prisma.UserRoleChangeListRelationFilter
+  roleChangesMade?: Prisma.UserRoleChangeListRelationFilter
 }, "id" | "email">
 
 export type UserOrderByWithAggregationInput = {
@@ -387,6 +402,9 @@ export type UserCreateInput = {
   checkoutQuotes?: Prisma.CheckoutQuoteCreateNestedManyWithoutUserInput
   promotionUsages?: Prisma.PromotionUsageCreateNestedManyWithoutUserInput
   passwordResetTokens?: Prisma.PasswordResetTokenCreateNestedManyWithoutUserInput
+  refreshSessions?: Prisma.RefreshSessionCreateNestedManyWithoutUserInput
+  refreshRotationResults?: Prisma.RefreshRotationResultCreateNestedManyWithoutUserInput
+  refreshOperationTombstones?: Prisma.RefreshOperationTombstoneCreateNestedManyWithoutUserInput
   deliveryAssignments?: Prisma.DeliveryAssignmentCreateNestedManyWithoutDeliveryStaffInput
   assignmentsMade?: Prisma.DeliveryAssignmentCreateNestedManyWithoutAssignedByInput
   codCollections?: Prisma.CodCollectionCreateNestedManyWithoutCollectedByInput
@@ -395,6 +413,8 @@ export type UserCreateInput = {
   feedback?: Prisma.FeedbackCreateNestedManyWithoutCustomerInput
   notifications?: Prisma.NotificationCreateNestedManyWithoutUserInput
   pushSubscriptions?: Prisma.PushSubscriptionCreateNestedManyWithoutUserInput
+  roleChangesReceived?: Prisma.UserRoleChangeCreateNestedManyWithoutTargetInput
+  roleChangesMade?: Prisma.UserRoleChangeCreateNestedManyWithoutActorInput
 }
 
 export type UserUncheckedCreateInput = {
@@ -418,6 +438,9 @@ export type UserUncheckedCreateInput = {
   checkoutQuotes?: Prisma.CheckoutQuoteUncheckedCreateNestedManyWithoutUserInput
   promotionUsages?: Prisma.PromotionUsageUncheckedCreateNestedManyWithoutUserInput
   passwordResetTokens?: Prisma.PasswordResetTokenUncheckedCreateNestedManyWithoutUserInput
+  refreshSessions?: Prisma.RefreshSessionUncheckedCreateNestedManyWithoutUserInput
+  refreshRotationResults?: Prisma.RefreshRotationResultUncheckedCreateNestedManyWithoutUserInput
+  refreshOperationTombstones?: Prisma.RefreshOperationTombstoneUncheckedCreateNestedManyWithoutUserInput
   deliveryAssignments?: Prisma.DeliveryAssignmentUncheckedCreateNestedManyWithoutDeliveryStaffInput
   assignmentsMade?: Prisma.DeliveryAssignmentUncheckedCreateNestedManyWithoutAssignedByInput
   codCollections?: Prisma.CodCollectionUncheckedCreateNestedManyWithoutCollectedByInput
@@ -426,6 +449,8 @@ export type UserUncheckedCreateInput = {
   feedback?: Prisma.FeedbackUncheckedCreateNestedManyWithoutCustomerInput
   notifications?: Prisma.NotificationUncheckedCreateNestedManyWithoutUserInput
   pushSubscriptions?: Prisma.PushSubscriptionUncheckedCreateNestedManyWithoutUserInput
+  roleChangesReceived?: Prisma.UserRoleChangeUncheckedCreateNestedManyWithoutTargetInput
+  roleChangesMade?: Prisma.UserRoleChangeUncheckedCreateNestedManyWithoutActorInput
 }
 
 export type UserUpdateInput = {
@@ -449,6 +474,9 @@ export type UserUpdateInput = {
   checkoutQuotes?: Prisma.CheckoutQuoteUpdateManyWithoutUserNestedInput
   promotionUsages?: Prisma.PromotionUsageUpdateManyWithoutUserNestedInput
   passwordResetTokens?: Prisma.PasswordResetTokenUpdateManyWithoutUserNestedInput
+  refreshSessions?: Prisma.RefreshSessionUpdateManyWithoutUserNestedInput
+  refreshRotationResults?: Prisma.RefreshRotationResultUpdateManyWithoutUserNestedInput
+  refreshOperationTombstones?: Prisma.RefreshOperationTombstoneUpdateManyWithoutUserNestedInput
   deliveryAssignments?: Prisma.DeliveryAssignmentUpdateManyWithoutDeliveryStaffNestedInput
   assignmentsMade?: Prisma.DeliveryAssignmentUpdateManyWithoutAssignedByNestedInput
   codCollections?: Prisma.CodCollectionUpdateManyWithoutCollectedByNestedInput
@@ -457,6 +485,8 @@ export type UserUpdateInput = {
   feedback?: Prisma.FeedbackUpdateManyWithoutCustomerNestedInput
   notifications?: Prisma.NotificationUpdateManyWithoutUserNestedInput
   pushSubscriptions?: Prisma.PushSubscriptionUpdateManyWithoutUserNestedInput
+  roleChangesReceived?: Prisma.UserRoleChangeUpdateManyWithoutTargetNestedInput
+  roleChangesMade?: Prisma.UserRoleChangeUpdateManyWithoutActorNestedInput
 }
 
 export type UserUncheckedUpdateInput = {
@@ -480,6 +510,9 @@ export type UserUncheckedUpdateInput = {
   checkoutQuotes?: Prisma.CheckoutQuoteUncheckedUpdateManyWithoutUserNestedInput
   promotionUsages?: Prisma.PromotionUsageUncheckedUpdateManyWithoutUserNestedInput
   passwordResetTokens?: Prisma.PasswordResetTokenUncheckedUpdateManyWithoutUserNestedInput
+  refreshSessions?: Prisma.RefreshSessionUncheckedUpdateManyWithoutUserNestedInput
+  refreshRotationResults?: Prisma.RefreshRotationResultUncheckedUpdateManyWithoutUserNestedInput
+  refreshOperationTombstones?: Prisma.RefreshOperationTombstoneUncheckedUpdateManyWithoutUserNestedInput
   deliveryAssignments?: Prisma.DeliveryAssignmentUncheckedUpdateManyWithoutDeliveryStaffNestedInput
   assignmentsMade?: Prisma.DeliveryAssignmentUncheckedUpdateManyWithoutAssignedByNestedInput
   codCollections?: Prisma.CodCollectionUncheckedUpdateManyWithoutCollectedByNestedInput
@@ -488,6 +521,8 @@ export type UserUncheckedUpdateInput = {
   feedback?: Prisma.FeedbackUncheckedUpdateManyWithoutCustomerNestedInput
   notifications?: Prisma.NotificationUncheckedUpdateManyWithoutUserNestedInput
   pushSubscriptions?: Prisma.PushSubscriptionUncheckedUpdateManyWithoutUserNestedInput
+  roleChangesReceived?: Prisma.UserRoleChangeUncheckedUpdateManyWithoutTargetNestedInput
+  roleChangesMade?: Prisma.UserRoleChangeUncheckedUpdateManyWithoutActorNestedInput
 }
 
 export type UserCreateManyInput = {
@@ -616,6 +651,34 @@ export type DateTimeFieldUpdateOperationsInput = {
   set?: Date | string
 }
 
+export type UserCreateNestedOneWithoutRoleChangesMadeInput = {
+  create?: Prisma.XOR<Prisma.UserCreateWithoutRoleChangesMadeInput, Prisma.UserUncheckedCreateWithoutRoleChangesMadeInput>
+  connectOrCreate?: Prisma.UserCreateOrConnectWithoutRoleChangesMadeInput
+  connect?: Prisma.UserWhereUniqueInput
+}
+
+export type UserCreateNestedOneWithoutRoleChangesReceivedInput = {
+  create?: Prisma.XOR<Prisma.UserCreateWithoutRoleChangesReceivedInput, Prisma.UserUncheckedCreateWithoutRoleChangesReceivedInput>
+  connectOrCreate?: Prisma.UserCreateOrConnectWithoutRoleChangesReceivedInput
+  connect?: Prisma.UserWhereUniqueInput
+}
+
+export type UserUpdateOneRequiredWithoutRoleChangesMadeNestedInput = {
+  create?: Prisma.XOR<Prisma.UserCreateWithoutRoleChangesMadeInput, Prisma.UserUncheckedCreateWithoutRoleChangesMadeInput>
+  connectOrCreate?: Prisma.UserCreateOrConnectWithoutRoleChangesMadeInput
+  upsert?: Prisma.UserUpsertWithoutRoleChangesMadeInput
+  connect?: Prisma.UserWhereUniqueInput
+  update?: Prisma.XOR<Prisma.XOR<Prisma.UserUpdateToOneWithWhereWithoutRoleChangesMadeInput, Prisma.UserUpdateWithoutRoleChangesMadeInput>, Prisma.UserUncheckedUpdateWithoutRoleChangesMadeInput>
+}
+
+export type UserUpdateOneRequiredWithoutRoleChangesReceivedNestedInput = {
+  create?: Prisma.XOR<Prisma.UserCreateWithoutRoleChangesReceivedInput, Prisma.UserUncheckedCreateWithoutRoleChangesReceivedInput>
+  connectOrCreate?: Prisma.UserCreateOrConnectWithoutRoleChangesReceivedInput
+  upsert?: Prisma.UserUpsertWithoutRoleChangesReceivedInput
+  connect?: Prisma.UserWhereUniqueInput
+  update?: Prisma.XOR<Prisma.XOR<Prisma.UserUpdateToOneWithWhereWithoutRoleChangesReceivedInput, Prisma.UserUpdateWithoutRoleChangesReceivedInput>, Prisma.UserUncheckedUpdateWithoutRoleChangesReceivedInput>
+}
+
 export type UserCreateNestedOneWithoutNotificationsInput = {
   create?: Prisma.XOR<Prisma.UserCreateWithoutNotificationsInput, Prisma.UserUncheckedCreateWithoutNotificationsInput>
   connectOrCreate?: Prisma.UserCreateOrConnectWithoutNotificationsInput
@@ -684,6 +747,48 @@ export type UserUpdateOneRequiredWithoutPasswordResetTokensNestedInput = {
   upsert?: Prisma.UserUpsertWithoutPasswordResetTokensInput
   connect?: Prisma.UserWhereUniqueInput
   update?: Prisma.XOR<Prisma.XOR<Prisma.UserUpdateToOneWithWhereWithoutPasswordResetTokensInput, Prisma.UserUpdateWithoutPasswordResetTokensInput>, Prisma.UserUncheckedUpdateWithoutPasswordResetTokensInput>
+}
+
+export type UserCreateNestedOneWithoutRefreshSessionsInput = {
+  create?: Prisma.XOR<Prisma.UserCreateWithoutRefreshSessionsInput, Prisma.UserUncheckedCreateWithoutRefreshSessionsInput>
+  connectOrCreate?: Prisma.UserCreateOrConnectWithoutRefreshSessionsInput
+  connect?: Prisma.UserWhereUniqueInput
+}
+
+export type UserUpdateOneRequiredWithoutRefreshSessionsNestedInput = {
+  create?: Prisma.XOR<Prisma.UserCreateWithoutRefreshSessionsInput, Prisma.UserUncheckedCreateWithoutRefreshSessionsInput>
+  connectOrCreate?: Prisma.UserCreateOrConnectWithoutRefreshSessionsInput
+  upsert?: Prisma.UserUpsertWithoutRefreshSessionsInput
+  connect?: Prisma.UserWhereUniqueInput
+  update?: Prisma.XOR<Prisma.XOR<Prisma.UserUpdateToOneWithWhereWithoutRefreshSessionsInput, Prisma.UserUpdateWithoutRefreshSessionsInput>, Prisma.UserUncheckedUpdateWithoutRefreshSessionsInput>
+}
+
+export type UserCreateNestedOneWithoutRefreshRotationResultsInput = {
+  create?: Prisma.XOR<Prisma.UserCreateWithoutRefreshRotationResultsInput, Prisma.UserUncheckedCreateWithoutRefreshRotationResultsInput>
+  connectOrCreate?: Prisma.UserCreateOrConnectWithoutRefreshRotationResultsInput
+  connect?: Prisma.UserWhereUniqueInput
+}
+
+export type UserUpdateOneRequiredWithoutRefreshRotationResultsNestedInput = {
+  create?: Prisma.XOR<Prisma.UserCreateWithoutRefreshRotationResultsInput, Prisma.UserUncheckedCreateWithoutRefreshRotationResultsInput>
+  connectOrCreate?: Prisma.UserCreateOrConnectWithoutRefreshRotationResultsInput
+  upsert?: Prisma.UserUpsertWithoutRefreshRotationResultsInput
+  connect?: Prisma.UserWhereUniqueInput
+  update?: Prisma.XOR<Prisma.XOR<Prisma.UserUpdateToOneWithWhereWithoutRefreshRotationResultsInput, Prisma.UserUpdateWithoutRefreshRotationResultsInput>, Prisma.UserUncheckedUpdateWithoutRefreshRotationResultsInput>
+}
+
+export type UserCreateNestedOneWithoutRefreshOperationTombstonesInput = {
+  create?: Prisma.XOR<Prisma.UserCreateWithoutRefreshOperationTombstonesInput, Prisma.UserUncheckedCreateWithoutRefreshOperationTombstonesInput>
+  connectOrCreate?: Prisma.UserCreateOrConnectWithoutRefreshOperationTombstonesInput
+  connect?: Prisma.UserWhereUniqueInput
+}
+
+export type UserUpdateOneRequiredWithoutRefreshOperationTombstonesNestedInput = {
+  create?: Prisma.XOR<Prisma.UserCreateWithoutRefreshOperationTombstonesInput, Prisma.UserUncheckedCreateWithoutRefreshOperationTombstonesInput>
+  connectOrCreate?: Prisma.UserCreateOrConnectWithoutRefreshOperationTombstonesInput
+  upsert?: Prisma.UserUpsertWithoutRefreshOperationTombstonesInput
+  connect?: Prisma.UserWhereUniqueInput
+  update?: Prisma.XOR<Prisma.XOR<Prisma.UserUpdateToOneWithWhereWithoutRefreshOperationTombstonesInput, Prisma.UserUpdateWithoutRefreshOperationTombstonesInput>, Prisma.UserUncheckedUpdateWithoutRefreshOperationTombstonesInput>
 }
 
 export type UserCreateNestedOneWithoutVariantCostChangesInput = {
@@ -828,6 +933,318 @@ export type UserUpdateOneRequiredWithoutPromotionUsagesNestedInput = {
   update?: Prisma.XOR<Prisma.XOR<Prisma.UserUpdateToOneWithWhereWithoutPromotionUsagesInput, Prisma.UserUpdateWithoutPromotionUsagesInput>, Prisma.UserUncheckedUpdateWithoutPromotionUsagesInput>
 }
 
+export type UserCreateWithoutRoleChangesMadeInput = {
+  id?: string
+  firstName: string
+  lastName: string
+  email: string
+  passwordHash: string
+  phone?: string | null
+  status: string
+  role?: $Enums.Role
+  emailVerifiedAt?: Date | string | null
+  lastLoginAt?: Date | string | null
+  passwordChangedAt?: Date | string | null
+  createdAt?: Date | string
+  updatedAt?: Date | string
+  addresses?: Prisma.AddressCreateNestedManyWithoutUserInput
+  cart?: Prisma.CartCreateNestedOneWithoutUserInput
+  wishlist?: Prisma.WishlistCreateNestedOneWithoutUserInput
+  orders?: Prisma.OrderCreateNestedManyWithoutUserInput
+  checkoutQuotes?: Prisma.CheckoutQuoteCreateNestedManyWithoutUserInput
+  promotionUsages?: Prisma.PromotionUsageCreateNestedManyWithoutUserInput
+  passwordResetTokens?: Prisma.PasswordResetTokenCreateNestedManyWithoutUserInput
+  refreshSessions?: Prisma.RefreshSessionCreateNestedManyWithoutUserInput
+  refreshRotationResults?: Prisma.RefreshRotationResultCreateNestedManyWithoutUserInput
+  refreshOperationTombstones?: Prisma.RefreshOperationTombstoneCreateNestedManyWithoutUserInput
+  deliveryAssignments?: Prisma.DeliveryAssignmentCreateNestedManyWithoutDeliveryStaffInput
+  assignmentsMade?: Prisma.DeliveryAssignmentCreateNestedManyWithoutAssignedByInput
+  codCollections?: Prisma.CodCollectionCreateNestedManyWithoutCollectedByInput
+  variantCostChanges?: Prisma.VariantCostHistoryCreateNestedManyWithoutCreatedByInput
+  identities?: Prisma.UserIdentityCreateNestedManyWithoutUserInput
+  feedback?: Prisma.FeedbackCreateNestedManyWithoutCustomerInput
+  notifications?: Prisma.NotificationCreateNestedManyWithoutUserInput
+  pushSubscriptions?: Prisma.PushSubscriptionCreateNestedManyWithoutUserInput
+  roleChangesReceived?: Prisma.UserRoleChangeCreateNestedManyWithoutTargetInput
+}
+
+export type UserUncheckedCreateWithoutRoleChangesMadeInput = {
+  id?: string
+  firstName: string
+  lastName: string
+  email: string
+  passwordHash: string
+  phone?: string | null
+  status: string
+  role?: $Enums.Role
+  emailVerifiedAt?: Date | string | null
+  lastLoginAt?: Date | string | null
+  passwordChangedAt?: Date | string | null
+  createdAt?: Date | string
+  updatedAt?: Date | string
+  addresses?: Prisma.AddressUncheckedCreateNestedManyWithoutUserInput
+  cart?: Prisma.CartUncheckedCreateNestedOneWithoutUserInput
+  wishlist?: Prisma.WishlistUncheckedCreateNestedOneWithoutUserInput
+  orders?: Prisma.OrderUncheckedCreateNestedManyWithoutUserInput
+  checkoutQuotes?: Prisma.CheckoutQuoteUncheckedCreateNestedManyWithoutUserInput
+  promotionUsages?: Prisma.PromotionUsageUncheckedCreateNestedManyWithoutUserInput
+  passwordResetTokens?: Prisma.PasswordResetTokenUncheckedCreateNestedManyWithoutUserInput
+  refreshSessions?: Prisma.RefreshSessionUncheckedCreateNestedManyWithoutUserInput
+  refreshRotationResults?: Prisma.RefreshRotationResultUncheckedCreateNestedManyWithoutUserInput
+  refreshOperationTombstones?: Prisma.RefreshOperationTombstoneUncheckedCreateNestedManyWithoutUserInput
+  deliveryAssignments?: Prisma.DeliveryAssignmentUncheckedCreateNestedManyWithoutDeliveryStaffInput
+  assignmentsMade?: Prisma.DeliveryAssignmentUncheckedCreateNestedManyWithoutAssignedByInput
+  codCollections?: Prisma.CodCollectionUncheckedCreateNestedManyWithoutCollectedByInput
+  variantCostChanges?: Prisma.VariantCostHistoryUncheckedCreateNestedManyWithoutCreatedByInput
+  identities?: Prisma.UserIdentityUncheckedCreateNestedManyWithoutUserInput
+  feedback?: Prisma.FeedbackUncheckedCreateNestedManyWithoutCustomerInput
+  notifications?: Prisma.NotificationUncheckedCreateNestedManyWithoutUserInput
+  pushSubscriptions?: Prisma.PushSubscriptionUncheckedCreateNestedManyWithoutUserInput
+  roleChangesReceived?: Prisma.UserRoleChangeUncheckedCreateNestedManyWithoutTargetInput
+}
+
+export type UserCreateOrConnectWithoutRoleChangesMadeInput = {
+  where: Prisma.UserWhereUniqueInput
+  create: Prisma.XOR<Prisma.UserCreateWithoutRoleChangesMadeInput, Prisma.UserUncheckedCreateWithoutRoleChangesMadeInput>
+}
+
+export type UserCreateWithoutRoleChangesReceivedInput = {
+  id?: string
+  firstName: string
+  lastName: string
+  email: string
+  passwordHash: string
+  phone?: string | null
+  status: string
+  role?: $Enums.Role
+  emailVerifiedAt?: Date | string | null
+  lastLoginAt?: Date | string | null
+  passwordChangedAt?: Date | string | null
+  createdAt?: Date | string
+  updatedAt?: Date | string
+  addresses?: Prisma.AddressCreateNestedManyWithoutUserInput
+  cart?: Prisma.CartCreateNestedOneWithoutUserInput
+  wishlist?: Prisma.WishlistCreateNestedOneWithoutUserInput
+  orders?: Prisma.OrderCreateNestedManyWithoutUserInput
+  checkoutQuotes?: Prisma.CheckoutQuoteCreateNestedManyWithoutUserInput
+  promotionUsages?: Prisma.PromotionUsageCreateNestedManyWithoutUserInput
+  passwordResetTokens?: Prisma.PasswordResetTokenCreateNestedManyWithoutUserInput
+  refreshSessions?: Prisma.RefreshSessionCreateNestedManyWithoutUserInput
+  refreshRotationResults?: Prisma.RefreshRotationResultCreateNestedManyWithoutUserInput
+  refreshOperationTombstones?: Prisma.RefreshOperationTombstoneCreateNestedManyWithoutUserInput
+  deliveryAssignments?: Prisma.DeliveryAssignmentCreateNestedManyWithoutDeliveryStaffInput
+  assignmentsMade?: Prisma.DeliveryAssignmentCreateNestedManyWithoutAssignedByInput
+  codCollections?: Prisma.CodCollectionCreateNestedManyWithoutCollectedByInput
+  variantCostChanges?: Prisma.VariantCostHistoryCreateNestedManyWithoutCreatedByInput
+  identities?: Prisma.UserIdentityCreateNestedManyWithoutUserInput
+  feedback?: Prisma.FeedbackCreateNestedManyWithoutCustomerInput
+  notifications?: Prisma.NotificationCreateNestedManyWithoutUserInput
+  pushSubscriptions?: Prisma.PushSubscriptionCreateNestedManyWithoutUserInput
+  roleChangesMade?: Prisma.UserRoleChangeCreateNestedManyWithoutActorInput
+}
+
+export type UserUncheckedCreateWithoutRoleChangesReceivedInput = {
+  id?: string
+  firstName: string
+  lastName: string
+  email: string
+  passwordHash: string
+  phone?: string | null
+  status: string
+  role?: $Enums.Role
+  emailVerifiedAt?: Date | string | null
+  lastLoginAt?: Date | string | null
+  passwordChangedAt?: Date | string | null
+  createdAt?: Date | string
+  updatedAt?: Date | string
+  addresses?: Prisma.AddressUncheckedCreateNestedManyWithoutUserInput
+  cart?: Prisma.CartUncheckedCreateNestedOneWithoutUserInput
+  wishlist?: Prisma.WishlistUncheckedCreateNestedOneWithoutUserInput
+  orders?: Prisma.OrderUncheckedCreateNestedManyWithoutUserInput
+  checkoutQuotes?: Prisma.CheckoutQuoteUncheckedCreateNestedManyWithoutUserInput
+  promotionUsages?: Prisma.PromotionUsageUncheckedCreateNestedManyWithoutUserInput
+  passwordResetTokens?: Prisma.PasswordResetTokenUncheckedCreateNestedManyWithoutUserInput
+  refreshSessions?: Prisma.RefreshSessionUncheckedCreateNestedManyWithoutUserInput
+  refreshRotationResults?: Prisma.RefreshRotationResultUncheckedCreateNestedManyWithoutUserInput
+  refreshOperationTombstones?: Prisma.RefreshOperationTombstoneUncheckedCreateNestedManyWithoutUserInput
+  deliveryAssignments?: Prisma.DeliveryAssignmentUncheckedCreateNestedManyWithoutDeliveryStaffInput
+  assignmentsMade?: Prisma.DeliveryAssignmentUncheckedCreateNestedManyWithoutAssignedByInput
+  codCollections?: Prisma.CodCollectionUncheckedCreateNestedManyWithoutCollectedByInput
+  variantCostChanges?: Prisma.VariantCostHistoryUncheckedCreateNestedManyWithoutCreatedByInput
+  identities?: Prisma.UserIdentityUncheckedCreateNestedManyWithoutUserInput
+  feedback?: Prisma.FeedbackUncheckedCreateNestedManyWithoutCustomerInput
+  notifications?: Prisma.NotificationUncheckedCreateNestedManyWithoutUserInput
+  pushSubscriptions?: Prisma.PushSubscriptionUncheckedCreateNestedManyWithoutUserInput
+  roleChangesMade?: Prisma.UserRoleChangeUncheckedCreateNestedManyWithoutActorInput
+}
+
+export type UserCreateOrConnectWithoutRoleChangesReceivedInput = {
+  where: Prisma.UserWhereUniqueInput
+  create: Prisma.XOR<Prisma.UserCreateWithoutRoleChangesReceivedInput, Prisma.UserUncheckedCreateWithoutRoleChangesReceivedInput>
+}
+
+export type UserUpsertWithoutRoleChangesMadeInput = {
+  update: Prisma.XOR<Prisma.UserUpdateWithoutRoleChangesMadeInput, Prisma.UserUncheckedUpdateWithoutRoleChangesMadeInput>
+  create: Prisma.XOR<Prisma.UserCreateWithoutRoleChangesMadeInput, Prisma.UserUncheckedCreateWithoutRoleChangesMadeInput>
+  where?: Prisma.UserWhereInput
+}
+
+export type UserUpdateToOneWithWhereWithoutRoleChangesMadeInput = {
+  where?: Prisma.UserWhereInput
+  data: Prisma.XOR<Prisma.UserUpdateWithoutRoleChangesMadeInput, Prisma.UserUncheckedUpdateWithoutRoleChangesMadeInput>
+}
+
+export type UserUpdateWithoutRoleChangesMadeInput = {
+  id?: Prisma.StringFieldUpdateOperationsInput | string
+  firstName?: Prisma.StringFieldUpdateOperationsInput | string
+  lastName?: Prisma.StringFieldUpdateOperationsInput | string
+  email?: Prisma.StringFieldUpdateOperationsInput | string
+  passwordHash?: Prisma.StringFieldUpdateOperationsInput | string
+  phone?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  status?: Prisma.StringFieldUpdateOperationsInput | string
+  role?: Prisma.EnumRoleFieldUpdateOperationsInput | $Enums.Role
+  emailVerifiedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  lastLoginAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  passwordChangedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  addresses?: Prisma.AddressUpdateManyWithoutUserNestedInput
+  cart?: Prisma.CartUpdateOneWithoutUserNestedInput
+  wishlist?: Prisma.WishlistUpdateOneWithoutUserNestedInput
+  orders?: Prisma.OrderUpdateManyWithoutUserNestedInput
+  checkoutQuotes?: Prisma.CheckoutQuoteUpdateManyWithoutUserNestedInput
+  promotionUsages?: Prisma.PromotionUsageUpdateManyWithoutUserNestedInput
+  passwordResetTokens?: Prisma.PasswordResetTokenUpdateManyWithoutUserNestedInput
+  refreshSessions?: Prisma.RefreshSessionUpdateManyWithoutUserNestedInput
+  refreshRotationResults?: Prisma.RefreshRotationResultUpdateManyWithoutUserNestedInput
+  refreshOperationTombstones?: Prisma.RefreshOperationTombstoneUpdateManyWithoutUserNestedInput
+  deliveryAssignments?: Prisma.DeliveryAssignmentUpdateManyWithoutDeliveryStaffNestedInput
+  assignmentsMade?: Prisma.DeliveryAssignmentUpdateManyWithoutAssignedByNestedInput
+  codCollections?: Prisma.CodCollectionUpdateManyWithoutCollectedByNestedInput
+  variantCostChanges?: Prisma.VariantCostHistoryUpdateManyWithoutCreatedByNestedInput
+  identities?: Prisma.UserIdentityUpdateManyWithoutUserNestedInput
+  feedback?: Prisma.FeedbackUpdateManyWithoutCustomerNestedInput
+  notifications?: Prisma.NotificationUpdateManyWithoutUserNestedInput
+  pushSubscriptions?: Prisma.PushSubscriptionUpdateManyWithoutUserNestedInput
+  roleChangesReceived?: Prisma.UserRoleChangeUpdateManyWithoutTargetNestedInput
+}
+
+export type UserUncheckedUpdateWithoutRoleChangesMadeInput = {
+  id?: Prisma.StringFieldUpdateOperationsInput | string
+  firstName?: Prisma.StringFieldUpdateOperationsInput | string
+  lastName?: Prisma.StringFieldUpdateOperationsInput | string
+  email?: Prisma.StringFieldUpdateOperationsInput | string
+  passwordHash?: Prisma.StringFieldUpdateOperationsInput | string
+  phone?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  status?: Prisma.StringFieldUpdateOperationsInput | string
+  role?: Prisma.EnumRoleFieldUpdateOperationsInput | $Enums.Role
+  emailVerifiedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  lastLoginAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  passwordChangedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  addresses?: Prisma.AddressUncheckedUpdateManyWithoutUserNestedInput
+  cart?: Prisma.CartUncheckedUpdateOneWithoutUserNestedInput
+  wishlist?: Prisma.WishlistUncheckedUpdateOneWithoutUserNestedInput
+  orders?: Prisma.OrderUncheckedUpdateManyWithoutUserNestedInput
+  checkoutQuotes?: Prisma.CheckoutQuoteUncheckedUpdateManyWithoutUserNestedInput
+  promotionUsages?: Prisma.PromotionUsageUncheckedUpdateManyWithoutUserNestedInput
+  passwordResetTokens?: Prisma.PasswordResetTokenUncheckedUpdateManyWithoutUserNestedInput
+  refreshSessions?: Prisma.RefreshSessionUncheckedUpdateManyWithoutUserNestedInput
+  refreshRotationResults?: Prisma.RefreshRotationResultUncheckedUpdateManyWithoutUserNestedInput
+  refreshOperationTombstones?: Prisma.RefreshOperationTombstoneUncheckedUpdateManyWithoutUserNestedInput
+  deliveryAssignments?: Prisma.DeliveryAssignmentUncheckedUpdateManyWithoutDeliveryStaffNestedInput
+  assignmentsMade?: Prisma.DeliveryAssignmentUncheckedUpdateManyWithoutAssignedByNestedInput
+  codCollections?: Prisma.CodCollectionUncheckedUpdateManyWithoutCollectedByNestedInput
+  variantCostChanges?: Prisma.VariantCostHistoryUncheckedUpdateManyWithoutCreatedByNestedInput
+  identities?: Prisma.UserIdentityUncheckedUpdateManyWithoutUserNestedInput
+  feedback?: Prisma.FeedbackUncheckedUpdateManyWithoutCustomerNestedInput
+  notifications?: Prisma.NotificationUncheckedUpdateManyWithoutUserNestedInput
+  pushSubscriptions?: Prisma.PushSubscriptionUncheckedUpdateManyWithoutUserNestedInput
+  roleChangesReceived?: Prisma.UserRoleChangeUncheckedUpdateManyWithoutTargetNestedInput
+}
+
+export type UserUpsertWithoutRoleChangesReceivedInput = {
+  update: Prisma.XOR<Prisma.UserUpdateWithoutRoleChangesReceivedInput, Prisma.UserUncheckedUpdateWithoutRoleChangesReceivedInput>
+  create: Prisma.XOR<Prisma.UserCreateWithoutRoleChangesReceivedInput, Prisma.UserUncheckedCreateWithoutRoleChangesReceivedInput>
+  where?: Prisma.UserWhereInput
+}
+
+export type UserUpdateToOneWithWhereWithoutRoleChangesReceivedInput = {
+  where?: Prisma.UserWhereInput
+  data: Prisma.XOR<Prisma.UserUpdateWithoutRoleChangesReceivedInput, Prisma.UserUncheckedUpdateWithoutRoleChangesReceivedInput>
+}
+
+export type UserUpdateWithoutRoleChangesReceivedInput = {
+  id?: Prisma.StringFieldUpdateOperationsInput | string
+  firstName?: Prisma.StringFieldUpdateOperationsInput | string
+  lastName?: Prisma.StringFieldUpdateOperationsInput | string
+  email?: Prisma.StringFieldUpdateOperationsInput | string
+  passwordHash?: Prisma.StringFieldUpdateOperationsInput | string
+  phone?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  status?: Prisma.StringFieldUpdateOperationsInput | string
+  role?: Prisma.EnumRoleFieldUpdateOperationsInput | $Enums.Role
+  emailVerifiedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  lastLoginAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  passwordChangedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  addresses?: Prisma.AddressUpdateManyWithoutUserNestedInput
+  cart?: Prisma.CartUpdateOneWithoutUserNestedInput
+  wishlist?: Prisma.WishlistUpdateOneWithoutUserNestedInput
+  orders?: Prisma.OrderUpdateManyWithoutUserNestedInput
+  checkoutQuotes?: Prisma.CheckoutQuoteUpdateManyWithoutUserNestedInput
+  promotionUsages?: Prisma.PromotionUsageUpdateManyWithoutUserNestedInput
+  passwordResetTokens?: Prisma.PasswordResetTokenUpdateManyWithoutUserNestedInput
+  refreshSessions?: Prisma.RefreshSessionUpdateManyWithoutUserNestedInput
+  refreshRotationResults?: Prisma.RefreshRotationResultUpdateManyWithoutUserNestedInput
+  refreshOperationTombstones?: Prisma.RefreshOperationTombstoneUpdateManyWithoutUserNestedInput
+  deliveryAssignments?: Prisma.DeliveryAssignmentUpdateManyWithoutDeliveryStaffNestedInput
+  assignmentsMade?: Prisma.DeliveryAssignmentUpdateManyWithoutAssignedByNestedInput
+  codCollections?: Prisma.CodCollectionUpdateManyWithoutCollectedByNestedInput
+  variantCostChanges?: Prisma.VariantCostHistoryUpdateManyWithoutCreatedByNestedInput
+  identities?: Prisma.UserIdentityUpdateManyWithoutUserNestedInput
+  feedback?: Prisma.FeedbackUpdateManyWithoutCustomerNestedInput
+  notifications?: Prisma.NotificationUpdateManyWithoutUserNestedInput
+  pushSubscriptions?: Prisma.PushSubscriptionUpdateManyWithoutUserNestedInput
+  roleChangesMade?: Prisma.UserRoleChangeUpdateManyWithoutActorNestedInput
+}
+
+export type UserUncheckedUpdateWithoutRoleChangesReceivedInput = {
+  id?: Prisma.StringFieldUpdateOperationsInput | string
+  firstName?: Prisma.StringFieldUpdateOperationsInput | string
+  lastName?: Prisma.StringFieldUpdateOperationsInput | string
+  email?: Prisma.StringFieldUpdateOperationsInput | string
+  passwordHash?: Prisma.StringFieldUpdateOperationsInput | string
+  phone?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  status?: Prisma.StringFieldUpdateOperationsInput | string
+  role?: Prisma.EnumRoleFieldUpdateOperationsInput | $Enums.Role
+  emailVerifiedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  lastLoginAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  passwordChangedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  addresses?: Prisma.AddressUncheckedUpdateManyWithoutUserNestedInput
+  cart?: Prisma.CartUncheckedUpdateOneWithoutUserNestedInput
+  wishlist?: Prisma.WishlistUncheckedUpdateOneWithoutUserNestedInput
+  orders?: Prisma.OrderUncheckedUpdateManyWithoutUserNestedInput
+  checkoutQuotes?: Prisma.CheckoutQuoteUncheckedUpdateManyWithoutUserNestedInput
+  promotionUsages?: Prisma.PromotionUsageUncheckedUpdateManyWithoutUserNestedInput
+  passwordResetTokens?: Prisma.PasswordResetTokenUncheckedUpdateManyWithoutUserNestedInput
+  refreshSessions?: Prisma.RefreshSessionUncheckedUpdateManyWithoutUserNestedInput
+  refreshRotationResults?: Prisma.RefreshRotationResultUncheckedUpdateManyWithoutUserNestedInput
+  refreshOperationTombstones?: Prisma.RefreshOperationTombstoneUncheckedUpdateManyWithoutUserNestedInput
+  deliveryAssignments?: Prisma.DeliveryAssignmentUncheckedUpdateManyWithoutDeliveryStaffNestedInput
+  assignmentsMade?: Prisma.DeliveryAssignmentUncheckedUpdateManyWithoutAssignedByNestedInput
+  codCollections?: Prisma.CodCollectionUncheckedUpdateManyWithoutCollectedByNestedInput
+  variantCostChanges?: Prisma.VariantCostHistoryUncheckedUpdateManyWithoutCreatedByNestedInput
+  identities?: Prisma.UserIdentityUncheckedUpdateManyWithoutUserNestedInput
+  feedback?: Prisma.FeedbackUncheckedUpdateManyWithoutCustomerNestedInput
+  notifications?: Prisma.NotificationUncheckedUpdateManyWithoutUserNestedInput
+  pushSubscriptions?: Prisma.PushSubscriptionUncheckedUpdateManyWithoutUserNestedInput
+  roleChangesMade?: Prisma.UserRoleChangeUncheckedUpdateManyWithoutActorNestedInput
+}
+
 export type UserCreateWithoutNotificationsInput = {
   id?: string
   firstName: string
@@ -849,6 +1266,9 @@ export type UserCreateWithoutNotificationsInput = {
   checkoutQuotes?: Prisma.CheckoutQuoteCreateNestedManyWithoutUserInput
   promotionUsages?: Prisma.PromotionUsageCreateNestedManyWithoutUserInput
   passwordResetTokens?: Prisma.PasswordResetTokenCreateNestedManyWithoutUserInput
+  refreshSessions?: Prisma.RefreshSessionCreateNestedManyWithoutUserInput
+  refreshRotationResults?: Prisma.RefreshRotationResultCreateNestedManyWithoutUserInput
+  refreshOperationTombstones?: Prisma.RefreshOperationTombstoneCreateNestedManyWithoutUserInput
   deliveryAssignments?: Prisma.DeliveryAssignmentCreateNestedManyWithoutDeliveryStaffInput
   assignmentsMade?: Prisma.DeliveryAssignmentCreateNestedManyWithoutAssignedByInput
   codCollections?: Prisma.CodCollectionCreateNestedManyWithoutCollectedByInput
@@ -856,6 +1276,8 @@ export type UserCreateWithoutNotificationsInput = {
   identities?: Prisma.UserIdentityCreateNestedManyWithoutUserInput
   feedback?: Prisma.FeedbackCreateNestedManyWithoutCustomerInput
   pushSubscriptions?: Prisma.PushSubscriptionCreateNestedManyWithoutUserInput
+  roleChangesReceived?: Prisma.UserRoleChangeCreateNestedManyWithoutTargetInput
+  roleChangesMade?: Prisma.UserRoleChangeCreateNestedManyWithoutActorInput
 }
 
 export type UserUncheckedCreateWithoutNotificationsInput = {
@@ -879,6 +1301,9 @@ export type UserUncheckedCreateWithoutNotificationsInput = {
   checkoutQuotes?: Prisma.CheckoutQuoteUncheckedCreateNestedManyWithoutUserInput
   promotionUsages?: Prisma.PromotionUsageUncheckedCreateNestedManyWithoutUserInput
   passwordResetTokens?: Prisma.PasswordResetTokenUncheckedCreateNestedManyWithoutUserInput
+  refreshSessions?: Prisma.RefreshSessionUncheckedCreateNestedManyWithoutUserInput
+  refreshRotationResults?: Prisma.RefreshRotationResultUncheckedCreateNestedManyWithoutUserInput
+  refreshOperationTombstones?: Prisma.RefreshOperationTombstoneUncheckedCreateNestedManyWithoutUserInput
   deliveryAssignments?: Prisma.DeliveryAssignmentUncheckedCreateNestedManyWithoutDeliveryStaffInput
   assignmentsMade?: Prisma.DeliveryAssignmentUncheckedCreateNestedManyWithoutAssignedByInput
   codCollections?: Prisma.CodCollectionUncheckedCreateNestedManyWithoutCollectedByInput
@@ -886,6 +1311,8 @@ export type UserUncheckedCreateWithoutNotificationsInput = {
   identities?: Prisma.UserIdentityUncheckedCreateNestedManyWithoutUserInput
   feedback?: Prisma.FeedbackUncheckedCreateNestedManyWithoutCustomerInput
   pushSubscriptions?: Prisma.PushSubscriptionUncheckedCreateNestedManyWithoutUserInput
+  roleChangesReceived?: Prisma.UserRoleChangeUncheckedCreateNestedManyWithoutTargetInput
+  roleChangesMade?: Prisma.UserRoleChangeUncheckedCreateNestedManyWithoutActorInput
 }
 
 export type UserCreateOrConnectWithoutNotificationsInput = {
@@ -925,6 +1352,9 @@ export type UserUpdateWithoutNotificationsInput = {
   checkoutQuotes?: Prisma.CheckoutQuoteUpdateManyWithoutUserNestedInput
   promotionUsages?: Prisma.PromotionUsageUpdateManyWithoutUserNestedInput
   passwordResetTokens?: Prisma.PasswordResetTokenUpdateManyWithoutUserNestedInput
+  refreshSessions?: Prisma.RefreshSessionUpdateManyWithoutUserNestedInput
+  refreshRotationResults?: Prisma.RefreshRotationResultUpdateManyWithoutUserNestedInput
+  refreshOperationTombstones?: Prisma.RefreshOperationTombstoneUpdateManyWithoutUserNestedInput
   deliveryAssignments?: Prisma.DeliveryAssignmentUpdateManyWithoutDeliveryStaffNestedInput
   assignmentsMade?: Prisma.DeliveryAssignmentUpdateManyWithoutAssignedByNestedInput
   codCollections?: Prisma.CodCollectionUpdateManyWithoutCollectedByNestedInput
@@ -932,6 +1362,8 @@ export type UserUpdateWithoutNotificationsInput = {
   identities?: Prisma.UserIdentityUpdateManyWithoutUserNestedInput
   feedback?: Prisma.FeedbackUpdateManyWithoutCustomerNestedInput
   pushSubscriptions?: Prisma.PushSubscriptionUpdateManyWithoutUserNestedInput
+  roleChangesReceived?: Prisma.UserRoleChangeUpdateManyWithoutTargetNestedInput
+  roleChangesMade?: Prisma.UserRoleChangeUpdateManyWithoutActorNestedInput
 }
 
 export type UserUncheckedUpdateWithoutNotificationsInput = {
@@ -955,6 +1387,9 @@ export type UserUncheckedUpdateWithoutNotificationsInput = {
   checkoutQuotes?: Prisma.CheckoutQuoteUncheckedUpdateManyWithoutUserNestedInput
   promotionUsages?: Prisma.PromotionUsageUncheckedUpdateManyWithoutUserNestedInput
   passwordResetTokens?: Prisma.PasswordResetTokenUncheckedUpdateManyWithoutUserNestedInput
+  refreshSessions?: Prisma.RefreshSessionUncheckedUpdateManyWithoutUserNestedInput
+  refreshRotationResults?: Prisma.RefreshRotationResultUncheckedUpdateManyWithoutUserNestedInput
+  refreshOperationTombstones?: Prisma.RefreshOperationTombstoneUncheckedUpdateManyWithoutUserNestedInput
   deliveryAssignments?: Prisma.DeliveryAssignmentUncheckedUpdateManyWithoutDeliveryStaffNestedInput
   assignmentsMade?: Prisma.DeliveryAssignmentUncheckedUpdateManyWithoutAssignedByNestedInput
   codCollections?: Prisma.CodCollectionUncheckedUpdateManyWithoutCollectedByNestedInput
@@ -962,6 +1397,8 @@ export type UserUncheckedUpdateWithoutNotificationsInput = {
   identities?: Prisma.UserIdentityUncheckedUpdateManyWithoutUserNestedInput
   feedback?: Prisma.FeedbackUncheckedUpdateManyWithoutCustomerNestedInput
   pushSubscriptions?: Prisma.PushSubscriptionUncheckedUpdateManyWithoutUserNestedInput
+  roleChangesReceived?: Prisma.UserRoleChangeUncheckedUpdateManyWithoutTargetNestedInput
+  roleChangesMade?: Prisma.UserRoleChangeUncheckedUpdateManyWithoutActorNestedInput
 }
 
 export type UserCreateWithoutPushSubscriptionsInput = {
@@ -985,6 +1422,9 @@ export type UserCreateWithoutPushSubscriptionsInput = {
   checkoutQuotes?: Prisma.CheckoutQuoteCreateNestedManyWithoutUserInput
   promotionUsages?: Prisma.PromotionUsageCreateNestedManyWithoutUserInput
   passwordResetTokens?: Prisma.PasswordResetTokenCreateNestedManyWithoutUserInput
+  refreshSessions?: Prisma.RefreshSessionCreateNestedManyWithoutUserInput
+  refreshRotationResults?: Prisma.RefreshRotationResultCreateNestedManyWithoutUserInput
+  refreshOperationTombstones?: Prisma.RefreshOperationTombstoneCreateNestedManyWithoutUserInput
   deliveryAssignments?: Prisma.DeliveryAssignmentCreateNestedManyWithoutDeliveryStaffInput
   assignmentsMade?: Prisma.DeliveryAssignmentCreateNestedManyWithoutAssignedByInput
   codCollections?: Prisma.CodCollectionCreateNestedManyWithoutCollectedByInput
@@ -992,6 +1432,8 @@ export type UserCreateWithoutPushSubscriptionsInput = {
   identities?: Prisma.UserIdentityCreateNestedManyWithoutUserInput
   feedback?: Prisma.FeedbackCreateNestedManyWithoutCustomerInput
   notifications?: Prisma.NotificationCreateNestedManyWithoutUserInput
+  roleChangesReceived?: Prisma.UserRoleChangeCreateNestedManyWithoutTargetInput
+  roleChangesMade?: Prisma.UserRoleChangeCreateNestedManyWithoutActorInput
 }
 
 export type UserUncheckedCreateWithoutPushSubscriptionsInput = {
@@ -1015,6 +1457,9 @@ export type UserUncheckedCreateWithoutPushSubscriptionsInput = {
   checkoutQuotes?: Prisma.CheckoutQuoteUncheckedCreateNestedManyWithoutUserInput
   promotionUsages?: Prisma.PromotionUsageUncheckedCreateNestedManyWithoutUserInput
   passwordResetTokens?: Prisma.PasswordResetTokenUncheckedCreateNestedManyWithoutUserInput
+  refreshSessions?: Prisma.RefreshSessionUncheckedCreateNestedManyWithoutUserInput
+  refreshRotationResults?: Prisma.RefreshRotationResultUncheckedCreateNestedManyWithoutUserInput
+  refreshOperationTombstones?: Prisma.RefreshOperationTombstoneUncheckedCreateNestedManyWithoutUserInput
   deliveryAssignments?: Prisma.DeliveryAssignmentUncheckedCreateNestedManyWithoutDeliveryStaffInput
   assignmentsMade?: Prisma.DeliveryAssignmentUncheckedCreateNestedManyWithoutAssignedByInput
   codCollections?: Prisma.CodCollectionUncheckedCreateNestedManyWithoutCollectedByInput
@@ -1022,6 +1467,8 @@ export type UserUncheckedCreateWithoutPushSubscriptionsInput = {
   identities?: Prisma.UserIdentityUncheckedCreateNestedManyWithoutUserInput
   feedback?: Prisma.FeedbackUncheckedCreateNestedManyWithoutCustomerInput
   notifications?: Prisma.NotificationUncheckedCreateNestedManyWithoutUserInput
+  roleChangesReceived?: Prisma.UserRoleChangeUncheckedCreateNestedManyWithoutTargetInput
+  roleChangesMade?: Prisma.UserRoleChangeUncheckedCreateNestedManyWithoutActorInput
 }
 
 export type UserCreateOrConnectWithoutPushSubscriptionsInput = {
@@ -1061,6 +1508,9 @@ export type UserUpdateWithoutPushSubscriptionsInput = {
   checkoutQuotes?: Prisma.CheckoutQuoteUpdateManyWithoutUserNestedInput
   promotionUsages?: Prisma.PromotionUsageUpdateManyWithoutUserNestedInput
   passwordResetTokens?: Prisma.PasswordResetTokenUpdateManyWithoutUserNestedInput
+  refreshSessions?: Prisma.RefreshSessionUpdateManyWithoutUserNestedInput
+  refreshRotationResults?: Prisma.RefreshRotationResultUpdateManyWithoutUserNestedInput
+  refreshOperationTombstones?: Prisma.RefreshOperationTombstoneUpdateManyWithoutUserNestedInput
   deliveryAssignments?: Prisma.DeliveryAssignmentUpdateManyWithoutDeliveryStaffNestedInput
   assignmentsMade?: Prisma.DeliveryAssignmentUpdateManyWithoutAssignedByNestedInput
   codCollections?: Prisma.CodCollectionUpdateManyWithoutCollectedByNestedInput
@@ -1068,6 +1518,8 @@ export type UserUpdateWithoutPushSubscriptionsInput = {
   identities?: Prisma.UserIdentityUpdateManyWithoutUserNestedInput
   feedback?: Prisma.FeedbackUpdateManyWithoutCustomerNestedInput
   notifications?: Prisma.NotificationUpdateManyWithoutUserNestedInput
+  roleChangesReceived?: Prisma.UserRoleChangeUpdateManyWithoutTargetNestedInput
+  roleChangesMade?: Prisma.UserRoleChangeUpdateManyWithoutActorNestedInput
 }
 
 export type UserUncheckedUpdateWithoutPushSubscriptionsInput = {
@@ -1091,6 +1543,9 @@ export type UserUncheckedUpdateWithoutPushSubscriptionsInput = {
   checkoutQuotes?: Prisma.CheckoutQuoteUncheckedUpdateManyWithoutUserNestedInput
   promotionUsages?: Prisma.PromotionUsageUncheckedUpdateManyWithoutUserNestedInput
   passwordResetTokens?: Prisma.PasswordResetTokenUncheckedUpdateManyWithoutUserNestedInput
+  refreshSessions?: Prisma.RefreshSessionUncheckedUpdateManyWithoutUserNestedInput
+  refreshRotationResults?: Prisma.RefreshRotationResultUncheckedUpdateManyWithoutUserNestedInput
+  refreshOperationTombstones?: Prisma.RefreshOperationTombstoneUncheckedUpdateManyWithoutUserNestedInput
   deliveryAssignments?: Prisma.DeliveryAssignmentUncheckedUpdateManyWithoutDeliveryStaffNestedInput
   assignmentsMade?: Prisma.DeliveryAssignmentUncheckedUpdateManyWithoutAssignedByNestedInput
   codCollections?: Prisma.CodCollectionUncheckedUpdateManyWithoutCollectedByNestedInput
@@ -1098,6 +1553,8 @@ export type UserUncheckedUpdateWithoutPushSubscriptionsInput = {
   identities?: Prisma.UserIdentityUncheckedUpdateManyWithoutUserNestedInput
   feedback?: Prisma.FeedbackUncheckedUpdateManyWithoutCustomerNestedInput
   notifications?: Prisma.NotificationUncheckedUpdateManyWithoutUserNestedInput
+  roleChangesReceived?: Prisma.UserRoleChangeUncheckedUpdateManyWithoutTargetNestedInput
+  roleChangesMade?: Prisma.UserRoleChangeUncheckedUpdateManyWithoutActorNestedInput
 }
 
 export type UserCreateWithoutFeedbackInput = {
@@ -1121,6 +1578,9 @@ export type UserCreateWithoutFeedbackInput = {
   checkoutQuotes?: Prisma.CheckoutQuoteCreateNestedManyWithoutUserInput
   promotionUsages?: Prisma.PromotionUsageCreateNestedManyWithoutUserInput
   passwordResetTokens?: Prisma.PasswordResetTokenCreateNestedManyWithoutUserInput
+  refreshSessions?: Prisma.RefreshSessionCreateNestedManyWithoutUserInput
+  refreshRotationResults?: Prisma.RefreshRotationResultCreateNestedManyWithoutUserInput
+  refreshOperationTombstones?: Prisma.RefreshOperationTombstoneCreateNestedManyWithoutUserInput
   deliveryAssignments?: Prisma.DeliveryAssignmentCreateNestedManyWithoutDeliveryStaffInput
   assignmentsMade?: Prisma.DeliveryAssignmentCreateNestedManyWithoutAssignedByInput
   codCollections?: Prisma.CodCollectionCreateNestedManyWithoutCollectedByInput
@@ -1128,6 +1588,8 @@ export type UserCreateWithoutFeedbackInput = {
   identities?: Prisma.UserIdentityCreateNestedManyWithoutUserInput
   notifications?: Prisma.NotificationCreateNestedManyWithoutUserInput
   pushSubscriptions?: Prisma.PushSubscriptionCreateNestedManyWithoutUserInput
+  roleChangesReceived?: Prisma.UserRoleChangeCreateNestedManyWithoutTargetInput
+  roleChangesMade?: Prisma.UserRoleChangeCreateNestedManyWithoutActorInput
 }
 
 export type UserUncheckedCreateWithoutFeedbackInput = {
@@ -1151,6 +1613,9 @@ export type UserUncheckedCreateWithoutFeedbackInput = {
   checkoutQuotes?: Prisma.CheckoutQuoteUncheckedCreateNestedManyWithoutUserInput
   promotionUsages?: Prisma.PromotionUsageUncheckedCreateNestedManyWithoutUserInput
   passwordResetTokens?: Prisma.PasswordResetTokenUncheckedCreateNestedManyWithoutUserInput
+  refreshSessions?: Prisma.RefreshSessionUncheckedCreateNestedManyWithoutUserInput
+  refreshRotationResults?: Prisma.RefreshRotationResultUncheckedCreateNestedManyWithoutUserInput
+  refreshOperationTombstones?: Prisma.RefreshOperationTombstoneUncheckedCreateNestedManyWithoutUserInput
   deliveryAssignments?: Prisma.DeliveryAssignmentUncheckedCreateNestedManyWithoutDeliveryStaffInput
   assignmentsMade?: Prisma.DeliveryAssignmentUncheckedCreateNestedManyWithoutAssignedByInput
   codCollections?: Prisma.CodCollectionUncheckedCreateNestedManyWithoutCollectedByInput
@@ -1158,6 +1623,8 @@ export type UserUncheckedCreateWithoutFeedbackInput = {
   identities?: Prisma.UserIdentityUncheckedCreateNestedManyWithoutUserInput
   notifications?: Prisma.NotificationUncheckedCreateNestedManyWithoutUserInput
   pushSubscriptions?: Prisma.PushSubscriptionUncheckedCreateNestedManyWithoutUserInput
+  roleChangesReceived?: Prisma.UserRoleChangeUncheckedCreateNestedManyWithoutTargetInput
+  roleChangesMade?: Prisma.UserRoleChangeUncheckedCreateNestedManyWithoutActorInput
 }
 
 export type UserCreateOrConnectWithoutFeedbackInput = {
@@ -1197,6 +1664,9 @@ export type UserUpdateWithoutFeedbackInput = {
   checkoutQuotes?: Prisma.CheckoutQuoteUpdateManyWithoutUserNestedInput
   promotionUsages?: Prisma.PromotionUsageUpdateManyWithoutUserNestedInput
   passwordResetTokens?: Prisma.PasswordResetTokenUpdateManyWithoutUserNestedInput
+  refreshSessions?: Prisma.RefreshSessionUpdateManyWithoutUserNestedInput
+  refreshRotationResults?: Prisma.RefreshRotationResultUpdateManyWithoutUserNestedInput
+  refreshOperationTombstones?: Prisma.RefreshOperationTombstoneUpdateManyWithoutUserNestedInput
   deliveryAssignments?: Prisma.DeliveryAssignmentUpdateManyWithoutDeliveryStaffNestedInput
   assignmentsMade?: Prisma.DeliveryAssignmentUpdateManyWithoutAssignedByNestedInput
   codCollections?: Prisma.CodCollectionUpdateManyWithoutCollectedByNestedInput
@@ -1204,6 +1674,8 @@ export type UserUpdateWithoutFeedbackInput = {
   identities?: Prisma.UserIdentityUpdateManyWithoutUserNestedInput
   notifications?: Prisma.NotificationUpdateManyWithoutUserNestedInput
   pushSubscriptions?: Prisma.PushSubscriptionUpdateManyWithoutUserNestedInput
+  roleChangesReceived?: Prisma.UserRoleChangeUpdateManyWithoutTargetNestedInput
+  roleChangesMade?: Prisma.UserRoleChangeUpdateManyWithoutActorNestedInput
 }
 
 export type UserUncheckedUpdateWithoutFeedbackInput = {
@@ -1227,6 +1699,9 @@ export type UserUncheckedUpdateWithoutFeedbackInput = {
   checkoutQuotes?: Prisma.CheckoutQuoteUncheckedUpdateManyWithoutUserNestedInput
   promotionUsages?: Prisma.PromotionUsageUncheckedUpdateManyWithoutUserNestedInput
   passwordResetTokens?: Prisma.PasswordResetTokenUncheckedUpdateManyWithoutUserNestedInput
+  refreshSessions?: Prisma.RefreshSessionUncheckedUpdateManyWithoutUserNestedInput
+  refreshRotationResults?: Prisma.RefreshRotationResultUncheckedUpdateManyWithoutUserNestedInput
+  refreshOperationTombstones?: Prisma.RefreshOperationTombstoneUncheckedUpdateManyWithoutUserNestedInput
   deliveryAssignments?: Prisma.DeliveryAssignmentUncheckedUpdateManyWithoutDeliveryStaffNestedInput
   assignmentsMade?: Prisma.DeliveryAssignmentUncheckedUpdateManyWithoutAssignedByNestedInput
   codCollections?: Prisma.CodCollectionUncheckedUpdateManyWithoutCollectedByNestedInput
@@ -1234,6 +1709,8 @@ export type UserUncheckedUpdateWithoutFeedbackInput = {
   identities?: Prisma.UserIdentityUncheckedUpdateManyWithoutUserNestedInput
   notifications?: Prisma.NotificationUncheckedUpdateManyWithoutUserNestedInput
   pushSubscriptions?: Prisma.PushSubscriptionUncheckedUpdateManyWithoutUserNestedInput
+  roleChangesReceived?: Prisma.UserRoleChangeUncheckedUpdateManyWithoutTargetNestedInput
+  roleChangesMade?: Prisma.UserRoleChangeUncheckedUpdateManyWithoutActorNestedInput
 }
 
 export type UserCreateWithoutIdentitiesInput = {
@@ -1257,6 +1734,9 @@ export type UserCreateWithoutIdentitiesInput = {
   checkoutQuotes?: Prisma.CheckoutQuoteCreateNestedManyWithoutUserInput
   promotionUsages?: Prisma.PromotionUsageCreateNestedManyWithoutUserInput
   passwordResetTokens?: Prisma.PasswordResetTokenCreateNestedManyWithoutUserInput
+  refreshSessions?: Prisma.RefreshSessionCreateNestedManyWithoutUserInput
+  refreshRotationResults?: Prisma.RefreshRotationResultCreateNestedManyWithoutUserInput
+  refreshOperationTombstones?: Prisma.RefreshOperationTombstoneCreateNestedManyWithoutUserInput
   deliveryAssignments?: Prisma.DeliveryAssignmentCreateNestedManyWithoutDeliveryStaffInput
   assignmentsMade?: Prisma.DeliveryAssignmentCreateNestedManyWithoutAssignedByInput
   codCollections?: Prisma.CodCollectionCreateNestedManyWithoutCollectedByInput
@@ -1264,6 +1744,8 @@ export type UserCreateWithoutIdentitiesInput = {
   feedback?: Prisma.FeedbackCreateNestedManyWithoutCustomerInput
   notifications?: Prisma.NotificationCreateNestedManyWithoutUserInput
   pushSubscriptions?: Prisma.PushSubscriptionCreateNestedManyWithoutUserInput
+  roleChangesReceived?: Prisma.UserRoleChangeCreateNestedManyWithoutTargetInput
+  roleChangesMade?: Prisma.UserRoleChangeCreateNestedManyWithoutActorInput
 }
 
 export type UserUncheckedCreateWithoutIdentitiesInput = {
@@ -1287,6 +1769,9 @@ export type UserUncheckedCreateWithoutIdentitiesInput = {
   checkoutQuotes?: Prisma.CheckoutQuoteUncheckedCreateNestedManyWithoutUserInput
   promotionUsages?: Prisma.PromotionUsageUncheckedCreateNestedManyWithoutUserInput
   passwordResetTokens?: Prisma.PasswordResetTokenUncheckedCreateNestedManyWithoutUserInput
+  refreshSessions?: Prisma.RefreshSessionUncheckedCreateNestedManyWithoutUserInput
+  refreshRotationResults?: Prisma.RefreshRotationResultUncheckedCreateNestedManyWithoutUserInput
+  refreshOperationTombstones?: Prisma.RefreshOperationTombstoneUncheckedCreateNestedManyWithoutUserInput
   deliveryAssignments?: Prisma.DeliveryAssignmentUncheckedCreateNestedManyWithoutDeliveryStaffInput
   assignmentsMade?: Prisma.DeliveryAssignmentUncheckedCreateNestedManyWithoutAssignedByInput
   codCollections?: Prisma.CodCollectionUncheckedCreateNestedManyWithoutCollectedByInput
@@ -1294,6 +1779,8 @@ export type UserUncheckedCreateWithoutIdentitiesInput = {
   feedback?: Prisma.FeedbackUncheckedCreateNestedManyWithoutCustomerInput
   notifications?: Prisma.NotificationUncheckedCreateNestedManyWithoutUserInput
   pushSubscriptions?: Prisma.PushSubscriptionUncheckedCreateNestedManyWithoutUserInput
+  roleChangesReceived?: Prisma.UserRoleChangeUncheckedCreateNestedManyWithoutTargetInput
+  roleChangesMade?: Prisma.UserRoleChangeUncheckedCreateNestedManyWithoutActorInput
 }
 
 export type UserCreateOrConnectWithoutIdentitiesInput = {
@@ -1333,6 +1820,9 @@ export type UserUpdateWithoutIdentitiesInput = {
   checkoutQuotes?: Prisma.CheckoutQuoteUpdateManyWithoutUserNestedInput
   promotionUsages?: Prisma.PromotionUsageUpdateManyWithoutUserNestedInput
   passwordResetTokens?: Prisma.PasswordResetTokenUpdateManyWithoutUserNestedInput
+  refreshSessions?: Prisma.RefreshSessionUpdateManyWithoutUserNestedInput
+  refreshRotationResults?: Prisma.RefreshRotationResultUpdateManyWithoutUserNestedInput
+  refreshOperationTombstones?: Prisma.RefreshOperationTombstoneUpdateManyWithoutUserNestedInput
   deliveryAssignments?: Prisma.DeliveryAssignmentUpdateManyWithoutDeliveryStaffNestedInput
   assignmentsMade?: Prisma.DeliveryAssignmentUpdateManyWithoutAssignedByNestedInput
   codCollections?: Prisma.CodCollectionUpdateManyWithoutCollectedByNestedInput
@@ -1340,6 +1830,8 @@ export type UserUpdateWithoutIdentitiesInput = {
   feedback?: Prisma.FeedbackUpdateManyWithoutCustomerNestedInput
   notifications?: Prisma.NotificationUpdateManyWithoutUserNestedInput
   pushSubscriptions?: Prisma.PushSubscriptionUpdateManyWithoutUserNestedInput
+  roleChangesReceived?: Prisma.UserRoleChangeUpdateManyWithoutTargetNestedInput
+  roleChangesMade?: Prisma.UserRoleChangeUpdateManyWithoutActorNestedInput
 }
 
 export type UserUncheckedUpdateWithoutIdentitiesInput = {
@@ -1363,6 +1855,9 @@ export type UserUncheckedUpdateWithoutIdentitiesInput = {
   checkoutQuotes?: Prisma.CheckoutQuoteUncheckedUpdateManyWithoutUserNestedInput
   promotionUsages?: Prisma.PromotionUsageUncheckedUpdateManyWithoutUserNestedInput
   passwordResetTokens?: Prisma.PasswordResetTokenUncheckedUpdateManyWithoutUserNestedInput
+  refreshSessions?: Prisma.RefreshSessionUncheckedUpdateManyWithoutUserNestedInput
+  refreshRotationResults?: Prisma.RefreshRotationResultUncheckedUpdateManyWithoutUserNestedInput
+  refreshOperationTombstones?: Prisma.RefreshOperationTombstoneUncheckedUpdateManyWithoutUserNestedInput
   deliveryAssignments?: Prisma.DeliveryAssignmentUncheckedUpdateManyWithoutDeliveryStaffNestedInput
   assignmentsMade?: Prisma.DeliveryAssignmentUncheckedUpdateManyWithoutAssignedByNestedInput
   codCollections?: Prisma.CodCollectionUncheckedUpdateManyWithoutCollectedByNestedInput
@@ -1370,6 +1865,8 @@ export type UserUncheckedUpdateWithoutIdentitiesInput = {
   feedback?: Prisma.FeedbackUncheckedUpdateManyWithoutCustomerNestedInput
   notifications?: Prisma.NotificationUncheckedUpdateManyWithoutUserNestedInput
   pushSubscriptions?: Prisma.PushSubscriptionUncheckedUpdateManyWithoutUserNestedInput
+  roleChangesReceived?: Prisma.UserRoleChangeUncheckedUpdateManyWithoutTargetNestedInput
+  roleChangesMade?: Prisma.UserRoleChangeUncheckedUpdateManyWithoutActorNestedInput
 }
 
 export type UserCreateWithoutPasswordResetTokensInput = {
@@ -1392,6 +1889,9 @@ export type UserCreateWithoutPasswordResetTokensInput = {
   orders?: Prisma.OrderCreateNestedManyWithoutUserInput
   checkoutQuotes?: Prisma.CheckoutQuoteCreateNestedManyWithoutUserInput
   promotionUsages?: Prisma.PromotionUsageCreateNestedManyWithoutUserInput
+  refreshSessions?: Prisma.RefreshSessionCreateNestedManyWithoutUserInput
+  refreshRotationResults?: Prisma.RefreshRotationResultCreateNestedManyWithoutUserInput
+  refreshOperationTombstones?: Prisma.RefreshOperationTombstoneCreateNestedManyWithoutUserInput
   deliveryAssignments?: Prisma.DeliveryAssignmentCreateNestedManyWithoutDeliveryStaffInput
   assignmentsMade?: Prisma.DeliveryAssignmentCreateNestedManyWithoutAssignedByInput
   codCollections?: Prisma.CodCollectionCreateNestedManyWithoutCollectedByInput
@@ -1400,6 +1900,8 @@ export type UserCreateWithoutPasswordResetTokensInput = {
   feedback?: Prisma.FeedbackCreateNestedManyWithoutCustomerInput
   notifications?: Prisma.NotificationCreateNestedManyWithoutUserInput
   pushSubscriptions?: Prisma.PushSubscriptionCreateNestedManyWithoutUserInput
+  roleChangesReceived?: Prisma.UserRoleChangeCreateNestedManyWithoutTargetInput
+  roleChangesMade?: Prisma.UserRoleChangeCreateNestedManyWithoutActorInput
 }
 
 export type UserUncheckedCreateWithoutPasswordResetTokensInput = {
@@ -1422,6 +1924,9 @@ export type UserUncheckedCreateWithoutPasswordResetTokensInput = {
   orders?: Prisma.OrderUncheckedCreateNestedManyWithoutUserInput
   checkoutQuotes?: Prisma.CheckoutQuoteUncheckedCreateNestedManyWithoutUserInput
   promotionUsages?: Prisma.PromotionUsageUncheckedCreateNestedManyWithoutUserInput
+  refreshSessions?: Prisma.RefreshSessionUncheckedCreateNestedManyWithoutUserInput
+  refreshRotationResults?: Prisma.RefreshRotationResultUncheckedCreateNestedManyWithoutUserInput
+  refreshOperationTombstones?: Prisma.RefreshOperationTombstoneUncheckedCreateNestedManyWithoutUserInput
   deliveryAssignments?: Prisma.DeliveryAssignmentUncheckedCreateNestedManyWithoutDeliveryStaffInput
   assignmentsMade?: Prisma.DeliveryAssignmentUncheckedCreateNestedManyWithoutAssignedByInput
   codCollections?: Prisma.CodCollectionUncheckedCreateNestedManyWithoutCollectedByInput
@@ -1430,6 +1935,8 @@ export type UserUncheckedCreateWithoutPasswordResetTokensInput = {
   feedback?: Prisma.FeedbackUncheckedCreateNestedManyWithoutCustomerInput
   notifications?: Prisma.NotificationUncheckedCreateNestedManyWithoutUserInput
   pushSubscriptions?: Prisma.PushSubscriptionUncheckedCreateNestedManyWithoutUserInput
+  roleChangesReceived?: Prisma.UserRoleChangeUncheckedCreateNestedManyWithoutTargetInput
+  roleChangesMade?: Prisma.UserRoleChangeUncheckedCreateNestedManyWithoutActorInput
 }
 
 export type UserCreateOrConnectWithoutPasswordResetTokensInput = {
@@ -1468,6 +1975,9 @@ export type UserUpdateWithoutPasswordResetTokensInput = {
   orders?: Prisma.OrderUpdateManyWithoutUserNestedInput
   checkoutQuotes?: Prisma.CheckoutQuoteUpdateManyWithoutUserNestedInput
   promotionUsages?: Prisma.PromotionUsageUpdateManyWithoutUserNestedInput
+  refreshSessions?: Prisma.RefreshSessionUpdateManyWithoutUserNestedInput
+  refreshRotationResults?: Prisma.RefreshRotationResultUpdateManyWithoutUserNestedInput
+  refreshOperationTombstones?: Prisma.RefreshOperationTombstoneUpdateManyWithoutUserNestedInput
   deliveryAssignments?: Prisma.DeliveryAssignmentUpdateManyWithoutDeliveryStaffNestedInput
   assignmentsMade?: Prisma.DeliveryAssignmentUpdateManyWithoutAssignedByNestedInput
   codCollections?: Prisma.CodCollectionUpdateManyWithoutCollectedByNestedInput
@@ -1476,6 +1986,8 @@ export type UserUpdateWithoutPasswordResetTokensInput = {
   feedback?: Prisma.FeedbackUpdateManyWithoutCustomerNestedInput
   notifications?: Prisma.NotificationUpdateManyWithoutUserNestedInput
   pushSubscriptions?: Prisma.PushSubscriptionUpdateManyWithoutUserNestedInput
+  roleChangesReceived?: Prisma.UserRoleChangeUpdateManyWithoutTargetNestedInput
+  roleChangesMade?: Prisma.UserRoleChangeUpdateManyWithoutActorNestedInput
 }
 
 export type UserUncheckedUpdateWithoutPasswordResetTokensInput = {
@@ -1498,6 +2010,9 @@ export type UserUncheckedUpdateWithoutPasswordResetTokensInput = {
   orders?: Prisma.OrderUncheckedUpdateManyWithoutUserNestedInput
   checkoutQuotes?: Prisma.CheckoutQuoteUncheckedUpdateManyWithoutUserNestedInput
   promotionUsages?: Prisma.PromotionUsageUncheckedUpdateManyWithoutUserNestedInput
+  refreshSessions?: Prisma.RefreshSessionUncheckedUpdateManyWithoutUserNestedInput
+  refreshRotationResults?: Prisma.RefreshRotationResultUncheckedUpdateManyWithoutUserNestedInput
+  refreshOperationTombstones?: Prisma.RefreshOperationTombstoneUncheckedUpdateManyWithoutUserNestedInput
   deliveryAssignments?: Prisma.DeliveryAssignmentUncheckedUpdateManyWithoutDeliveryStaffNestedInput
   assignmentsMade?: Prisma.DeliveryAssignmentUncheckedUpdateManyWithoutAssignedByNestedInput
   codCollections?: Prisma.CodCollectionUncheckedUpdateManyWithoutCollectedByNestedInput
@@ -1506,6 +2021,476 @@ export type UserUncheckedUpdateWithoutPasswordResetTokensInput = {
   feedback?: Prisma.FeedbackUncheckedUpdateManyWithoutCustomerNestedInput
   notifications?: Prisma.NotificationUncheckedUpdateManyWithoutUserNestedInput
   pushSubscriptions?: Prisma.PushSubscriptionUncheckedUpdateManyWithoutUserNestedInput
+  roleChangesReceived?: Prisma.UserRoleChangeUncheckedUpdateManyWithoutTargetNestedInput
+  roleChangesMade?: Prisma.UserRoleChangeUncheckedUpdateManyWithoutActorNestedInput
+}
+
+export type UserCreateWithoutRefreshSessionsInput = {
+  id?: string
+  firstName: string
+  lastName: string
+  email: string
+  passwordHash: string
+  phone?: string | null
+  status: string
+  role?: $Enums.Role
+  emailVerifiedAt?: Date | string | null
+  lastLoginAt?: Date | string | null
+  passwordChangedAt?: Date | string | null
+  createdAt?: Date | string
+  updatedAt?: Date | string
+  addresses?: Prisma.AddressCreateNestedManyWithoutUserInput
+  cart?: Prisma.CartCreateNestedOneWithoutUserInput
+  wishlist?: Prisma.WishlistCreateNestedOneWithoutUserInput
+  orders?: Prisma.OrderCreateNestedManyWithoutUserInput
+  checkoutQuotes?: Prisma.CheckoutQuoteCreateNestedManyWithoutUserInput
+  promotionUsages?: Prisma.PromotionUsageCreateNestedManyWithoutUserInput
+  passwordResetTokens?: Prisma.PasswordResetTokenCreateNestedManyWithoutUserInput
+  refreshRotationResults?: Prisma.RefreshRotationResultCreateNestedManyWithoutUserInput
+  refreshOperationTombstones?: Prisma.RefreshOperationTombstoneCreateNestedManyWithoutUserInput
+  deliveryAssignments?: Prisma.DeliveryAssignmentCreateNestedManyWithoutDeliveryStaffInput
+  assignmentsMade?: Prisma.DeliveryAssignmentCreateNestedManyWithoutAssignedByInput
+  codCollections?: Prisma.CodCollectionCreateNestedManyWithoutCollectedByInput
+  variantCostChanges?: Prisma.VariantCostHistoryCreateNestedManyWithoutCreatedByInput
+  identities?: Prisma.UserIdentityCreateNestedManyWithoutUserInput
+  feedback?: Prisma.FeedbackCreateNestedManyWithoutCustomerInput
+  notifications?: Prisma.NotificationCreateNestedManyWithoutUserInput
+  pushSubscriptions?: Prisma.PushSubscriptionCreateNestedManyWithoutUserInput
+  roleChangesReceived?: Prisma.UserRoleChangeCreateNestedManyWithoutTargetInput
+  roleChangesMade?: Prisma.UserRoleChangeCreateNestedManyWithoutActorInput
+}
+
+export type UserUncheckedCreateWithoutRefreshSessionsInput = {
+  id?: string
+  firstName: string
+  lastName: string
+  email: string
+  passwordHash: string
+  phone?: string | null
+  status: string
+  role?: $Enums.Role
+  emailVerifiedAt?: Date | string | null
+  lastLoginAt?: Date | string | null
+  passwordChangedAt?: Date | string | null
+  createdAt?: Date | string
+  updatedAt?: Date | string
+  addresses?: Prisma.AddressUncheckedCreateNestedManyWithoutUserInput
+  cart?: Prisma.CartUncheckedCreateNestedOneWithoutUserInput
+  wishlist?: Prisma.WishlistUncheckedCreateNestedOneWithoutUserInput
+  orders?: Prisma.OrderUncheckedCreateNestedManyWithoutUserInput
+  checkoutQuotes?: Prisma.CheckoutQuoteUncheckedCreateNestedManyWithoutUserInput
+  promotionUsages?: Prisma.PromotionUsageUncheckedCreateNestedManyWithoutUserInput
+  passwordResetTokens?: Prisma.PasswordResetTokenUncheckedCreateNestedManyWithoutUserInput
+  refreshRotationResults?: Prisma.RefreshRotationResultUncheckedCreateNestedManyWithoutUserInput
+  refreshOperationTombstones?: Prisma.RefreshOperationTombstoneUncheckedCreateNestedManyWithoutUserInput
+  deliveryAssignments?: Prisma.DeliveryAssignmentUncheckedCreateNestedManyWithoutDeliveryStaffInput
+  assignmentsMade?: Prisma.DeliveryAssignmentUncheckedCreateNestedManyWithoutAssignedByInput
+  codCollections?: Prisma.CodCollectionUncheckedCreateNestedManyWithoutCollectedByInput
+  variantCostChanges?: Prisma.VariantCostHistoryUncheckedCreateNestedManyWithoutCreatedByInput
+  identities?: Prisma.UserIdentityUncheckedCreateNestedManyWithoutUserInput
+  feedback?: Prisma.FeedbackUncheckedCreateNestedManyWithoutCustomerInput
+  notifications?: Prisma.NotificationUncheckedCreateNestedManyWithoutUserInput
+  pushSubscriptions?: Prisma.PushSubscriptionUncheckedCreateNestedManyWithoutUserInput
+  roleChangesReceived?: Prisma.UserRoleChangeUncheckedCreateNestedManyWithoutTargetInput
+  roleChangesMade?: Prisma.UserRoleChangeUncheckedCreateNestedManyWithoutActorInput
+}
+
+export type UserCreateOrConnectWithoutRefreshSessionsInput = {
+  where: Prisma.UserWhereUniqueInput
+  create: Prisma.XOR<Prisma.UserCreateWithoutRefreshSessionsInput, Prisma.UserUncheckedCreateWithoutRefreshSessionsInput>
+}
+
+export type UserUpsertWithoutRefreshSessionsInput = {
+  update: Prisma.XOR<Prisma.UserUpdateWithoutRefreshSessionsInput, Prisma.UserUncheckedUpdateWithoutRefreshSessionsInput>
+  create: Prisma.XOR<Prisma.UserCreateWithoutRefreshSessionsInput, Prisma.UserUncheckedCreateWithoutRefreshSessionsInput>
+  where?: Prisma.UserWhereInput
+}
+
+export type UserUpdateToOneWithWhereWithoutRefreshSessionsInput = {
+  where?: Prisma.UserWhereInput
+  data: Prisma.XOR<Prisma.UserUpdateWithoutRefreshSessionsInput, Prisma.UserUncheckedUpdateWithoutRefreshSessionsInput>
+}
+
+export type UserUpdateWithoutRefreshSessionsInput = {
+  id?: Prisma.StringFieldUpdateOperationsInput | string
+  firstName?: Prisma.StringFieldUpdateOperationsInput | string
+  lastName?: Prisma.StringFieldUpdateOperationsInput | string
+  email?: Prisma.StringFieldUpdateOperationsInput | string
+  passwordHash?: Prisma.StringFieldUpdateOperationsInput | string
+  phone?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  status?: Prisma.StringFieldUpdateOperationsInput | string
+  role?: Prisma.EnumRoleFieldUpdateOperationsInput | $Enums.Role
+  emailVerifiedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  lastLoginAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  passwordChangedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  addresses?: Prisma.AddressUpdateManyWithoutUserNestedInput
+  cart?: Prisma.CartUpdateOneWithoutUserNestedInput
+  wishlist?: Prisma.WishlistUpdateOneWithoutUserNestedInput
+  orders?: Prisma.OrderUpdateManyWithoutUserNestedInput
+  checkoutQuotes?: Prisma.CheckoutQuoteUpdateManyWithoutUserNestedInput
+  promotionUsages?: Prisma.PromotionUsageUpdateManyWithoutUserNestedInput
+  passwordResetTokens?: Prisma.PasswordResetTokenUpdateManyWithoutUserNestedInput
+  refreshRotationResults?: Prisma.RefreshRotationResultUpdateManyWithoutUserNestedInput
+  refreshOperationTombstones?: Prisma.RefreshOperationTombstoneUpdateManyWithoutUserNestedInput
+  deliveryAssignments?: Prisma.DeliveryAssignmentUpdateManyWithoutDeliveryStaffNestedInput
+  assignmentsMade?: Prisma.DeliveryAssignmentUpdateManyWithoutAssignedByNestedInput
+  codCollections?: Prisma.CodCollectionUpdateManyWithoutCollectedByNestedInput
+  variantCostChanges?: Prisma.VariantCostHistoryUpdateManyWithoutCreatedByNestedInput
+  identities?: Prisma.UserIdentityUpdateManyWithoutUserNestedInput
+  feedback?: Prisma.FeedbackUpdateManyWithoutCustomerNestedInput
+  notifications?: Prisma.NotificationUpdateManyWithoutUserNestedInput
+  pushSubscriptions?: Prisma.PushSubscriptionUpdateManyWithoutUserNestedInput
+  roleChangesReceived?: Prisma.UserRoleChangeUpdateManyWithoutTargetNestedInput
+  roleChangesMade?: Prisma.UserRoleChangeUpdateManyWithoutActorNestedInput
+}
+
+export type UserUncheckedUpdateWithoutRefreshSessionsInput = {
+  id?: Prisma.StringFieldUpdateOperationsInput | string
+  firstName?: Prisma.StringFieldUpdateOperationsInput | string
+  lastName?: Prisma.StringFieldUpdateOperationsInput | string
+  email?: Prisma.StringFieldUpdateOperationsInput | string
+  passwordHash?: Prisma.StringFieldUpdateOperationsInput | string
+  phone?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  status?: Prisma.StringFieldUpdateOperationsInput | string
+  role?: Prisma.EnumRoleFieldUpdateOperationsInput | $Enums.Role
+  emailVerifiedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  lastLoginAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  passwordChangedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  addresses?: Prisma.AddressUncheckedUpdateManyWithoutUserNestedInput
+  cart?: Prisma.CartUncheckedUpdateOneWithoutUserNestedInput
+  wishlist?: Prisma.WishlistUncheckedUpdateOneWithoutUserNestedInput
+  orders?: Prisma.OrderUncheckedUpdateManyWithoutUserNestedInput
+  checkoutQuotes?: Prisma.CheckoutQuoteUncheckedUpdateManyWithoutUserNestedInput
+  promotionUsages?: Prisma.PromotionUsageUncheckedUpdateManyWithoutUserNestedInput
+  passwordResetTokens?: Prisma.PasswordResetTokenUncheckedUpdateManyWithoutUserNestedInput
+  refreshRotationResults?: Prisma.RefreshRotationResultUncheckedUpdateManyWithoutUserNestedInput
+  refreshOperationTombstones?: Prisma.RefreshOperationTombstoneUncheckedUpdateManyWithoutUserNestedInput
+  deliveryAssignments?: Prisma.DeliveryAssignmentUncheckedUpdateManyWithoutDeliveryStaffNestedInput
+  assignmentsMade?: Prisma.DeliveryAssignmentUncheckedUpdateManyWithoutAssignedByNestedInput
+  codCollections?: Prisma.CodCollectionUncheckedUpdateManyWithoutCollectedByNestedInput
+  variantCostChanges?: Prisma.VariantCostHistoryUncheckedUpdateManyWithoutCreatedByNestedInput
+  identities?: Prisma.UserIdentityUncheckedUpdateManyWithoutUserNestedInput
+  feedback?: Prisma.FeedbackUncheckedUpdateManyWithoutCustomerNestedInput
+  notifications?: Prisma.NotificationUncheckedUpdateManyWithoutUserNestedInput
+  pushSubscriptions?: Prisma.PushSubscriptionUncheckedUpdateManyWithoutUserNestedInput
+  roleChangesReceived?: Prisma.UserRoleChangeUncheckedUpdateManyWithoutTargetNestedInput
+  roleChangesMade?: Prisma.UserRoleChangeUncheckedUpdateManyWithoutActorNestedInput
+}
+
+export type UserCreateWithoutRefreshRotationResultsInput = {
+  id?: string
+  firstName: string
+  lastName: string
+  email: string
+  passwordHash: string
+  phone?: string | null
+  status: string
+  role?: $Enums.Role
+  emailVerifiedAt?: Date | string | null
+  lastLoginAt?: Date | string | null
+  passwordChangedAt?: Date | string | null
+  createdAt?: Date | string
+  updatedAt?: Date | string
+  addresses?: Prisma.AddressCreateNestedManyWithoutUserInput
+  cart?: Prisma.CartCreateNestedOneWithoutUserInput
+  wishlist?: Prisma.WishlistCreateNestedOneWithoutUserInput
+  orders?: Prisma.OrderCreateNestedManyWithoutUserInput
+  checkoutQuotes?: Prisma.CheckoutQuoteCreateNestedManyWithoutUserInput
+  promotionUsages?: Prisma.PromotionUsageCreateNestedManyWithoutUserInput
+  passwordResetTokens?: Prisma.PasswordResetTokenCreateNestedManyWithoutUserInput
+  refreshSessions?: Prisma.RefreshSessionCreateNestedManyWithoutUserInput
+  refreshOperationTombstones?: Prisma.RefreshOperationTombstoneCreateNestedManyWithoutUserInput
+  deliveryAssignments?: Prisma.DeliveryAssignmentCreateNestedManyWithoutDeliveryStaffInput
+  assignmentsMade?: Prisma.DeliveryAssignmentCreateNestedManyWithoutAssignedByInput
+  codCollections?: Prisma.CodCollectionCreateNestedManyWithoutCollectedByInput
+  variantCostChanges?: Prisma.VariantCostHistoryCreateNestedManyWithoutCreatedByInput
+  identities?: Prisma.UserIdentityCreateNestedManyWithoutUserInput
+  feedback?: Prisma.FeedbackCreateNestedManyWithoutCustomerInput
+  notifications?: Prisma.NotificationCreateNestedManyWithoutUserInput
+  pushSubscriptions?: Prisma.PushSubscriptionCreateNestedManyWithoutUserInput
+  roleChangesReceived?: Prisma.UserRoleChangeCreateNestedManyWithoutTargetInput
+  roleChangesMade?: Prisma.UserRoleChangeCreateNestedManyWithoutActorInput
+}
+
+export type UserUncheckedCreateWithoutRefreshRotationResultsInput = {
+  id?: string
+  firstName: string
+  lastName: string
+  email: string
+  passwordHash: string
+  phone?: string | null
+  status: string
+  role?: $Enums.Role
+  emailVerifiedAt?: Date | string | null
+  lastLoginAt?: Date | string | null
+  passwordChangedAt?: Date | string | null
+  createdAt?: Date | string
+  updatedAt?: Date | string
+  addresses?: Prisma.AddressUncheckedCreateNestedManyWithoutUserInput
+  cart?: Prisma.CartUncheckedCreateNestedOneWithoutUserInput
+  wishlist?: Prisma.WishlistUncheckedCreateNestedOneWithoutUserInput
+  orders?: Prisma.OrderUncheckedCreateNestedManyWithoutUserInput
+  checkoutQuotes?: Prisma.CheckoutQuoteUncheckedCreateNestedManyWithoutUserInput
+  promotionUsages?: Prisma.PromotionUsageUncheckedCreateNestedManyWithoutUserInput
+  passwordResetTokens?: Prisma.PasswordResetTokenUncheckedCreateNestedManyWithoutUserInput
+  refreshSessions?: Prisma.RefreshSessionUncheckedCreateNestedManyWithoutUserInput
+  refreshOperationTombstones?: Prisma.RefreshOperationTombstoneUncheckedCreateNestedManyWithoutUserInput
+  deliveryAssignments?: Prisma.DeliveryAssignmentUncheckedCreateNestedManyWithoutDeliveryStaffInput
+  assignmentsMade?: Prisma.DeliveryAssignmentUncheckedCreateNestedManyWithoutAssignedByInput
+  codCollections?: Prisma.CodCollectionUncheckedCreateNestedManyWithoutCollectedByInput
+  variantCostChanges?: Prisma.VariantCostHistoryUncheckedCreateNestedManyWithoutCreatedByInput
+  identities?: Prisma.UserIdentityUncheckedCreateNestedManyWithoutUserInput
+  feedback?: Prisma.FeedbackUncheckedCreateNestedManyWithoutCustomerInput
+  notifications?: Prisma.NotificationUncheckedCreateNestedManyWithoutUserInput
+  pushSubscriptions?: Prisma.PushSubscriptionUncheckedCreateNestedManyWithoutUserInput
+  roleChangesReceived?: Prisma.UserRoleChangeUncheckedCreateNestedManyWithoutTargetInput
+  roleChangesMade?: Prisma.UserRoleChangeUncheckedCreateNestedManyWithoutActorInput
+}
+
+export type UserCreateOrConnectWithoutRefreshRotationResultsInput = {
+  where: Prisma.UserWhereUniqueInput
+  create: Prisma.XOR<Prisma.UserCreateWithoutRefreshRotationResultsInput, Prisma.UserUncheckedCreateWithoutRefreshRotationResultsInput>
+}
+
+export type UserUpsertWithoutRefreshRotationResultsInput = {
+  update: Prisma.XOR<Prisma.UserUpdateWithoutRefreshRotationResultsInput, Prisma.UserUncheckedUpdateWithoutRefreshRotationResultsInput>
+  create: Prisma.XOR<Prisma.UserCreateWithoutRefreshRotationResultsInput, Prisma.UserUncheckedCreateWithoutRefreshRotationResultsInput>
+  where?: Prisma.UserWhereInput
+}
+
+export type UserUpdateToOneWithWhereWithoutRefreshRotationResultsInput = {
+  where?: Prisma.UserWhereInput
+  data: Prisma.XOR<Prisma.UserUpdateWithoutRefreshRotationResultsInput, Prisma.UserUncheckedUpdateWithoutRefreshRotationResultsInput>
+}
+
+export type UserUpdateWithoutRefreshRotationResultsInput = {
+  id?: Prisma.StringFieldUpdateOperationsInput | string
+  firstName?: Prisma.StringFieldUpdateOperationsInput | string
+  lastName?: Prisma.StringFieldUpdateOperationsInput | string
+  email?: Prisma.StringFieldUpdateOperationsInput | string
+  passwordHash?: Prisma.StringFieldUpdateOperationsInput | string
+  phone?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  status?: Prisma.StringFieldUpdateOperationsInput | string
+  role?: Prisma.EnumRoleFieldUpdateOperationsInput | $Enums.Role
+  emailVerifiedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  lastLoginAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  passwordChangedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  addresses?: Prisma.AddressUpdateManyWithoutUserNestedInput
+  cart?: Prisma.CartUpdateOneWithoutUserNestedInput
+  wishlist?: Prisma.WishlistUpdateOneWithoutUserNestedInput
+  orders?: Prisma.OrderUpdateManyWithoutUserNestedInput
+  checkoutQuotes?: Prisma.CheckoutQuoteUpdateManyWithoutUserNestedInput
+  promotionUsages?: Prisma.PromotionUsageUpdateManyWithoutUserNestedInput
+  passwordResetTokens?: Prisma.PasswordResetTokenUpdateManyWithoutUserNestedInput
+  refreshSessions?: Prisma.RefreshSessionUpdateManyWithoutUserNestedInput
+  refreshOperationTombstones?: Prisma.RefreshOperationTombstoneUpdateManyWithoutUserNestedInput
+  deliveryAssignments?: Prisma.DeliveryAssignmentUpdateManyWithoutDeliveryStaffNestedInput
+  assignmentsMade?: Prisma.DeliveryAssignmentUpdateManyWithoutAssignedByNestedInput
+  codCollections?: Prisma.CodCollectionUpdateManyWithoutCollectedByNestedInput
+  variantCostChanges?: Prisma.VariantCostHistoryUpdateManyWithoutCreatedByNestedInput
+  identities?: Prisma.UserIdentityUpdateManyWithoutUserNestedInput
+  feedback?: Prisma.FeedbackUpdateManyWithoutCustomerNestedInput
+  notifications?: Prisma.NotificationUpdateManyWithoutUserNestedInput
+  pushSubscriptions?: Prisma.PushSubscriptionUpdateManyWithoutUserNestedInput
+  roleChangesReceived?: Prisma.UserRoleChangeUpdateManyWithoutTargetNestedInput
+  roleChangesMade?: Prisma.UserRoleChangeUpdateManyWithoutActorNestedInput
+}
+
+export type UserUncheckedUpdateWithoutRefreshRotationResultsInput = {
+  id?: Prisma.StringFieldUpdateOperationsInput | string
+  firstName?: Prisma.StringFieldUpdateOperationsInput | string
+  lastName?: Prisma.StringFieldUpdateOperationsInput | string
+  email?: Prisma.StringFieldUpdateOperationsInput | string
+  passwordHash?: Prisma.StringFieldUpdateOperationsInput | string
+  phone?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  status?: Prisma.StringFieldUpdateOperationsInput | string
+  role?: Prisma.EnumRoleFieldUpdateOperationsInput | $Enums.Role
+  emailVerifiedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  lastLoginAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  passwordChangedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  addresses?: Prisma.AddressUncheckedUpdateManyWithoutUserNestedInput
+  cart?: Prisma.CartUncheckedUpdateOneWithoutUserNestedInput
+  wishlist?: Prisma.WishlistUncheckedUpdateOneWithoutUserNestedInput
+  orders?: Prisma.OrderUncheckedUpdateManyWithoutUserNestedInput
+  checkoutQuotes?: Prisma.CheckoutQuoteUncheckedUpdateManyWithoutUserNestedInput
+  promotionUsages?: Prisma.PromotionUsageUncheckedUpdateManyWithoutUserNestedInput
+  passwordResetTokens?: Prisma.PasswordResetTokenUncheckedUpdateManyWithoutUserNestedInput
+  refreshSessions?: Prisma.RefreshSessionUncheckedUpdateManyWithoutUserNestedInput
+  refreshOperationTombstones?: Prisma.RefreshOperationTombstoneUncheckedUpdateManyWithoutUserNestedInput
+  deliveryAssignments?: Prisma.DeliveryAssignmentUncheckedUpdateManyWithoutDeliveryStaffNestedInput
+  assignmentsMade?: Prisma.DeliveryAssignmentUncheckedUpdateManyWithoutAssignedByNestedInput
+  codCollections?: Prisma.CodCollectionUncheckedUpdateManyWithoutCollectedByNestedInput
+  variantCostChanges?: Prisma.VariantCostHistoryUncheckedUpdateManyWithoutCreatedByNestedInput
+  identities?: Prisma.UserIdentityUncheckedUpdateManyWithoutUserNestedInput
+  feedback?: Prisma.FeedbackUncheckedUpdateManyWithoutCustomerNestedInput
+  notifications?: Prisma.NotificationUncheckedUpdateManyWithoutUserNestedInput
+  pushSubscriptions?: Prisma.PushSubscriptionUncheckedUpdateManyWithoutUserNestedInput
+  roleChangesReceived?: Prisma.UserRoleChangeUncheckedUpdateManyWithoutTargetNestedInput
+  roleChangesMade?: Prisma.UserRoleChangeUncheckedUpdateManyWithoutActorNestedInput
+}
+
+export type UserCreateWithoutRefreshOperationTombstonesInput = {
+  id?: string
+  firstName: string
+  lastName: string
+  email: string
+  passwordHash: string
+  phone?: string | null
+  status: string
+  role?: $Enums.Role
+  emailVerifiedAt?: Date | string | null
+  lastLoginAt?: Date | string | null
+  passwordChangedAt?: Date | string | null
+  createdAt?: Date | string
+  updatedAt?: Date | string
+  addresses?: Prisma.AddressCreateNestedManyWithoutUserInput
+  cart?: Prisma.CartCreateNestedOneWithoutUserInput
+  wishlist?: Prisma.WishlistCreateNestedOneWithoutUserInput
+  orders?: Prisma.OrderCreateNestedManyWithoutUserInput
+  checkoutQuotes?: Prisma.CheckoutQuoteCreateNestedManyWithoutUserInput
+  promotionUsages?: Prisma.PromotionUsageCreateNestedManyWithoutUserInput
+  passwordResetTokens?: Prisma.PasswordResetTokenCreateNestedManyWithoutUserInput
+  refreshSessions?: Prisma.RefreshSessionCreateNestedManyWithoutUserInput
+  refreshRotationResults?: Prisma.RefreshRotationResultCreateNestedManyWithoutUserInput
+  deliveryAssignments?: Prisma.DeliveryAssignmentCreateNestedManyWithoutDeliveryStaffInput
+  assignmentsMade?: Prisma.DeliveryAssignmentCreateNestedManyWithoutAssignedByInput
+  codCollections?: Prisma.CodCollectionCreateNestedManyWithoutCollectedByInput
+  variantCostChanges?: Prisma.VariantCostHistoryCreateNestedManyWithoutCreatedByInput
+  identities?: Prisma.UserIdentityCreateNestedManyWithoutUserInput
+  feedback?: Prisma.FeedbackCreateNestedManyWithoutCustomerInput
+  notifications?: Prisma.NotificationCreateNestedManyWithoutUserInput
+  pushSubscriptions?: Prisma.PushSubscriptionCreateNestedManyWithoutUserInput
+  roleChangesReceived?: Prisma.UserRoleChangeCreateNestedManyWithoutTargetInput
+  roleChangesMade?: Prisma.UserRoleChangeCreateNestedManyWithoutActorInput
+}
+
+export type UserUncheckedCreateWithoutRefreshOperationTombstonesInput = {
+  id?: string
+  firstName: string
+  lastName: string
+  email: string
+  passwordHash: string
+  phone?: string | null
+  status: string
+  role?: $Enums.Role
+  emailVerifiedAt?: Date | string | null
+  lastLoginAt?: Date | string | null
+  passwordChangedAt?: Date | string | null
+  createdAt?: Date | string
+  updatedAt?: Date | string
+  addresses?: Prisma.AddressUncheckedCreateNestedManyWithoutUserInput
+  cart?: Prisma.CartUncheckedCreateNestedOneWithoutUserInput
+  wishlist?: Prisma.WishlistUncheckedCreateNestedOneWithoutUserInput
+  orders?: Prisma.OrderUncheckedCreateNestedManyWithoutUserInput
+  checkoutQuotes?: Prisma.CheckoutQuoteUncheckedCreateNestedManyWithoutUserInput
+  promotionUsages?: Prisma.PromotionUsageUncheckedCreateNestedManyWithoutUserInput
+  passwordResetTokens?: Prisma.PasswordResetTokenUncheckedCreateNestedManyWithoutUserInput
+  refreshSessions?: Prisma.RefreshSessionUncheckedCreateNestedManyWithoutUserInput
+  refreshRotationResults?: Prisma.RefreshRotationResultUncheckedCreateNestedManyWithoutUserInput
+  deliveryAssignments?: Prisma.DeliveryAssignmentUncheckedCreateNestedManyWithoutDeliveryStaffInput
+  assignmentsMade?: Prisma.DeliveryAssignmentUncheckedCreateNestedManyWithoutAssignedByInput
+  codCollections?: Prisma.CodCollectionUncheckedCreateNestedManyWithoutCollectedByInput
+  variantCostChanges?: Prisma.VariantCostHistoryUncheckedCreateNestedManyWithoutCreatedByInput
+  identities?: Prisma.UserIdentityUncheckedCreateNestedManyWithoutUserInput
+  feedback?: Prisma.FeedbackUncheckedCreateNestedManyWithoutCustomerInput
+  notifications?: Prisma.NotificationUncheckedCreateNestedManyWithoutUserInput
+  pushSubscriptions?: Prisma.PushSubscriptionUncheckedCreateNestedManyWithoutUserInput
+  roleChangesReceived?: Prisma.UserRoleChangeUncheckedCreateNestedManyWithoutTargetInput
+  roleChangesMade?: Prisma.UserRoleChangeUncheckedCreateNestedManyWithoutActorInput
+}
+
+export type UserCreateOrConnectWithoutRefreshOperationTombstonesInput = {
+  where: Prisma.UserWhereUniqueInput
+  create: Prisma.XOR<Prisma.UserCreateWithoutRefreshOperationTombstonesInput, Prisma.UserUncheckedCreateWithoutRefreshOperationTombstonesInput>
+}
+
+export type UserUpsertWithoutRefreshOperationTombstonesInput = {
+  update: Prisma.XOR<Prisma.UserUpdateWithoutRefreshOperationTombstonesInput, Prisma.UserUncheckedUpdateWithoutRefreshOperationTombstonesInput>
+  create: Prisma.XOR<Prisma.UserCreateWithoutRefreshOperationTombstonesInput, Prisma.UserUncheckedCreateWithoutRefreshOperationTombstonesInput>
+  where?: Prisma.UserWhereInput
+}
+
+export type UserUpdateToOneWithWhereWithoutRefreshOperationTombstonesInput = {
+  where?: Prisma.UserWhereInput
+  data: Prisma.XOR<Prisma.UserUpdateWithoutRefreshOperationTombstonesInput, Prisma.UserUncheckedUpdateWithoutRefreshOperationTombstonesInput>
+}
+
+export type UserUpdateWithoutRefreshOperationTombstonesInput = {
+  id?: Prisma.StringFieldUpdateOperationsInput | string
+  firstName?: Prisma.StringFieldUpdateOperationsInput | string
+  lastName?: Prisma.StringFieldUpdateOperationsInput | string
+  email?: Prisma.StringFieldUpdateOperationsInput | string
+  passwordHash?: Prisma.StringFieldUpdateOperationsInput | string
+  phone?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  status?: Prisma.StringFieldUpdateOperationsInput | string
+  role?: Prisma.EnumRoleFieldUpdateOperationsInput | $Enums.Role
+  emailVerifiedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  lastLoginAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  passwordChangedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  addresses?: Prisma.AddressUpdateManyWithoutUserNestedInput
+  cart?: Prisma.CartUpdateOneWithoutUserNestedInput
+  wishlist?: Prisma.WishlistUpdateOneWithoutUserNestedInput
+  orders?: Prisma.OrderUpdateManyWithoutUserNestedInput
+  checkoutQuotes?: Prisma.CheckoutQuoteUpdateManyWithoutUserNestedInput
+  promotionUsages?: Prisma.PromotionUsageUpdateManyWithoutUserNestedInput
+  passwordResetTokens?: Prisma.PasswordResetTokenUpdateManyWithoutUserNestedInput
+  refreshSessions?: Prisma.RefreshSessionUpdateManyWithoutUserNestedInput
+  refreshRotationResults?: Prisma.RefreshRotationResultUpdateManyWithoutUserNestedInput
+  deliveryAssignments?: Prisma.DeliveryAssignmentUpdateManyWithoutDeliveryStaffNestedInput
+  assignmentsMade?: Prisma.DeliveryAssignmentUpdateManyWithoutAssignedByNestedInput
+  codCollections?: Prisma.CodCollectionUpdateManyWithoutCollectedByNestedInput
+  variantCostChanges?: Prisma.VariantCostHistoryUpdateManyWithoutCreatedByNestedInput
+  identities?: Prisma.UserIdentityUpdateManyWithoutUserNestedInput
+  feedback?: Prisma.FeedbackUpdateManyWithoutCustomerNestedInput
+  notifications?: Prisma.NotificationUpdateManyWithoutUserNestedInput
+  pushSubscriptions?: Prisma.PushSubscriptionUpdateManyWithoutUserNestedInput
+  roleChangesReceived?: Prisma.UserRoleChangeUpdateManyWithoutTargetNestedInput
+  roleChangesMade?: Prisma.UserRoleChangeUpdateManyWithoutActorNestedInput
+}
+
+export type UserUncheckedUpdateWithoutRefreshOperationTombstonesInput = {
+  id?: Prisma.StringFieldUpdateOperationsInput | string
+  firstName?: Prisma.StringFieldUpdateOperationsInput | string
+  lastName?: Prisma.StringFieldUpdateOperationsInput | string
+  email?: Prisma.StringFieldUpdateOperationsInput | string
+  passwordHash?: Prisma.StringFieldUpdateOperationsInput | string
+  phone?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  status?: Prisma.StringFieldUpdateOperationsInput | string
+  role?: Prisma.EnumRoleFieldUpdateOperationsInput | $Enums.Role
+  emailVerifiedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  lastLoginAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  passwordChangedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  addresses?: Prisma.AddressUncheckedUpdateManyWithoutUserNestedInput
+  cart?: Prisma.CartUncheckedUpdateOneWithoutUserNestedInput
+  wishlist?: Prisma.WishlistUncheckedUpdateOneWithoutUserNestedInput
+  orders?: Prisma.OrderUncheckedUpdateManyWithoutUserNestedInput
+  checkoutQuotes?: Prisma.CheckoutQuoteUncheckedUpdateManyWithoutUserNestedInput
+  promotionUsages?: Prisma.PromotionUsageUncheckedUpdateManyWithoutUserNestedInput
+  passwordResetTokens?: Prisma.PasswordResetTokenUncheckedUpdateManyWithoutUserNestedInput
+  refreshSessions?: Prisma.RefreshSessionUncheckedUpdateManyWithoutUserNestedInput
+  refreshRotationResults?: Prisma.RefreshRotationResultUncheckedUpdateManyWithoutUserNestedInput
+  deliveryAssignments?: Prisma.DeliveryAssignmentUncheckedUpdateManyWithoutDeliveryStaffNestedInput
+  assignmentsMade?: Prisma.DeliveryAssignmentUncheckedUpdateManyWithoutAssignedByNestedInput
+  codCollections?: Prisma.CodCollectionUncheckedUpdateManyWithoutCollectedByNestedInput
+  variantCostChanges?: Prisma.VariantCostHistoryUncheckedUpdateManyWithoutCreatedByNestedInput
+  identities?: Prisma.UserIdentityUncheckedUpdateManyWithoutUserNestedInput
+  feedback?: Prisma.FeedbackUncheckedUpdateManyWithoutCustomerNestedInput
+  notifications?: Prisma.NotificationUncheckedUpdateManyWithoutUserNestedInput
+  pushSubscriptions?: Prisma.PushSubscriptionUncheckedUpdateManyWithoutUserNestedInput
+  roleChangesReceived?: Prisma.UserRoleChangeUncheckedUpdateManyWithoutTargetNestedInput
+  roleChangesMade?: Prisma.UserRoleChangeUncheckedUpdateManyWithoutActorNestedInput
 }
 
 export type UserCreateWithoutVariantCostChangesInput = {
@@ -1529,6 +2514,9 @@ export type UserCreateWithoutVariantCostChangesInput = {
   checkoutQuotes?: Prisma.CheckoutQuoteCreateNestedManyWithoutUserInput
   promotionUsages?: Prisma.PromotionUsageCreateNestedManyWithoutUserInput
   passwordResetTokens?: Prisma.PasswordResetTokenCreateNestedManyWithoutUserInput
+  refreshSessions?: Prisma.RefreshSessionCreateNestedManyWithoutUserInput
+  refreshRotationResults?: Prisma.RefreshRotationResultCreateNestedManyWithoutUserInput
+  refreshOperationTombstones?: Prisma.RefreshOperationTombstoneCreateNestedManyWithoutUserInput
   deliveryAssignments?: Prisma.DeliveryAssignmentCreateNestedManyWithoutDeliveryStaffInput
   assignmentsMade?: Prisma.DeliveryAssignmentCreateNestedManyWithoutAssignedByInput
   codCollections?: Prisma.CodCollectionCreateNestedManyWithoutCollectedByInput
@@ -1536,6 +2524,8 @@ export type UserCreateWithoutVariantCostChangesInput = {
   feedback?: Prisma.FeedbackCreateNestedManyWithoutCustomerInput
   notifications?: Prisma.NotificationCreateNestedManyWithoutUserInput
   pushSubscriptions?: Prisma.PushSubscriptionCreateNestedManyWithoutUserInput
+  roleChangesReceived?: Prisma.UserRoleChangeCreateNestedManyWithoutTargetInput
+  roleChangesMade?: Prisma.UserRoleChangeCreateNestedManyWithoutActorInput
 }
 
 export type UserUncheckedCreateWithoutVariantCostChangesInput = {
@@ -1559,6 +2549,9 @@ export type UserUncheckedCreateWithoutVariantCostChangesInput = {
   checkoutQuotes?: Prisma.CheckoutQuoteUncheckedCreateNestedManyWithoutUserInput
   promotionUsages?: Prisma.PromotionUsageUncheckedCreateNestedManyWithoutUserInput
   passwordResetTokens?: Prisma.PasswordResetTokenUncheckedCreateNestedManyWithoutUserInput
+  refreshSessions?: Prisma.RefreshSessionUncheckedCreateNestedManyWithoutUserInput
+  refreshRotationResults?: Prisma.RefreshRotationResultUncheckedCreateNestedManyWithoutUserInput
+  refreshOperationTombstones?: Prisma.RefreshOperationTombstoneUncheckedCreateNestedManyWithoutUserInput
   deliveryAssignments?: Prisma.DeliveryAssignmentUncheckedCreateNestedManyWithoutDeliveryStaffInput
   assignmentsMade?: Prisma.DeliveryAssignmentUncheckedCreateNestedManyWithoutAssignedByInput
   codCollections?: Prisma.CodCollectionUncheckedCreateNestedManyWithoutCollectedByInput
@@ -1566,6 +2559,8 @@ export type UserUncheckedCreateWithoutVariantCostChangesInput = {
   feedback?: Prisma.FeedbackUncheckedCreateNestedManyWithoutCustomerInput
   notifications?: Prisma.NotificationUncheckedCreateNestedManyWithoutUserInput
   pushSubscriptions?: Prisma.PushSubscriptionUncheckedCreateNestedManyWithoutUserInput
+  roleChangesReceived?: Prisma.UserRoleChangeUncheckedCreateNestedManyWithoutTargetInput
+  roleChangesMade?: Prisma.UserRoleChangeUncheckedCreateNestedManyWithoutActorInput
 }
 
 export type UserCreateOrConnectWithoutVariantCostChangesInput = {
@@ -1605,6 +2600,9 @@ export type UserUpdateWithoutVariantCostChangesInput = {
   checkoutQuotes?: Prisma.CheckoutQuoteUpdateManyWithoutUserNestedInput
   promotionUsages?: Prisma.PromotionUsageUpdateManyWithoutUserNestedInput
   passwordResetTokens?: Prisma.PasswordResetTokenUpdateManyWithoutUserNestedInput
+  refreshSessions?: Prisma.RefreshSessionUpdateManyWithoutUserNestedInput
+  refreshRotationResults?: Prisma.RefreshRotationResultUpdateManyWithoutUserNestedInput
+  refreshOperationTombstones?: Prisma.RefreshOperationTombstoneUpdateManyWithoutUserNestedInput
   deliveryAssignments?: Prisma.DeliveryAssignmentUpdateManyWithoutDeliveryStaffNestedInput
   assignmentsMade?: Prisma.DeliveryAssignmentUpdateManyWithoutAssignedByNestedInput
   codCollections?: Prisma.CodCollectionUpdateManyWithoutCollectedByNestedInput
@@ -1612,6 +2610,8 @@ export type UserUpdateWithoutVariantCostChangesInput = {
   feedback?: Prisma.FeedbackUpdateManyWithoutCustomerNestedInput
   notifications?: Prisma.NotificationUpdateManyWithoutUserNestedInput
   pushSubscriptions?: Prisma.PushSubscriptionUpdateManyWithoutUserNestedInput
+  roleChangesReceived?: Prisma.UserRoleChangeUpdateManyWithoutTargetNestedInput
+  roleChangesMade?: Prisma.UserRoleChangeUpdateManyWithoutActorNestedInput
 }
 
 export type UserUncheckedUpdateWithoutVariantCostChangesInput = {
@@ -1635,6 +2635,9 @@ export type UserUncheckedUpdateWithoutVariantCostChangesInput = {
   checkoutQuotes?: Prisma.CheckoutQuoteUncheckedUpdateManyWithoutUserNestedInput
   promotionUsages?: Prisma.PromotionUsageUncheckedUpdateManyWithoutUserNestedInput
   passwordResetTokens?: Prisma.PasswordResetTokenUncheckedUpdateManyWithoutUserNestedInput
+  refreshSessions?: Prisma.RefreshSessionUncheckedUpdateManyWithoutUserNestedInput
+  refreshRotationResults?: Prisma.RefreshRotationResultUncheckedUpdateManyWithoutUserNestedInput
+  refreshOperationTombstones?: Prisma.RefreshOperationTombstoneUncheckedUpdateManyWithoutUserNestedInput
   deliveryAssignments?: Prisma.DeliveryAssignmentUncheckedUpdateManyWithoutDeliveryStaffNestedInput
   assignmentsMade?: Prisma.DeliveryAssignmentUncheckedUpdateManyWithoutAssignedByNestedInput
   codCollections?: Prisma.CodCollectionUncheckedUpdateManyWithoutCollectedByNestedInput
@@ -1642,6 +2645,8 @@ export type UserUncheckedUpdateWithoutVariantCostChangesInput = {
   feedback?: Prisma.FeedbackUncheckedUpdateManyWithoutCustomerNestedInput
   notifications?: Prisma.NotificationUncheckedUpdateManyWithoutUserNestedInput
   pushSubscriptions?: Prisma.PushSubscriptionUncheckedUpdateManyWithoutUserNestedInput
+  roleChangesReceived?: Prisma.UserRoleChangeUncheckedUpdateManyWithoutTargetNestedInput
+  roleChangesMade?: Prisma.UserRoleChangeUncheckedUpdateManyWithoutActorNestedInput
 }
 
 export type UserCreateWithoutCartInput = {
@@ -1664,6 +2669,9 @@ export type UserCreateWithoutCartInput = {
   checkoutQuotes?: Prisma.CheckoutQuoteCreateNestedManyWithoutUserInput
   promotionUsages?: Prisma.PromotionUsageCreateNestedManyWithoutUserInput
   passwordResetTokens?: Prisma.PasswordResetTokenCreateNestedManyWithoutUserInput
+  refreshSessions?: Prisma.RefreshSessionCreateNestedManyWithoutUserInput
+  refreshRotationResults?: Prisma.RefreshRotationResultCreateNestedManyWithoutUserInput
+  refreshOperationTombstones?: Prisma.RefreshOperationTombstoneCreateNestedManyWithoutUserInput
   deliveryAssignments?: Prisma.DeliveryAssignmentCreateNestedManyWithoutDeliveryStaffInput
   assignmentsMade?: Prisma.DeliveryAssignmentCreateNestedManyWithoutAssignedByInput
   codCollections?: Prisma.CodCollectionCreateNestedManyWithoutCollectedByInput
@@ -1672,6 +2680,8 @@ export type UserCreateWithoutCartInput = {
   feedback?: Prisma.FeedbackCreateNestedManyWithoutCustomerInput
   notifications?: Prisma.NotificationCreateNestedManyWithoutUserInput
   pushSubscriptions?: Prisma.PushSubscriptionCreateNestedManyWithoutUserInput
+  roleChangesReceived?: Prisma.UserRoleChangeCreateNestedManyWithoutTargetInput
+  roleChangesMade?: Prisma.UserRoleChangeCreateNestedManyWithoutActorInput
 }
 
 export type UserUncheckedCreateWithoutCartInput = {
@@ -1694,6 +2704,9 @@ export type UserUncheckedCreateWithoutCartInput = {
   checkoutQuotes?: Prisma.CheckoutQuoteUncheckedCreateNestedManyWithoutUserInput
   promotionUsages?: Prisma.PromotionUsageUncheckedCreateNestedManyWithoutUserInput
   passwordResetTokens?: Prisma.PasswordResetTokenUncheckedCreateNestedManyWithoutUserInput
+  refreshSessions?: Prisma.RefreshSessionUncheckedCreateNestedManyWithoutUserInput
+  refreshRotationResults?: Prisma.RefreshRotationResultUncheckedCreateNestedManyWithoutUserInput
+  refreshOperationTombstones?: Prisma.RefreshOperationTombstoneUncheckedCreateNestedManyWithoutUserInput
   deliveryAssignments?: Prisma.DeliveryAssignmentUncheckedCreateNestedManyWithoutDeliveryStaffInput
   assignmentsMade?: Prisma.DeliveryAssignmentUncheckedCreateNestedManyWithoutAssignedByInput
   codCollections?: Prisma.CodCollectionUncheckedCreateNestedManyWithoutCollectedByInput
@@ -1702,6 +2715,8 @@ export type UserUncheckedCreateWithoutCartInput = {
   feedback?: Prisma.FeedbackUncheckedCreateNestedManyWithoutCustomerInput
   notifications?: Prisma.NotificationUncheckedCreateNestedManyWithoutUserInput
   pushSubscriptions?: Prisma.PushSubscriptionUncheckedCreateNestedManyWithoutUserInput
+  roleChangesReceived?: Prisma.UserRoleChangeUncheckedCreateNestedManyWithoutTargetInput
+  roleChangesMade?: Prisma.UserRoleChangeUncheckedCreateNestedManyWithoutActorInput
 }
 
 export type UserCreateOrConnectWithoutCartInput = {
@@ -1740,6 +2755,9 @@ export type UserUpdateWithoutCartInput = {
   checkoutQuotes?: Prisma.CheckoutQuoteUpdateManyWithoutUserNestedInput
   promotionUsages?: Prisma.PromotionUsageUpdateManyWithoutUserNestedInput
   passwordResetTokens?: Prisma.PasswordResetTokenUpdateManyWithoutUserNestedInput
+  refreshSessions?: Prisma.RefreshSessionUpdateManyWithoutUserNestedInput
+  refreshRotationResults?: Prisma.RefreshRotationResultUpdateManyWithoutUserNestedInput
+  refreshOperationTombstones?: Prisma.RefreshOperationTombstoneUpdateManyWithoutUserNestedInput
   deliveryAssignments?: Prisma.DeliveryAssignmentUpdateManyWithoutDeliveryStaffNestedInput
   assignmentsMade?: Prisma.DeliveryAssignmentUpdateManyWithoutAssignedByNestedInput
   codCollections?: Prisma.CodCollectionUpdateManyWithoutCollectedByNestedInput
@@ -1748,6 +2766,8 @@ export type UserUpdateWithoutCartInput = {
   feedback?: Prisma.FeedbackUpdateManyWithoutCustomerNestedInput
   notifications?: Prisma.NotificationUpdateManyWithoutUserNestedInput
   pushSubscriptions?: Prisma.PushSubscriptionUpdateManyWithoutUserNestedInput
+  roleChangesReceived?: Prisma.UserRoleChangeUpdateManyWithoutTargetNestedInput
+  roleChangesMade?: Prisma.UserRoleChangeUpdateManyWithoutActorNestedInput
 }
 
 export type UserUncheckedUpdateWithoutCartInput = {
@@ -1770,6 +2790,9 @@ export type UserUncheckedUpdateWithoutCartInput = {
   checkoutQuotes?: Prisma.CheckoutQuoteUncheckedUpdateManyWithoutUserNestedInput
   promotionUsages?: Prisma.PromotionUsageUncheckedUpdateManyWithoutUserNestedInput
   passwordResetTokens?: Prisma.PasswordResetTokenUncheckedUpdateManyWithoutUserNestedInput
+  refreshSessions?: Prisma.RefreshSessionUncheckedUpdateManyWithoutUserNestedInput
+  refreshRotationResults?: Prisma.RefreshRotationResultUncheckedUpdateManyWithoutUserNestedInput
+  refreshOperationTombstones?: Prisma.RefreshOperationTombstoneUncheckedUpdateManyWithoutUserNestedInput
   deliveryAssignments?: Prisma.DeliveryAssignmentUncheckedUpdateManyWithoutDeliveryStaffNestedInput
   assignmentsMade?: Prisma.DeliveryAssignmentUncheckedUpdateManyWithoutAssignedByNestedInput
   codCollections?: Prisma.CodCollectionUncheckedUpdateManyWithoutCollectedByNestedInput
@@ -1778,6 +2801,8 @@ export type UserUncheckedUpdateWithoutCartInput = {
   feedback?: Prisma.FeedbackUncheckedUpdateManyWithoutCustomerNestedInput
   notifications?: Prisma.NotificationUncheckedUpdateManyWithoutUserNestedInput
   pushSubscriptions?: Prisma.PushSubscriptionUncheckedUpdateManyWithoutUserNestedInput
+  roleChangesReceived?: Prisma.UserRoleChangeUncheckedUpdateManyWithoutTargetNestedInput
+  roleChangesMade?: Prisma.UserRoleChangeUncheckedUpdateManyWithoutActorNestedInput
 }
 
 export type UserCreateWithoutWishlistInput = {
@@ -1800,6 +2825,9 @@ export type UserCreateWithoutWishlistInput = {
   checkoutQuotes?: Prisma.CheckoutQuoteCreateNestedManyWithoutUserInput
   promotionUsages?: Prisma.PromotionUsageCreateNestedManyWithoutUserInput
   passwordResetTokens?: Prisma.PasswordResetTokenCreateNestedManyWithoutUserInput
+  refreshSessions?: Prisma.RefreshSessionCreateNestedManyWithoutUserInput
+  refreshRotationResults?: Prisma.RefreshRotationResultCreateNestedManyWithoutUserInput
+  refreshOperationTombstones?: Prisma.RefreshOperationTombstoneCreateNestedManyWithoutUserInput
   deliveryAssignments?: Prisma.DeliveryAssignmentCreateNestedManyWithoutDeliveryStaffInput
   assignmentsMade?: Prisma.DeliveryAssignmentCreateNestedManyWithoutAssignedByInput
   codCollections?: Prisma.CodCollectionCreateNestedManyWithoutCollectedByInput
@@ -1808,6 +2836,8 @@ export type UserCreateWithoutWishlistInput = {
   feedback?: Prisma.FeedbackCreateNestedManyWithoutCustomerInput
   notifications?: Prisma.NotificationCreateNestedManyWithoutUserInput
   pushSubscriptions?: Prisma.PushSubscriptionCreateNestedManyWithoutUserInput
+  roleChangesReceived?: Prisma.UserRoleChangeCreateNestedManyWithoutTargetInput
+  roleChangesMade?: Prisma.UserRoleChangeCreateNestedManyWithoutActorInput
 }
 
 export type UserUncheckedCreateWithoutWishlistInput = {
@@ -1830,6 +2860,9 @@ export type UserUncheckedCreateWithoutWishlistInput = {
   checkoutQuotes?: Prisma.CheckoutQuoteUncheckedCreateNestedManyWithoutUserInput
   promotionUsages?: Prisma.PromotionUsageUncheckedCreateNestedManyWithoutUserInput
   passwordResetTokens?: Prisma.PasswordResetTokenUncheckedCreateNestedManyWithoutUserInput
+  refreshSessions?: Prisma.RefreshSessionUncheckedCreateNestedManyWithoutUserInput
+  refreshRotationResults?: Prisma.RefreshRotationResultUncheckedCreateNestedManyWithoutUserInput
+  refreshOperationTombstones?: Prisma.RefreshOperationTombstoneUncheckedCreateNestedManyWithoutUserInput
   deliveryAssignments?: Prisma.DeliveryAssignmentUncheckedCreateNestedManyWithoutDeliveryStaffInput
   assignmentsMade?: Prisma.DeliveryAssignmentUncheckedCreateNestedManyWithoutAssignedByInput
   codCollections?: Prisma.CodCollectionUncheckedCreateNestedManyWithoutCollectedByInput
@@ -1838,6 +2871,8 @@ export type UserUncheckedCreateWithoutWishlistInput = {
   feedback?: Prisma.FeedbackUncheckedCreateNestedManyWithoutCustomerInput
   notifications?: Prisma.NotificationUncheckedCreateNestedManyWithoutUserInput
   pushSubscriptions?: Prisma.PushSubscriptionUncheckedCreateNestedManyWithoutUserInput
+  roleChangesReceived?: Prisma.UserRoleChangeUncheckedCreateNestedManyWithoutTargetInput
+  roleChangesMade?: Prisma.UserRoleChangeUncheckedCreateNestedManyWithoutActorInput
 }
 
 export type UserCreateOrConnectWithoutWishlistInput = {
@@ -1876,6 +2911,9 @@ export type UserUpdateWithoutWishlistInput = {
   checkoutQuotes?: Prisma.CheckoutQuoteUpdateManyWithoutUserNestedInput
   promotionUsages?: Prisma.PromotionUsageUpdateManyWithoutUserNestedInput
   passwordResetTokens?: Prisma.PasswordResetTokenUpdateManyWithoutUserNestedInput
+  refreshSessions?: Prisma.RefreshSessionUpdateManyWithoutUserNestedInput
+  refreshRotationResults?: Prisma.RefreshRotationResultUpdateManyWithoutUserNestedInput
+  refreshOperationTombstones?: Prisma.RefreshOperationTombstoneUpdateManyWithoutUserNestedInput
   deliveryAssignments?: Prisma.DeliveryAssignmentUpdateManyWithoutDeliveryStaffNestedInput
   assignmentsMade?: Prisma.DeliveryAssignmentUpdateManyWithoutAssignedByNestedInput
   codCollections?: Prisma.CodCollectionUpdateManyWithoutCollectedByNestedInput
@@ -1884,6 +2922,8 @@ export type UserUpdateWithoutWishlistInput = {
   feedback?: Prisma.FeedbackUpdateManyWithoutCustomerNestedInput
   notifications?: Prisma.NotificationUpdateManyWithoutUserNestedInput
   pushSubscriptions?: Prisma.PushSubscriptionUpdateManyWithoutUserNestedInput
+  roleChangesReceived?: Prisma.UserRoleChangeUpdateManyWithoutTargetNestedInput
+  roleChangesMade?: Prisma.UserRoleChangeUpdateManyWithoutActorNestedInput
 }
 
 export type UserUncheckedUpdateWithoutWishlistInput = {
@@ -1906,6 +2946,9 @@ export type UserUncheckedUpdateWithoutWishlistInput = {
   checkoutQuotes?: Prisma.CheckoutQuoteUncheckedUpdateManyWithoutUserNestedInput
   promotionUsages?: Prisma.PromotionUsageUncheckedUpdateManyWithoutUserNestedInput
   passwordResetTokens?: Prisma.PasswordResetTokenUncheckedUpdateManyWithoutUserNestedInput
+  refreshSessions?: Prisma.RefreshSessionUncheckedUpdateManyWithoutUserNestedInput
+  refreshRotationResults?: Prisma.RefreshRotationResultUncheckedUpdateManyWithoutUserNestedInput
+  refreshOperationTombstones?: Prisma.RefreshOperationTombstoneUncheckedUpdateManyWithoutUserNestedInput
   deliveryAssignments?: Prisma.DeliveryAssignmentUncheckedUpdateManyWithoutDeliveryStaffNestedInput
   assignmentsMade?: Prisma.DeliveryAssignmentUncheckedUpdateManyWithoutAssignedByNestedInput
   codCollections?: Prisma.CodCollectionUncheckedUpdateManyWithoutCollectedByNestedInput
@@ -1914,6 +2957,8 @@ export type UserUncheckedUpdateWithoutWishlistInput = {
   feedback?: Prisma.FeedbackUncheckedUpdateManyWithoutCustomerNestedInput
   notifications?: Prisma.NotificationUncheckedUpdateManyWithoutUserNestedInput
   pushSubscriptions?: Prisma.PushSubscriptionUncheckedUpdateManyWithoutUserNestedInput
+  roleChangesReceived?: Prisma.UserRoleChangeUncheckedUpdateManyWithoutTargetNestedInput
+  roleChangesMade?: Prisma.UserRoleChangeUncheckedUpdateManyWithoutActorNestedInput
 }
 
 export type UserCreateWithoutAddressesInput = {
@@ -1936,6 +2981,9 @@ export type UserCreateWithoutAddressesInput = {
   checkoutQuotes?: Prisma.CheckoutQuoteCreateNestedManyWithoutUserInput
   promotionUsages?: Prisma.PromotionUsageCreateNestedManyWithoutUserInput
   passwordResetTokens?: Prisma.PasswordResetTokenCreateNestedManyWithoutUserInput
+  refreshSessions?: Prisma.RefreshSessionCreateNestedManyWithoutUserInput
+  refreshRotationResults?: Prisma.RefreshRotationResultCreateNestedManyWithoutUserInput
+  refreshOperationTombstones?: Prisma.RefreshOperationTombstoneCreateNestedManyWithoutUserInput
   deliveryAssignments?: Prisma.DeliveryAssignmentCreateNestedManyWithoutDeliveryStaffInput
   assignmentsMade?: Prisma.DeliveryAssignmentCreateNestedManyWithoutAssignedByInput
   codCollections?: Prisma.CodCollectionCreateNestedManyWithoutCollectedByInput
@@ -1944,6 +2992,8 @@ export type UserCreateWithoutAddressesInput = {
   feedback?: Prisma.FeedbackCreateNestedManyWithoutCustomerInput
   notifications?: Prisma.NotificationCreateNestedManyWithoutUserInput
   pushSubscriptions?: Prisma.PushSubscriptionCreateNestedManyWithoutUserInput
+  roleChangesReceived?: Prisma.UserRoleChangeCreateNestedManyWithoutTargetInput
+  roleChangesMade?: Prisma.UserRoleChangeCreateNestedManyWithoutActorInput
 }
 
 export type UserUncheckedCreateWithoutAddressesInput = {
@@ -1966,6 +3016,9 @@ export type UserUncheckedCreateWithoutAddressesInput = {
   checkoutQuotes?: Prisma.CheckoutQuoteUncheckedCreateNestedManyWithoutUserInput
   promotionUsages?: Prisma.PromotionUsageUncheckedCreateNestedManyWithoutUserInput
   passwordResetTokens?: Prisma.PasswordResetTokenUncheckedCreateNestedManyWithoutUserInput
+  refreshSessions?: Prisma.RefreshSessionUncheckedCreateNestedManyWithoutUserInput
+  refreshRotationResults?: Prisma.RefreshRotationResultUncheckedCreateNestedManyWithoutUserInput
+  refreshOperationTombstones?: Prisma.RefreshOperationTombstoneUncheckedCreateNestedManyWithoutUserInput
   deliveryAssignments?: Prisma.DeliveryAssignmentUncheckedCreateNestedManyWithoutDeliveryStaffInput
   assignmentsMade?: Prisma.DeliveryAssignmentUncheckedCreateNestedManyWithoutAssignedByInput
   codCollections?: Prisma.CodCollectionUncheckedCreateNestedManyWithoutCollectedByInput
@@ -1974,6 +3027,8 @@ export type UserUncheckedCreateWithoutAddressesInput = {
   feedback?: Prisma.FeedbackUncheckedCreateNestedManyWithoutCustomerInput
   notifications?: Prisma.NotificationUncheckedCreateNestedManyWithoutUserInput
   pushSubscriptions?: Prisma.PushSubscriptionUncheckedCreateNestedManyWithoutUserInput
+  roleChangesReceived?: Prisma.UserRoleChangeUncheckedCreateNestedManyWithoutTargetInput
+  roleChangesMade?: Prisma.UserRoleChangeUncheckedCreateNestedManyWithoutActorInput
 }
 
 export type UserCreateOrConnectWithoutAddressesInput = {
@@ -2012,6 +3067,9 @@ export type UserUpdateWithoutAddressesInput = {
   checkoutQuotes?: Prisma.CheckoutQuoteUpdateManyWithoutUserNestedInput
   promotionUsages?: Prisma.PromotionUsageUpdateManyWithoutUserNestedInput
   passwordResetTokens?: Prisma.PasswordResetTokenUpdateManyWithoutUserNestedInput
+  refreshSessions?: Prisma.RefreshSessionUpdateManyWithoutUserNestedInput
+  refreshRotationResults?: Prisma.RefreshRotationResultUpdateManyWithoutUserNestedInput
+  refreshOperationTombstones?: Prisma.RefreshOperationTombstoneUpdateManyWithoutUserNestedInput
   deliveryAssignments?: Prisma.DeliveryAssignmentUpdateManyWithoutDeliveryStaffNestedInput
   assignmentsMade?: Prisma.DeliveryAssignmentUpdateManyWithoutAssignedByNestedInput
   codCollections?: Prisma.CodCollectionUpdateManyWithoutCollectedByNestedInput
@@ -2020,6 +3078,8 @@ export type UserUpdateWithoutAddressesInput = {
   feedback?: Prisma.FeedbackUpdateManyWithoutCustomerNestedInput
   notifications?: Prisma.NotificationUpdateManyWithoutUserNestedInput
   pushSubscriptions?: Prisma.PushSubscriptionUpdateManyWithoutUserNestedInput
+  roleChangesReceived?: Prisma.UserRoleChangeUpdateManyWithoutTargetNestedInput
+  roleChangesMade?: Prisma.UserRoleChangeUpdateManyWithoutActorNestedInput
 }
 
 export type UserUncheckedUpdateWithoutAddressesInput = {
@@ -2042,6 +3102,9 @@ export type UserUncheckedUpdateWithoutAddressesInput = {
   checkoutQuotes?: Prisma.CheckoutQuoteUncheckedUpdateManyWithoutUserNestedInput
   promotionUsages?: Prisma.PromotionUsageUncheckedUpdateManyWithoutUserNestedInput
   passwordResetTokens?: Prisma.PasswordResetTokenUncheckedUpdateManyWithoutUserNestedInput
+  refreshSessions?: Prisma.RefreshSessionUncheckedUpdateManyWithoutUserNestedInput
+  refreshRotationResults?: Prisma.RefreshRotationResultUncheckedUpdateManyWithoutUserNestedInput
+  refreshOperationTombstones?: Prisma.RefreshOperationTombstoneUncheckedUpdateManyWithoutUserNestedInput
   deliveryAssignments?: Prisma.DeliveryAssignmentUncheckedUpdateManyWithoutDeliveryStaffNestedInput
   assignmentsMade?: Prisma.DeliveryAssignmentUncheckedUpdateManyWithoutAssignedByNestedInput
   codCollections?: Prisma.CodCollectionUncheckedUpdateManyWithoutCollectedByNestedInput
@@ -2050,6 +3113,8 @@ export type UserUncheckedUpdateWithoutAddressesInput = {
   feedback?: Prisma.FeedbackUncheckedUpdateManyWithoutCustomerNestedInput
   notifications?: Prisma.NotificationUncheckedUpdateManyWithoutUserNestedInput
   pushSubscriptions?: Prisma.PushSubscriptionUncheckedUpdateManyWithoutUserNestedInput
+  roleChangesReceived?: Prisma.UserRoleChangeUncheckedUpdateManyWithoutTargetNestedInput
+  roleChangesMade?: Prisma.UserRoleChangeUncheckedUpdateManyWithoutActorNestedInput
 }
 
 export type UserCreateWithoutOrdersInput = {
@@ -2072,6 +3137,9 @@ export type UserCreateWithoutOrdersInput = {
   checkoutQuotes?: Prisma.CheckoutQuoteCreateNestedManyWithoutUserInput
   promotionUsages?: Prisma.PromotionUsageCreateNestedManyWithoutUserInput
   passwordResetTokens?: Prisma.PasswordResetTokenCreateNestedManyWithoutUserInput
+  refreshSessions?: Prisma.RefreshSessionCreateNestedManyWithoutUserInput
+  refreshRotationResults?: Prisma.RefreshRotationResultCreateNestedManyWithoutUserInput
+  refreshOperationTombstones?: Prisma.RefreshOperationTombstoneCreateNestedManyWithoutUserInput
   deliveryAssignments?: Prisma.DeliveryAssignmentCreateNestedManyWithoutDeliveryStaffInput
   assignmentsMade?: Prisma.DeliveryAssignmentCreateNestedManyWithoutAssignedByInput
   codCollections?: Prisma.CodCollectionCreateNestedManyWithoutCollectedByInput
@@ -2080,6 +3148,8 @@ export type UserCreateWithoutOrdersInput = {
   feedback?: Prisma.FeedbackCreateNestedManyWithoutCustomerInput
   notifications?: Prisma.NotificationCreateNestedManyWithoutUserInput
   pushSubscriptions?: Prisma.PushSubscriptionCreateNestedManyWithoutUserInput
+  roleChangesReceived?: Prisma.UserRoleChangeCreateNestedManyWithoutTargetInput
+  roleChangesMade?: Prisma.UserRoleChangeCreateNestedManyWithoutActorInput
 }
 
 export type UserUncheckedCreateWithoutOrdersInput = {
@@ -2102,6 +3172,9 @@ export type UserUncheckedCreateWithoutOrdersInput = {
   checkoutQuotes?: Prisma.CheckoutQuoteUncheckedCreateNestedManyWithoutUserInput
   promotionUsages?: Prisma.PromotionUsageUncheckedCreateNestedManyWithoutUserInput
   passwordResetTokens?: Prisma.PasswordResetTokenUncheckedCreateNestedManyWithoutUserInput
+  refreshSessions?: Prisma.RefreshSessionUncheckedCreateNestedManyWithoutUserInput
+  refreshRotationResults?: Prisma.RefreshRotationResultUncheckedCreateNestedManyWithoutUserInput
+  refreshOperationTombstones?: Prisma.RefreshOperationTombstoneUncheckedCreateNestedManyWithoutUserInput
   deliveryAssignments?: Prisma.DeliveryAssignmentUncheckedCreateNestedManyWithoutDeliveryStaffInput
   assignmentsMade?: Prisma.DeliveryAssignmentUncheckedCreateNestedManyWithoutAssignedByInput
   codCollections?: Prisma.CodCollectionUncheckedCreateNestedManyWithoutCollectedByInput
@@ -2110,6 +3183,8 @@ export type UserUncheckedCreateWithoutOrdersInput = {
   feedback?: Prisma.FeedbackUncheckedCreateNestedManyWithoutCustomerInput
   notifications?: Prisma.NotificationUncheckedCreateNestedManyWithoutUserInput
   pushSubscriptions?: Prisma.PushSubscriptionUncheckedCreateNestedManyWithoutUserInput
+  roleChangesReceived?: Prisma.UserRoleChangeUncheckedCreateNestedManyWithoutTargetInput
+  roleChangesMade?: Prisma.UserRoleChangeUncheckedCreateNestedManyWithoutActorInput
 }
 
 export type UserCreateOrConnectWithoutOrdersInput = {
@@ -2148,6 +3223,9 @@ export type UserUpdateWithoutOrdersInput = {
   checkoutQuotes?: Prisma.CheckoutQuoteUpdateManyWithoutUserNestedInput
   promotionUsages?: Prisma.PromotionUsageUpdateManyWithoutUserNestedInput
   passwordResetTokens?: Prisma.PasswordResetTokenUpdateManyWithoutUserNestedInput
+  refreshSessions?: Prisma.RefreshSessionUpdateManyWithoutUserNestedInput
+  refreshRotationResults?: Prisma.RefreshRotationResultUpdateManyWithoutUserNestedInput
+  refreshOperationTombstones?: Prisma.RefreshOperationTombstoneUpdateManyWithoutUserNestedInput
   deliveryAssignments?: Prisma.DeliveryAssignmentUpdateManyWithoutDeliveryStaffNestedInput
   assignmentsMade?: Prisma.DeliveryAssignmentUpdateManyWithoutAssignedByNestedInput
   codCollections?: Prisma.CodCollectionUpdateManyWithoutCollectedByNestedInput
@@ -2156,6 +3234,8 @@ export type UserUpdateWithoutOrdersInput = {
   feedback?: Prisma.FeedbackUpdateManyWithoutCustomerNestedInput
   notifications?: Prisma.NotificationUpdateManyWithoutUserNestedInput
   pushSubscriptions?: Prisma.PushSubscriptionUpdateManyWithoutUserNestedInput
+  roleChangesReceived?: Prisma.UserRoleChangeUpdateManyWithoutTargetNestedInput
+  roleChangesMade?: Prisma.UserRoleChangeUpdateManyWithoutActorNestedInput
 }
 
 export type UserUncheckedUpdateWithoutOrdersInput = {
@@ -2178,6 +3258,9 @@ export type UserUncheckedUpdateWithoutOrdersInput = {
   checkoutQuotes?: Prisma.CheckoutQuoteUncheckedUpdateManyWithoutUserNestedInput
   promotionUsages?: Prisma.PromotionUsageUncheckedUpdateManyWithoutUserNestedInput
   passwordResetTokens?: Prisma.PasswordResetTokenUncheckedUpdateManyWithoutUserNestedInput
+  refreshSessions?: Prisma.RefreshSessionUncheckedUpdateManyWithoutUserNestedInput
+  refreshRotationResults?: Prisma.RefreshRotationResultUncheckedUpdateManyWithoutUserNestedInput
+  refreshOperationTombstones?: Prisma.RefreshOperationTombstoneUncheckedUpdateManyWithoutUserNestedInput
   deliveryAssignments?: Prisma.DeliveryAssignmentUncheckedUpdateManyWithoutDeliveryStaffNestedInput
   assignmentsMade?: Prisma.DeliveryAssignmentUncheckedUpdateManyWithoutAssignedByNestedInput
   codCollections?: Prisma.CodCollectionUncheckedUpdateManyWithoutCollectedByNestedInput
@@ -2186,6 +3269,8 @@ export type UserUncheckedUpdateWithoutOrdersInput = {
   feedback?: Prisma.FeedbackUncheckedUpdateManyWithoutCustomerNestedInput
   notifications?: Prisma.NotificationUncheckedUpdateManyWithoutUserNestedInput
   pushSubscriptions?: Prisma.PushSubscriptionUncheckedUpdateManyWithoutUserNestedInput
+  roleChangesReceived?: Prisma.UserRoleChangeUncheckedUpdateManyWithoutTargetNestedInput
+  roleChangesMade?: Prisma.UserRoleChangeUncheckedUpdateManyWithoutActorNestedInput
 }
 
 export type UserCreateWithoutDeliveryAssignmentsInput = {
@@ -2209,6 +3294,9 @@ export type UserCreateWithoutDeliveryAssignmentsInput = {
   checkoutQuotes?: Prisma.CheckoutQuoteCreateNestedManyWithoutUserInput
   promotionUsages?: Prisma.PromotionUsageCreateNestedManyWithoutUserInput
   passwordResetTokens?: Prisma.PasswordResetTokenCreateNestedManyWithoutUserInput
+  refreshSessions?: Prisma.RefreshSessionCreateNestedManyWithoutUserInput
+  refreshRotationResults?: Prisma.RefreshRotationResultCreateNestedManyWithoutUserInput
+  refreshOperationTombstones?: Prisma.RefreshOperationTombstoneCreateNestedManyWithoutUserInput
   assignmentsMade?: Prisma.DeliveryAssignmentCreateNestedManyWithoutAssignedByInput
   codCollections?: Prisma.CodCollectionCreateNestedManyWithoutCollectedByInput
   variantCostChanges?: Prisma.VariantCostHistoryCreateNestedManyWithoutCreatedByInput
@@ -2216,6 +3304,8 @@ export type UserCreateWithoutDeliveryAssignmentsInput = {
   feedback?: Prisma.FeedbackCreateNestedManyWithoutCustomerInput
   notifications?: Prisma.NotificationCreateNestedManyWithoutUserInput
   pushSubscriptions?: Prisma.PushSubscriptionCreateNestedManyWithoutUserInput
+  roleChangesReceived?: Prisma.UserRoleChangeCreateNestedManyWithoutTargetInput
+  roleChangesMade?: Prisma.UserRoleChangeCreateNestedManyWithoutActorInput
 }
 
 export type UserUncheckedCreateWithoutDeliveryAssignmentsInput = {
@@ -2239,6 +3329,9 @@ export type UserUncheckedCreateWithoutDeliveryAssignmentsInput = {
   checkoutQuotes?: Prisma.CheckoutQuoteUncheckedCreateNestedManyWithoutUserInput
   promotionUsages?: Prisma.PromotionUsageUncheckedCreateNestedManyWithoutUserInput
   passwordResetTokens?: Prisma.PasswordResetTokenUncheckedCreateNestedManyWithoutUserInput
+  refreshSessions?: Prisma.RefreshSessionUncheckedCreateNestedManyWithoutUserInput
+  refreshRotationResults?: Prisma.RefreshRotationResultUncheckedCreateNestedManyWithoutUserInput
+  refreshOperationTombstones?: Prisma.RefreshOperationTombstoneUncheckedCreateNestedManyWithoutUserInput
   assignmentsMade?: Prisma.DeliveryAssignmentUncheckedCreateNestedManyWithoutAssignedByInput
   codCollections?: Prisma.CodCollectionUncheckedCreateNestedManyWithoutCollectedByInput
   variantCostChanges?: Prisma.VariantCostHistoryUncheckedCreateNestedManyWithoutCreatedByInput
@@ -2246,6 +3339,8 @@ export type UserUncheckedCreateWithoutDeliveryAssignmentsInput = {
   feedback?: Prisma.FeedbackUncheckedCreateNestedManyWithoutCustomerInput
   notifications?: Prisma.NotificationUncheckedCreateNestedManyWithoutUserInput
   pushSubscriptions?: Prisma.PushSubscriptionUncheckedCreateNestedManyWithoutUserInput
+  roleChangesReceived?: Prisma.UserRoleChangeUncheckedCreateNestedManyWithoutTargetInput
+  roleChangesMade?: Prisma.UserRoleChangeUncheckedCreateNestedManyWithoutActorInput
 }
 
 export type UserCreateOrConnectWithoutDeliveryAssignmentsInput = {
@@ -2274,6 +3369,9 @@ export type UserCreateWithoutAssignmentsMadeInput = {
   checkoutQuotes?: Prisma.CheckoutQuoteCreateNestedManyWithoutUserInput
   promotionUsages?: Prisma.PromotionUsageCreateNestedManyWithoutUserInput
   passwordResetTokens?: Prisma.PasswordResetTokenCreateNestedManyWithoutUserInput
+  refreshSessions?: Prisma.RefreshSessionCreateNestedManyWithoutUserInput
+  refreshRotationResults?: Prisma.RefreshRotationResultCreateNestedManyWithoutUserInput
+  refreshOperationTombstones?: Prisma.RefreshOperationTombstoneCreateNestedManyWithoutUserInput
   deliveryAssignments?: Prisma.DeliveryAssignmentCreateNestedManyWithoutDeliveryStaffInput
   codCollections?: Prisma.CodCollectionCreateNestedManyWithoutCollectedByInput
   variantCostChanges?: Prisma.VariantCostHistoryCreateNestedManyWithoutCreatedByInput
@@ -2281,6 +3379,8 @@ export type UserCreateWithoutAssignmentsMadeInput = {
   feedback?: Prisma.FeedbackCreateNestedManyWithoutCustomerInput
   notifications?: Prisma.NotificationCreateNestedManyWithoutUserInput
   pushSubscriptions?: Prisma.PushSubscriptionCreateNestedManyWithoutUserInput
+  roleChangesReceived?: Prisma.UserRoleChangeCreateNestedManyWithoutTargetInput
+  roleChangesMade?: Prisma.UserRoleChangeCreateNestedManyWithoutActorInput
 }
 
 export type UserUncheckedCreateWithoutAssignmentsMadeInput = {
@@ -2304,6 +3404,9 @@ export type UserUncheckedCreateWithoutAssignmentsMadeInput = {
   checkoutQuotes?: Prisma.CheckoutQuoteUncheckedCreateNestedManyWithoutUserInput
   promotionUsages?: Prisma.PromotionUsageUncheckedCreateNestedManyWithoutUserInput
   passwordResetTokens?: Prisma.PasswordResetTokenUncheckedCreateNestedManyWithoutUserInput
+  refreshSessions?: Prisma.RefreshSessionUncheckedCreateNestedManyWithoutUserInput
+  refreshRotationResults?: Prisma.RefreshRotationResultUncheckedCreateNestedManyWithoutUserInput
+  refreshOperationTombstones?: Prisma.RefreshOperationTombstoneUncheckedCreateNestedManyWithoutUserInput
   deliveryAssignments?: Prisma.DeliveryAssignmentUncheckedCreateNestedManyWithoutDeliveryStaffInput
   codCollections?: Prisma.CodCollectionUncheckedCreateNestedManyWithoutCollectedByInput
   variantCostChanges?: Prisma.VariantCostHistoryUncheckedCreateNestedManyWithoutCreatedByInput
@@ -2311,6 +3414,8 @@ export type UserUncheckedCreateWithoutAssignmentsMadeInput = {
   feedback?: Prisma.FeedbackUncheckedCreateNestedManyWithoutCustomerInput
   notifications?: Prisma.NotificationUncheckedCreateNestedManyWithoutUserInput
   pushSubscriptions?: Prisma.PushSubscriptionUncheckedCreateNestedManyWithoutUserInput
+  roleChangesReceived?: Prisma.UserRoleChangeUncheckedCreateNestedManyWithoutTargetInput
+  roleChangesMade?: Prisma.UserRoleChangeUncheckedCreateNestedManyWithoutActorInput
 }
 
 export type UserCreateOrConnectWithoutAssignmentsMadeInput = {
@@ -2350,6 +3455,9 @@ export type UserUpdateWithoutDeliveryAssignmentsInput = {
   checkoutQuotes?: Prisma.CheckoutQuoteUpdateManyWithoutUserNestedInput
   promotionUsages?: Prisma.PromotionUsageUpdateManyWithoutUserNestedInput
   passwordResetTokens?: Prisma.PasswordResetTokenUpdateManyWithoutUserNestedInput
+  refreshSessions?: Prisma.RefreshSessionUpdateManyWithoutUserNestedInput
+  refreshRotationResults?: Prisma.RefreshRotationResultUpdateManyWithoutUserNestedInput
+  refreshOperationTombstones?: Prisma.RefreshOperationTombstoneUpdateManyWithoutUserNestedInput
   assignmentsMade?: Prisma.DeliveryAssignmentUpdateManyWithoutAssignedByNestedInput
   codCollections?: Prisma.CodCollectionUpdateManyWithoutCollectedByNestedInput
   variantCostChanges?: Prisma.VariantCostHistoryUpdateManyWithoutCreatedByNestedInput
@@ -2357,6 +3465,8 @@ export type UserUpdateWithoutDeliveryAssignmentsInput = {
   feedback?: Prisma.FeedbackUpdateManyWithoutCustomerNestedInput
   notifications?: Prisma.NotificationUpdateManyWithoutUserNestedInput
   pushSubscriptions?: Prisma.PushSubscriptionUpdateManyWithoutUserNestedInput
+  roleChangesReceived?: Prisma.UserRoleChangeUpdateManyWithoutTargetNestedInput
+  roleChangesMade?: Prisma.UserRoleChangeUpdateManyWithoutActorNestedInput
 }
 
 export type UserUncheckedUpdateWithoutDeliveryAssignmentsInput = {
@@ -2380,6 +3490,9 @@ export type UserUncheckedUpdateWithoutDeliveryAssignmentsInput = {
   checkoutQuotes?: Prisma.CheckoutQuoteUncheckedUpdateManyWithoutUserNestedInput
   promotionUsages?: Prisma.PromotionUsageUncheckedUpdateManyWithoutUserNestedInput
   passwordResetTokens?: Prisma.PasswordResetTokenUncheckedUpdateManyWithoutUserNestedInput
+  refreshSessions?: Prisma.RefreshSessionUncheckedUpdateManyWithoutUserNestedInput
+  refreshRotationResults?: Prisma.RefreshRotationResultUncheckedUpdateManyWithoutUserNestedInput
+  refreshOperationTombstones?: Prisma.RefreshOperationTombstoneUncheckedUpdateManyWithoutUserNestedInput
   assignmentsMade?: Prisma.DeliveryAssignmentUncheckedUpdateManyWithoutAssignedByNestedInput
   codCollections?: Prisma.CodCollectionUncheckedUpdateManyWithoutCollectedByNestedInput
   variantCostChanges?: Prisma.VariantCostHistoryUncheckedUpdateManyWithoutCreatedByNestedInput
@@ -2387,6 +3500,8 @@ export type UserUncheckedUpdateWithoutDeliveryAssignmentsInput = {
   feedback?: Prisma.FeedbackUncheckedUpdateManyWithoutCustomerNestedInput
   notifications?: Prisma.NotificationUncheckedUpdateManyWithoutUserNestedInput
   pushSubscriptions?: Prisma.PushSubscriptionUncheckedUpdateManyWithoutUserNestedInput
+  roleChangesReceived?: Prisma.UserRoleChangeUncheckedUpdateManyWithoutTargetNestedInput
+  roleChangesMade?: Prisma.UserRoleChangeUncheckedUpdateManyWithoutActorNestedInput
 }
 
 export type UserUpsertWithoutAssignmentsMadeInput = {
@@ -2421,6 +3536,9 @@ export type UserUpdateWithoutAssignmentsMadeInput = {
   checkoutQuotes?: Prisma.CheckoutQuoteUpdateManyWithoutUserNestedInput
   promotionUsages?: Prisma.PromotionUsageUpdateManyWithoutUserNestedInput
   passwordResetTokens?: Prisma.PasswordResetTokenUpdateManyWithoutUserNestedInput
+  refreshSessions?: Prisma.RefreshSessionUpdateManyWithoutUserNestedInput
+  refreshRotationResults?: Prisma.RefreshRotationResultUpdateManyWithoutUserNestedInput
+  refreshOperationTombstones?: Prisma.RefreshOperationTombstoneUpdateManyWithoutUserNestedInput
   deliveryAssignments?: Prisma.DeliveryAssignmentUpdateManyWithoutDeliveryStaffNestedInput
   codCollections?: Prisma.CodCollectionUpdateManyWithoutCollectedByNestedInput
   variantCostChanges?: Prisma.VariantCostHistoryUpdateManyWithoutCreatedByNestedInput
@@ -2428,6 +3546,8 @@ export type UserUpdateWithoutAssignmentsMadeInput = {
   feedback?: Prisma.FeedbackUpdateManyWithoutCustomerNestedInput
   notifications?: Prisma.NotificationUpdateManyWithoutUserNestedInput
   pushSubscriptions?: Prisma.PushSubscriptionUpdateManyWithoutUserNestedInput
+  roleChangesReceived?: Prisma.UserRoleChangeUpdateManyWithoutTargetNestedInput
+  roleChangesMade?: Prisma.UserRoleChangeUpdateManyWithoutActorNestedInput
 }
 
 export type UserUncheckedUpdateWithoutAssignmentsMadeInput = {
@@ -2451,6 +3571,9 @@ export type UserUncheckedUpdateWithoutAssignmentsMadeInput = {
   checkoutQuotes?: Prisma.CheckoutQuoteUncheckedUpdateManyWithoutUserNestedInput
   promotionUsages?: Prisma.PromotionUsageUncheckedUpdateManyWithoutUserNestedInput
   passwordResetTokens?: Prisma.PasswordResetTokenUncheckedUpdateManyWithoutUserNestedInput
+  refreshSessions?: Prisma.RefreshSessionUncheckedUpdateManyWithoutUserNestedInput
+  refreshRotationResults?: Prisma.RefreshRotationResultUncheckedUpdateManyWithoutUserNestedInput
+  refreshOperationTombstones?: Prisma.RefreshOperationTombstoneUncheckedUpdateManyWithoutUserNestedInput
   deliveryAssignments?: Prisma.DeliveryAssignmentUncheckedUpdateManyWithoutDeliveryStaffNestedInput
   codCollections?: Prisma.CodCollectionUncheckedUpdateManyWithoutCollectedByNestedInput
   variantCostChanges?: Prisma.VariantCostHistoryUncheckedUpdateManyWithoutCreatedByNestedInput
@@ -2458,6 +3581,8 @@ export type UserUncheckedUpdateWithoutAssignmentsMadeInput = {
   feedback?: Prisma.FeedbackUncheckedUpdateManyWithoutCustomerNestedInput
   notifications?: Prisma.NotificationUncheckedUpdateManyWithoutUserNestedInput
   pushSubscriptions?: Prisma.PushSubscriptionUncheckedUpdateManyWithoutUserNestedInput
+  roleChangesReceived?: Prisma.UserRoleChangeUncheckedUpdateManyWithoutTargetNestedInput
+  roleChangesMade?: Prisma.UserRoleChangeUncheckedUpdateManyWithoutActorNestedInput
 }
 
 export type UserCreateWithoutCheckoutQuotesInput = {
@@ -2480,6 +3605,9 @@ export type UserCreateWithoutCheckoutQuotesInput = {
   orders?: Prisma.OrderCreateNestedManyWithoutUserInput
   promotionUsages?: Prisma.PromotionUsageCreateNestedManyWithoutUserInput
   passwordResetTokens?: Prisma.PasswordResetTokenCreateNestedManyWithoutUserInput
+  refreshSessions?: Prisma.RefreshSessionCreateNestedManyWithoutUserInput
+  refreshRotationResults?: Prisma.RefreshRotationResultCreateNestedManyWithoutUserInput
+  refreshOperationTombstones?: Prisma.RefreshOperationTombstoneCreateNestedManyWithoutUserInput
   deliveryAssignments?: Prisma.DeliveryAssignmentCreateNestedManyWithoutDeliveryStaffInput
   assignmentsMade?: Prisma.DeliveryAssignmentCreateNestedManyWithoutAssignedByInput
   codCollections?: Prisma.CodCollectionCreateNestedManyWithoutCollectedByInput
@@ -2488,6 +3616,8 @@ export type UserCreateWithoutCheckoutQuotesInput = {
   feedback?: Prisma.FeedbackCreateNestedManyWithoutCustomerInput
   notifications?: Prisma.NotificationCreateNestedManyWithoutUserInput
   pushSubscriptions?: Prisma.PushSubscriptionCreateNestedManyWithoutUserInput
+  roleChangesReceived?: Prisma.UserRoleChangeCreateNestedManyWithoutTargetInput
+  roleChangesMade?: Prisma.UserRoleChangeCreateNestedManyWithoutActorInput
 }
 
 export type UserUncheckedCreateWithoutCheckoutQuotesInput = {
@@ -2510,6 +3640,9 @@ export type UserUncheckedCreateWithoutCheckoutQuotesInput = {
   orders?: Prisma.OrderUncheckedCreateNestedManyWithoutUserInput
   promotionUsages?: Prisma.PromotionUsageUncheckedCreateNestedManyWithoutUserInput
   passwordResetTokens?: Prisma.PasswordResetTokenUncheckedCreateNestedManyWithoutUserInput
+  refreshSessions?: Prisma.RefreshSessionUncheckedCreateNestedManyWithoutUserInput
+  refreshRotationResults?: Prisma.RefreshRotationResultUncheckedCreateNestedManyWithoutUserInput
+  refreshOperationTombstones?: Prisma.RefreshOperationTombstoneUncheckedCreateNestedManyWithoutUserInput
   deliveryAssignments?: Prisma.DeliveryAssignmentUncheckedCreateNestedManyWithoutDeliveryStaffInput
   assignmentsMade?: Prisma.DeliveryAssignmentUncheckedCreateNestedManyWithoutAssignedByInput
   codCollections?: Prisma.CodCollectionUncheckedCreateNestedManyWithoutCollectedByInput
@@ -2518,6 +3651,8 @@ export type UserUncheckedCreateWithoutCheckoutQuotesInput = {
   feedback?: Prisma.FeedbackUncheckedCreateNestedManyWithoutCustomerInput
   notifications?: Prisma.NotificationUncheckedCreateNestedManyWithoutUserInput
   pushSubscriptions?: Prisma.PushSubscriptionUncheckedCreateNestedManyWithoutUserInput
+  roleChangesReceived?: Prisma.UserRoleChangeUncheckedCreateNestedManyWithoutTargetInput
+  roleChangesMade?: Prisma.UserRoleChangeUncheckedCreateNestedManyWithoutActorInput
 }
 
 export type UserCreateOrConnectWithoutCheckoutQuotesInput = {
@@ -2556,6 +3691,9 @@ export type UserUpdateWithoutCheckoutQuotesInput = {
   orders?: Prisma.OrderUpdateManyWithoutUserNestedInput
   promotionUsages?: Prisma.PromotionUsageUpdateManyWithoutUserNestedInput
   passwordResetTokens?: Prisma.PasswordResetTokenUpdateManyWithoutUserNestedInput
+  refreshSessions?: Prisma.RefreshSessionUpdateManyWithoutUserNestedInput
+  refreshRotationResults?: Prisma.RefreshRotationResultUpdateManyWithoutUserNestedInput
+  refreshOperationTombstones?: Prisma.RefreshOperationTombstoneUpdateManyWithoutUserNestedInput
   deliveryAssignments?: Prisma.DeliveryAssignmentUpdateManyWithoutDeliveryStaffNestedInput
   assignmentsMade?: Prisma.DeliveryAssignmentUpdateManyWithoutAssignedByNestedInput
   codCollections?: Prisma.CodCollectionUpdateManyWithoutCollectedByNestedInput
@@ -2564,6 +3702,8 @@ export type UserUpdateWithoutCheckoutQuotesInput = {
   feedback?: Prisma.FeedbackUpdateManyWithoutCustomerNestedInput
   notifications?: Prisma.NotificationUpdateManyWithoutUserNestedInput
   pushSubscriptions?: Prisma.PushSubscriptionUpdateManyWithoutUserNestedInput
+  roleChangesReceived?: Prisma.UserRoleChangeUpdateManyWithoutTargetNestedInput
+  roleChangesMade?: Prisma.UserRoleChangeUpdateManyWithoutActorNestedInput
 }
 
 export type UserUncheckedUpdateWithoutCheckoutQuotesInput = {
@@ -2586,6 +3726,9 @@ export type UserUncheckedUpdateWithoutCheckoutQuotesInput = {
   orders?: Prisma.OrderUncheckedUpdateManyWithoutUserNestedInput
   promotionUsages?: Prisma.PromotionUsageUncheckedUpdateManyWithoutUserNestedInput
   passwordResetTokens?: Prisma.PasswordResetTokenUncheckedUpdateManyWithoutUserNestedInput
+  refreshSessions?: Prisma.RefreshSessionUncheckedUpdateManyWithoutUserNestedInput
+  refreshRotationResults?: Prisma.RefreshRotationResultUncheckedUpdateManyWithoutUserNestedInput
+  refreshOperationTombstones?: Prisma.RefreshOperationTombstoneUncheckedUpdateManyWithoutUserNestedInput
   deliveryAssignments?: Prisma.DeliveryAssignmentUncheckedUpdateManyWithoutDeliveryStaffNestedInput
   assignmentsMade?: Prisma.DeliveryAssignmentUncheckedUpdateManyWithoutAssignedByNestedInput
   codCollections?: Prisma.CodCollectionUncheckedUpdateManyWithoutCollectedByNestedInput
@@ -2594,6 +3737,8 @@ export type UserUncheckedUpdateWithoutCheckoutQuotesInput = {
   feedback?: Prisma.FeedbackUncheckedUpdateManyWithoutCustomerNestedInput
   notifications?: Prisma.NotificationUncheckedUpdateManyWithoutUserNestedInput
   pushSubscriptions?: Prisma.PushSubscriptionUncheckedUpdateManyWithoutUserNestedInput
+  roleChangesReceived?: Prisma.UserRoleChangeUncheckedUpdateManyWithoutTargetNestedInput
+  roleChangesMade?: Prisma.UserRoleChangeUncheckedUpdateManyWithoutActorNestedInput
 }
 
 export type UserCreateWithoutCodCollectionsInput = {
@@ -2617,6 +3762,9 @@ export type UserCreateWithoutCodCollectionsInput = {
   checkoutQuotes?: Prisma.CheckoutQuoteCreateNestedManyWithoutUserInput
   promotionUsages?: Prisma.PromotionUsageCreateNestedManyWithoutUserInput
   passwordResetTokens?: Prisma.PasswordResetTokenCreateNestedManyWithoutUserInput
+  refreshSessions?: Prisma.RefreshSessionCreateNestedManyWithoutUserInput
+  refreshRotationResults?: Prisma.RefreshRotationResultCreateNestedManyWithoutUserInput
+  refreshOperationTombstones?: Prisma.RefreshOperationTombstoneCreateNestedManyWithoutUserInput
   deliveryAssignments?: Prisma.DeliveryAssignmentCreateNestedManyWithoutDeliveryStaffInput
   assignmentsMade?: Prisma.DeliveryAssignmentCreateNestedManyWithoutAssignedByInput
   variantCostChanges?: Prisma.VariantCostHistoryCreateNestedManyWithoutCreatedByInput
@@ -2624,6 +3772,8 @@ export type UserCreateWithoutCodCollectionsInput = {
   feedback?: Prisma.FeedbackCreateNestedManyWithoutCustomerInput
   notifications?: Prisma.NotificationCreateNestedManyWithoutUserInput
   pushSubscriptions?: Prisma.PushSubscriptionCreateNestedManyWithoutUserInput
+  roleChangesReceived?: Prisma.UserRoleChangeCreateNestedManyWithoutTargetInput
+  roleChangesMade?: Prisma.UserRoleChangeCreateNestedManyWithoutActorInput
 }
 
 export type UserUncheckedCreateWithoutCodCollectionsInput = {
@@ -2647,6 +3797,9 @@ export type UserUncheckedCreateWithoutCodCollectionsInput = {
   checkoutQuotes?: Prisma.CheckoutQuoteUncheckedCreateNestedManyWithoutUserInput
   promotionUsages?: Prisma.PromotionUsageUncheckedCreateNestedManyWithoutUserInput
   passwordResetTokens?: Prisma.PasswordResetTokenUncheckedCreateNestedManyWithoutUserInput
+  refreshSessions?: Prisma.RefreshSessionUncheckedCreateNestedManyWithoutUserInput
+  refreshRotationResults?: Prisma.RefreshRotationResultUncheckedCreateNestedManyWithoutUserInput
+  refreshOperationTombstones?: Prisma.RefreshOperationTombstoneUncheckedCreateNestedManyWithoutUserInput
   deliveryAssignments?: Prisma.DeliveryAssignmentUncheckedCreateNestedManyWithoutDeliveryStaffInput
   assignmentsMade?: Prisma.DeliveryAssignmentUncheckedCreateNestedManyWithoutAssignedByInput
   variantCostChanges?: Prisma.VariantCostHistoryUncheckedCreateNestedManyWithoutCreatedByInput
@@ -2654,6 +3807,8 @@ export type UserUncheckedCreateWithoutCodCollectionsInput = {
   feedback?: Prisma.FeedbackUncheckedCreateNestedManyWithoutCustomerInput
   notifications?: Prisma.NotificationUncheckedCreateNestedManyWithoutUserInput
   pushSubscriptions?: Prisma.PushSubscriptionUncheckedCreateNestedManyWithoutUserInput
+  roleChangesReceived?: Prisma.UserRoleChangeUncheckedCreateNestedManyWithoutTargetInput
+  roleChangesMade?: Prisma.UserRoleChangeUncheckedCreateNestedManyWithoutActorInput
 }
 
 export type UserCreateOrConnectWithoutCodCollectionsInput = {
@@ -2693,6 +3848,9 @@ export type UserUpdateWithoutCodCollectionsInput = {
   checkoutQuotes?: Prisma.CheckoutQuoteUpdateManyWithoutUserNestedInput
   promotionUsages?: Prisma.PromotionUsageUpdateManyWithoutUserNestedInput
   passwordResetTokens?: Prisma.PasswordResetTokenUpdateManyWithoutUserNestedInput
+  refreshSessions?: Prisma.RefreshSessionUpdateManyWithoutUserNestedInput
+  refreshRotationResults?: Prisma.RefreshRotationResultUpdateManyWithoutUserNestedInput
+  refreshOperationTombstones?: Prisma.RefreshOperationTombstoneUpdateManyWithoutUserNestedInput
   deliveryAssignments?: Prisma.DeliveryAssignmentUpdateManyWithoutDeliveryStaffNestedInput
   assignmentsMade?: Prisma.DeliveryAssignmentUpdateManyWithoutAssignedByNestedInput
   variantCostChanges?: Prisma.VariantCostHistoryUpdateManyWithoutCreatedByNestedInput
@@ -2700,6 +3858,8 @@ export type UserUpdateWithoutCodCollectionsInput = {
   feedback?: Prisma.FeedbackUpdateManyWithoutCustomerNestedInput
   notifications?: Prisma.NotificationUpdateManyWithoutUserNestedInput
   pushSubscriptions?: Prisma.PushSubscriptionUpdateManyWithoutUserNestedInput
+  roleChangesReceived?: Prisma.UserRoleChangeUpdateManyWithoutTargetNestedInput
+  roleChangesMade?: Prisma.UserRoleChangeUpdateManyWithoutActorNestedInput
 }
 
 export type UserUncheckedUpdateWithoutCodCollectionsInput = {
@@ -2723,6 +3883,9 @@ export type UserUncheckedUpdateWithoutCodCollectionsInput = {
   checkoutQuotes?: Prisma.CheckoutQuoteUncheckedUpdateManyWithoutUserNestedInput
   promotionUsages?: Prisma.PromotionUsageUncheckedUpdateManyWithoutUserNestedInput
   passwordResetTokens?: Prisma.PasswordResetTokenUncheckedUpdateManyWithoutUserNestedInput
+  refreshSessions?: Prisma.RefreshSessionUncheckedUpdateManyWithoutUserNestedInput
+  refreshRotationResults?: Prisma.RefreshRotationResultUncheckedUpdateManyWithoutUserNestedInput
+  refreshOperationTombstones?: Prisma.RefreshOperationTombstoneUncheckedUpdateManyWithoutUserNestedInput
   deliveryAssignments?: Prisma.DeliveryAssignmentUncheckedUpdateManyWithoutDeliveryStaffNestedInput
   assignmentsMade?: Prisma.DeliveryAssignmentUncheckedUpdateManyWithoutAssignedByNestedInput
   variantCostChanges?: Prisma.VariantCostHistoryUncheckedUpdateManyWithoutCreatedByNestedInput
@@ -2730,6 +3893,8 @@ export type UserUncheckedUpdateWithoutCodCollectionsInput = {
   feedback?: Prisma.FeedbackUncheckedUpdateManyWithoutCustomerNestedInput
   notifications?: Prisma.NotificationUncheckedUpdateManyWithoutUserNestedInput
   pushSubscriptions?: Prisma.PushSubscriptionUncheckedUpdateManyWithoutUserNestedInput
+  roleChangesReceived?: Prisma.UserRoleChangeUncheckedUpdateManyWithoutTargetNestedInput
+  roleChangesMade?: Prisma.UserRoleChangeUncheckedUpdateManyWithoutActorNestedInput
 }
 
 export type UserCreateWithoutPromotionUsagesInput = {
@@ -2752,6 +3917,9 @@ export type UserCreateWithoutPromotionUsagesInput = {
   orders?: Prisma.OrderCreateNestedManyWithoutUserInput
   checkoutQuotes?: Prisma.CheckoutQuoteCreateNestedManyWithoutUserInput
   passwordResetTokens?: Prisma.PasswordResetTokenCreateNestedManyWithoutUserInput
+  refreshSessions?: Prisma.RefreshSessionCreateNestedManyWithoutUserInput
+  refreshRotationResults?: Prisma.RefreshRotationResultCreateNestedManyWithoutUserInput
+  refreshOperationTombstones?: Prisma.RefreshOperationTombstoneCreateNestedManyWithoutUserInput
   deliveryAssignments?: Prisma.DeliveryAssignmentCreateNestedManyWithoutDeliveryStaffInput
   assignmentsMade?: Prisma.DeliveryAssignmentCreateNestedManyWithoutAssignedByInput
   codCollections?: Prisma.CodCollectionCreateNestedManyWithoutCollectedByInput
@@ -2760,6 +3928,8 @@ export type UserCreateWithoutPromotionUsagesInput = {
   feedback?: Prisma.FeedbackCreateNestedManyWithoutCustomerInput
   notifications?: Prisma.NotificationCreateNestedManyWithoutUserInput
   pushSubscriptions?: Prisma.PushSubscriptionCreateNestedManyWithoutUserInput
+  roleChangesReceived?: Prisma.UserRoleChangeCreateNestedManyWithoutTargetInput
+  roleChangesMade?: Prisma.UserRoleChangeCreateNestedManyWithoutActorInput
 }
 
 export type UserUncheckedCreateWithoutPromotionUsagesInput = {
@@ -2782,6 +3952,9 @@ export type UserUncheckedCreateWithoutPromotionUsagesInput = {
   orders?: Prisma.OrderUncheckedCreateNestedManyWithoutUserInput
   checkoutQuotes?: Prisma.CheckoutQuoteUncheckedCreateNestedManyWithoutUserInput
   passwordResetTokens?: Prisma.PasswordResetTokenUncheckedCreateNestedManyWithoutUserInput
+  refreshSessions?: Prisma.RefreshSessionUncheckedCreateNestedManyWithoutUserInput
+  refreshRotationResults?: Prisma.RefreshRotationResultUncheckedCreateNestedManyWithoutUserInput
+  refreshOperationTombstones?: Prisma.RefreshOperationTombstoneUncheckedCreateNestedManyWithoutUserInput
   deliveryAssignments?: Prisma.DeliveryAssignmentUncheckedCreateNestedManyWithoutDeliveryStaffInput
   assignmentsMade?: Prisma.DeliveryAssignmentUncheckedCreateNestedManyWithoutAssignedByInput
   codCollections?: Prisma.CodCollectionUncheckedCreateNestedManyWithoutCollectedByInput
@@ -2790,6 +3963,8 @@ export type UserUncheckedCreateWithoutPromotionUsagesInput = {
   feedback?: Prisma.FeedbackUncheckedCreateNestedManyWithoutCustomerInput
   notifications?: Prisma.NotificationUncheckedCreateNestedManyWithoutUserInput
   pushSubscriptions?: Prisma.PushSubscriptionUncheckedCreateNestedManyWithoutUserInput
+  roleChangesReceived?: Prisma.UserRoleChangeUncheckedCreateNestedManyWithoutTargetInput
+  roleChangesMade?: Prisma.UserRoleChangeUncheckedCreateNestedManyWithoutActorInput
 }
 
 export type UserCreateOrConnectWithoutPromotionUsagesInput = {
@@ -2828,6 +4003,9 @@ export type UserUpdateWithoutPromotionUsagesInput = {
   orders?: Prisma.OrderUpdateManyWithoutUserNestedInput
   checkoutQuotes?: Prisma.CheckoutQuoteUpdateManyWithoutUserNestedInput
   passwordResetTokens?: Prisma.PasswordResetTokenUpdateManyWithoutUserNestedInput
+  refreshSessions?: Prisma.RefreshSessionUpdateManyWithoutUserNestedInput
+  refreshRotationResults?: Prisma.RefreshRotationResultUpdateManyWithoutUserNestedInput
+  refreshOperationTombstones?: Prisma.RefreshOperationTombstoneUpdateManyWithoutUserNestedInput
   deliveryAssignments?: Prisma.DeliveryAssignmentUpdateManyWithoutDeliveryStaffNestedInput
   assignmentsMade?: Prisma.DeliveryAssignmentUpdateManyWithoutAssignedByNestedInput
   codCollections?: Prisma.CodCollectionUpdateManyWithoutCollectedByNestedInput
@@ -2836,6 +4014,8 @@ export type UserUpdateWithoutPromotionUsagesInput = {
   feedback?: Prisma.FeedbackUpdateManyWithoutCustomerNestedInput
   notifications?: Prisma.NotificationUpdateManyWithoutUserNestedInput
   pushSubscriptions?: Prisma.PushSubscriptionUpdateManyWithoutUserNestedInput
+  roleChangesReceived?: Prisma.UserRoleChangeUpdateManyWithoutTargetNestedInput
+  roleChangesMade?: Prisma.UserRoleChangeUpdateManyWithoutActorNestedInput
 }
 
 export type UserUncheckedUpdateWithoutPromotionUsagesInput = {
@@ -2858,6 +4038,9 @@ export type UserUncheckedUpdateWithoutPromotionUsagesInput = {
   orders?: Prisma.OrderUncheckedUpdateManyWithoutUserNestedInput
   checkoutQuotes?: Prisma.CheckoutQuoteUncheckedUpdateManyWithoutUserNestedInput
   passwordResetTokens?: Prisma.PasswordResetTokenUncheckedUpdateManyWithoutUserNestedInput
+  refreshSessions?: Prisma.RefreshSessionUncheckedUpdateManyWithoutUserNestedInput
+  refreshRotationResults?: Prisma.RefreshRotationResultUncheckedUpdateManyWithoutUserNestedInput
+  refreshOperationTombstones?: Prisma.RefreshOperationTombstoneUncheckedUpdateManyWithoutUserNestedInput
   deliveryAssignments?: Prisma.DeliveryAssignmentUncheckedUpdateManyWithoutDeliveryStaffNestedInput
   assignmentsMade?: Prisma.DeliveryAssignmentUncheckedUpdateManyWithoutAssignedByNestedInput
   codCollections?: Prisma.CodCollectionUncheckedUpdateManyWithoutCollectedByNestedInput
@@ -2866,6 +4049,8 @@ export type UserUncheckedUpdateWithoutPromotionUsagesInput = {
   feedback?: Prisma.FeedbackUncheckedUpdateManyWithoutCustomerNestedInput
   notifications?: Prisma.NotificationUncheckedUpdateManyWithoutUserNestedInput
   pushSubscriptions?: Prisma.PushSubscriptionUncheckedUpdateManyWithoutUserNestedInput
+  roleChangesReceived?: Prisma.UserRoleChangeUncheckedUpdateManyWithoutTargetNestedInput
+  roleChangesMade?: Prisma.UserRoleChangeUncheckedUpdateManyWithoutActorNestedInput
 }
 
 
@@ -2879,6 +4064,9 @@ export type UserCountOutputType = {
   checkoutQuotes: number
   promotionUsages: number
   passwordResetTokens: number
+  refreshSessions: number
+  refreshRotationResults: number
+  refreshOperationTombstones: number
   deliveryAssignments: number
   assignmentsMade: number
   codCollections: number
@@ -2887,6 +4075,8 @@ export type UserCountOutputType = {
   feedback: number
   notifications: number
   pushSubscriptions: number
+  roleChangesReceived: number
+  roleChangesMade: number
 }
 
 export type UserCountOutputTypeSelect<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
@@ -2895,6 +4085,9 @@ export type UserCountOutputTypeSelect<ExtArgs extends runtime.Types.Extensions.I
   checkoutQuotes?: boolean | UserCountOutputTypeCountCheckoutQuotesArgs
   promotionUsages?: boolean | UserCountOutputTypeCountPromotionUsagesArgs
   passwordResetTokens?: boolean | UserCountOutputTypeCountPasswordResetTokensArgs
+  refreshSessions?: boolean | UserCountOutputTypeCountRefreshSessionsArgs
+  refreshRotationResults?: boolean | UserCountOutputTypeCountRefreshRotationResultsArgs
+  refreshOperationTombstones?: boolean | UserCountOutputTypeCountRefreshOperationTombstonesArgs
   deliveryAssignments?: boolean | UserCountOutputTypeCountDeliveryAssignmentsArgs
   assignmentsMade?: boolean | UserCountOutputTypeCountAssignmentsMadeArgs
   codCollections?: boolean | UserCountOutputTypeCountCodCollectionsArgs
@@ -2903,6 +4096,8 @@ export type UserCountOutputTypeSelect<ExtArgs extends runtime.Types.Extensions.I
   feedback?: boolean | UserCountOutputTypeCountFeedbackArgs
   notifications?: boolean | UserCountOutputTypeCountNotificationsArgs
   pushSubscriptions?: boolean | UserCountOutputTypeCountPushSubscriptionsArgs
+  roleChangesReceived?: boolean | UserCountOutputTypeCountRoleChangesReceivedArgs
+  roleChangesMade?: boolean | UserCountOutputTypeCountRoleChangesMadeArgs
 }
 
 /**
@@ -2948,6 +4143,27 @@ export type UserCountOutputTypeCountPromotionUsagesArgs<ExtArgs extends runtime.
  */
 export type UserCountOutputTypeCountPasswordResetTokensArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
   where?: Prisma.PasswordResetTokenWhereInput
+}
+
+/**
+ * UserCountOutputType without action
+ */
+export type UserCountOutputTypeCountRefreshSessionsArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
+  where?: Prisma.RefreshSessionWhereInput
+}
+
+/**
+ * UserCountOutputType without action
+ */
+export type UserCountOutputTypeCountRefreshRotationResultsArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
+  where?: Prisma.RefreshRotationResultWhereInput
+}
+
+/**
+ * UserCountOutputType without action
+ */
+export type UserCountOutputTypeCountRefreshOperationTombstonesArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
+  where?: Prisma.RefreshOperationTombstoneWhereInput
 }
 
 /**
@@ -3006,6 +4222,20 @@ export type UserCountOutputTypeCountPushSubscriptionsArgs<ExtArgs extends runtim
   where?: Prisma.PushSubscriptionWhereInput
 }
 
+/**
+ * UserCountOutputType without action
+ */
+export type UserCountOutputTypeCountRoleChangesReceivedArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
+  where?: Prisma.UserRoleChangeWhereInput
+}
+
+/**
+ * UserCountOutputType without action
+ */
+export type UserCountOutputTypeCountRoleChangesMadeArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
+  where?: Prisma.UserRoleChangeWhereInput
+}
+
 
 export type UserSelect<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetSelect<{
   id?: boolean
@@ -3028,6 +4258,9 @@ export type UserSelect<ExtArgs extends runtime.Types.Extensions.InternalArgs = r
   checkoutQuotes?: boolean | Prisma.User$checkoutQuotesArgs<ExtArgs>
   promotionUsages?: boolean | Prisma.User$promotionUsagesArgs<ExtArgs>
   passwordResetTokens?: boolean | Prisma.User$passwordResetTokensArgs<ExtArgs>
+  refreshSessions?: boolean | Prisma.User$refreshSessionsArgs<ExtArgs>
+  refreshRotationResults?: boolean | Prisma.User$refreshRotationResultsArgs<ExtArgs>
+  refreshOperationTombstones?: boolean | Prisma.User$refreshOperationTombstonesArgs<ExtArgs>
   deliveryAssignments?: boolean | Prisma.User$deliveryAssignmentsArgs<ExtArgs>
   assignmentsMade?: boolean | Prisma.User$assignmentsMadeArgs<ExtArgs>
   codCollections?: boolean | Prisma.User$codCollectionsArgs<ExtArgs>
@@ -3036,6 +4269,8 @@ export type UserSelect<ExtArgs extends runtime.Types.Extensions.InternalArgs = r
   feedback?: boolean | Prisma.User$feedbackArgs<ExtArgs>
   notifications?: boolean | Prisma.User$notificationsArgs<ExtArgs>
   pushSubscriptions?: boolean | Prisma.User$pushSubscriptionsArgs<ExtArgs>
+  roleChangesReceived?: boolean | Prisma.User$roleChangesReceivedArgs<ExtArgs>
+  roleChangesMade?: boolean | Prisma.User$roleChangesMadeArgs<ExtArgs>
   _count?: boolean | Prisma.UserCountOutputTypeDefaultArgs<ExtArgs>
 }, ExtArgs["result"]["user"]>
 
@@ -3096,6 +4331,9 @@ export type UserInclude<ExtArgs extends runtime.Types.Extensions.InternalArgs = 
   checkoutQuotes?: boolean | Prisma.User$checkoutQuotesArgs<ExtArgs>
   promotionUsages?: boolean | Prisma.User$promotionUsagesArgs<ExtArgs>
   passwordResetTokens?: boolean | Prisma.User$passwordResetTokensArgs<ExtArgs>
+  refreshSessions?: boolean | Prisma.User$refreshSessionsArgs<ExtArgs>
+  refreshRotationResults?: boolean | Prisma.User$refreshRotationResultsArgs<ExtArgs>
+  refreshOperationTombstones?: boolean | Prisma.User$refreshOperationTombstonesArgs<ExtArgs>
   deliveryAssignments?: boolean | Prisma.User$deliveryAssignmentsArgs<ExtArgs>
   assignmentsMade?: boolean | Prisma.User$assignmentsMadeArgs<ExtArgs>
   codCollections?: boolean | Prisma.User$codCollectionsArgs<ExtArgs>
@@ -3104,6 +4342,8 @@ export type UserInclude<ExtArgs extends runtime.Types.Extensions.InternalArgs = 
   feedback?: boolean | Prisma.User$feedbackArgs<ExtArgs>
   notifications?: boolean | Prisma.User$notificationsArgs<ExtArgs>
   pushSubscriptions?: boolean | Prisma.User$pushSubscriptionsArgs<ExtArgs>
+  roleChangesReceived?: boolean | Prisma.User$roleChangesReceivedArgs<ExtArgs>
+  roleChangesMade?: boolean | Prisma.User$roleChangesMadeArgs<ExtArgs>
   _count?: boolean | Prisma.UserCountOutputTypeDefaultArgs<ExtArgs>
 }
 export type UserIncludeCreateManyAndReturn<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {}
@@ -3125,6 +4365,9 @@ export type $UserPayload<ExtArgs extends runtime.Types.Extensions.InternalArgs =
      * Short-lived, single-use links for setting or changing a local password.
      */
     passwordResetTokens: Prisma.$PasswordResetTokenPayload<ExtArgs>[]
+    refreshSessions: Prisma.$RefreshSessionPayload<ExtArgs>[]
+    refreshRotationResults: Prisma.$RefreshRotationResultPayload<ExtArgs>[]
+    refreshOperationTombstones: Prisma.$RefreshOperationTombstonePayload<ExtArgs>[]
     /**
      * Assignments where this user is the courier, and history is never overwritten.
      */
@@ -3151,6 +4394,14 @@ export type $UserPayload<ExtArgs extends runtime.Types.Extensions.InternalArgs =
      */
     notifications: Prisma.$NotificationPayload<ExtArgs>[]
     pushSubscriptions: Prisma.$PushSubscriptionPayload<ExtArgs>[]
+    /**
+     * Every role change made to this user, kept as an immutable audit history.
+     */
+    roleChangesReceived: Prisma.$UserRoleChangePayload<ExtArgs>[]
+    /**
+     * Role changes this administrator made for other users.
+     */
+    roleChangesMade: Prisma.$UserRoleChangePayload<ExtArgs>[]
   }
   scalars: runtime.Types.Extensions.GetPayloadResult<{
     id: string
@@ -3571,6 +4822,9 @@ export interface Prisma__UserClient<T, Null = never, ExtArgs extends runtime.Typ
   checkoutQuotes<T extends Prisma.User$checkoutQuotesArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.User$checkoutQuotesArgs<ExtArgs>>): Prisma.PrismaPromise<runtime.Types.Result.GetResult<Prisma.$CheckoutQuotePayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
   promotionUsages<T extends Prisma.User$promotionUsagesArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.User$promotionUsagesArgs<ExtArgs>>): Prisma.PrismaPromise<runtime.Types.Result.GetResult<Prisma.$PromotionUsagePayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
   passwordResetTokens<T extends Prisma.User$passwordResetTokensArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.User$passwordResetTokensArgs<ExtArgs>>): Prisma.PrismaPromise<runtime.Types.Result.GetResult<Prisma.$PasswordResetTokenPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
+  refreshSessions<T extends Prisma.User$refreshSessionsArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.User$refreshSessionsArgs<ExtArgs>>): Prisma.PrismaPromise<runtime.Types.Result.GetResult<Prisma.$RefreshSessionPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
+  refreshRotationResults<T extends Prisma.User$refreshRotationResultsArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.User$refreshRotationResultsArgs<ExtArgs>>): Prisma.PrismaPromise<runtime.Types.Result.GetResult<Prisma.$RefreshRotationResultPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
+  refreshOperationTombstones<T extends Prisma.User$refreshOperationTombstonesArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.User$refreshOperationTombstonesArgs<ExtArgs>>): Prisma.PrismaPromise<runtime.Types.Result.GetResult<Prisma.$RefreshOperationTombstonePayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
   deliveryAssignments<T extends Prisma.User$deliveryAssignmentsArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.User$deliveryAssignmentsArgs<ExtArgs>>): Prisma.PrismaPromise<runtime.Types.Result.GetResult<Prisma.$DeliveryAssignmentPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
   assignmentsMade<T extends Prisma.User$assignmentsMadeArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.User$assignmentsMadeArgs<ExtArgs>>): Prisma.PrismaPromise<runtime.Types.Result.GetResult<Prisma.$DeliveryAssignmentPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
   codCollections<T extends Prisma.User$codCollectionsArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.User$codCollectionsArgs<ExtArgs>>): Prisma.PrismaPromise<runtime.Types.Result.GetResult<Prisma.$CodCollectionPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
@@ -3579,6 +4833,8 @@ export interface Prisma__UserClient<T, Null = never, ExtArgs extends runtime.Typ
   feedback<T extends Prisma.User$feedbackArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.User$feedbackArgs<ExtArgs>>): Prisma.PrismaPromise<runtime.Types.Result.GetResult<Prisma.$FeedbackPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
   notifications<T extends Prisma.User$notificationsArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.User$notificationsArgs<ExtArgs>>): Prisma.PrismaPromise<runtime.Types.Result.GetResult<Prisma.$NotificationPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
   pushSubscriptions<T extends Prisma.User$pushSubscriptionsArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.User$pushSubscriptionsArgs<ExtArgs>>): Prisma.PrismaPromise<runtime.Types.Result.GetResult<Prisma.$PushSubscriptionPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
+  roleChangesReceived<T extends Prisma.User$roleChangesReceivedArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.User$roleChangesReceivedArgs<ExtArgs>>): Prisma.PrismaPromise<runtime.Types.Result.GetResult<Prisma.$UserRoleChangePayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
+  roleChangesMade<T extends Prisma.User$roleChangesMadeArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.User$roleChangesMadeArgs<ExtArgs>>): Prisma.PrismaPromise<runtime.Types.Result.GetResult<Prisma.$UserRoleChangePayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
   /**
    * Attaches callbacks for the resolution and/or rejection of the Promise.
    * @param onfulfilled The callback to execute when the Promise is resolved.
@@ -4172,6 +5428,78 @@ export type User$passwordResetTokensArgs<ExtArgs extends runtime.Types.Extension
 }
 
 /**
+ * User.refreshSessions
+ */
+export type User$refreshSessionsArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
+  /**
+   * Select specific fields to fetch from the RefreshSession
+   */
+  select?: Prisma.RefreshSessionSelect<ExtArgs> | null
+  /**
+   * Omit specific fields from the RefreshSession
+   */
+  omit?: Prisma.RefreshSessionOmit<ExtArgs> | null
+  /**
+   * Choose, which related nodes to fetch as well
+   */
+  include?: Prisma.RefreshSessionInclude<ExtArgs> | null
+  where?: Prisma.RefreshSessionWhereInput
+  orderBy?: Prisma.RefreshSessionOrderByWithRelationInput | Prisma.RefreshSessionOrderByWithRelationInput[]
+  cursor?: Prisma.RefreshSessionWhereUniqueInput
+  take?: number
+  skip?: number
+  distinct?: Prisma.RefreshSessionScalarFieldEnum | Prisma.RefreshSessionScalarFieldEnum[]
+}
+
+/**
+ * User.refreshRotationResults
+ */
+export type User$refreshRotationResultsArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
+  /**
+   * Select specific fields to fetch from the RefreshRotationResult
+   */
+  select?: Prisma.RefreshRotationResultSelect<ExtArgs> | null
+  /**
+   * Omit specific fields from the RefreshRotationResult
+   */
+  omit?: Prisma.RefreshRotationResultOmit<ExtArgs> | null
+  /**
+   * Choose, which related nodes to fetch as well
+   */
+  include?: Prisma.RefreshRotationResultInclude<ExtArgs> | null
+  where?: Prisma.RefreshRotationResultWhereInput
+  orderBy?: Prisma.RefreshRotationResultOrderByWithRelationInput | Prisma.RefreshRotationResultOrderByWithRelationInput[]
+  cursor?: Prisma.RefreshRotationResultWhereUniqueInput
+  take?: number
+  skip?: number
+  distinct?: Prisma.RefreshRotationResultScalarFieldEnum | Prisma.RefreshRotationResultScalarFieldEnum[]
+}
+
+/**
+ * User.refreshOperationTombstones
+ */
+export type User$refreshOperationTombstonesArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
+  /**
+   * Select specific fields to fetch from the RefreshOperationTombstone
+   */
+  select?: Prisma.RefreshOperationTombstoneSelect<ExtArgs> | null
+  /**
+   * Omit specific fields from the RefreshOperationTombstone
+   */
+  omit?: Prisma.RefreshOperationTombstoneOmit<ExtArgs> | null
+  /**
+   * Choose, which related nodes to fetch as well
+   */
+  include?: Prisma.RefreshOperationTombstoneInclude<ExtArgs> | null
+  where?: Prisma.RefreshOperationTombstoneWhereInput
+  orderBy?: Prisma.RefreshOperationTombstoneOrderByWithRelationInput | Prisma.RefreshOperationTombstoneOrderByWithRelationInput[]
+  cursor?: Prisma.RefreshOperationTombstoneWhereUniqueInput
+  take?: number
+  skip?: number
+  distinct?: Prisma.RefreshOperationTombstoneScalarFieldEnum | Prisma.RefreshOperationTombstoneScalarFieldEnum[]
+}
+
+/**
  * User.deliveryAssignments
  */
 export type User$deliveryAssignmentsArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
@@ -4361,6 +5689,54 @@ export type User$pushSubscriptionsArgs<ExtArgs extends runtime.Types.Extensions.
   take?: number
   skip?: number
   distinct?: Prisma.PushSubscriptionScalarFieldEnum | Prisma.PushSubscriptionScalarFieldEnum[]
+}
+
+/**
+ * User.roleChangesReceived
+ */
+export type User$roleChangesReceivedArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
+  /**
+   * Select specific fields to fetch from the UserRoleChange
+   */
+  select?: Prisma.UserRoleChangeSelect<ExtArgs> | null
+  /**
+   * Omit specific fields from the UserRoleChange
+   */
+  omit?: Prisma.UserRoleChangeOmit<ExtArgs> | null
+  /**
+   * Choose, which related nodes to fetch as well
+   */
+  include?: Prisma.UserRoleChangeInclude<ExtArgs> | null
+  where?: Prisma.UserRoleChangeWhereInput
+  orderBy?: Prisma.UserRoleChangeOrderByWithRelationInput | Prisma.UserRoleChangeOrderByWithRelationInput[]
+  cursor?: Prisma.UserRoleChangeWhereUniqueInput
+  take?: number
+  skip?: number
+  distinct?: Prisma.UserRoleChangeScalarFieldEnum | Prisma.UserRoleChangeScalarFieldEnum[]
+}
+
+/**
+ * User.roleChangesMade
+ */
+export type User$roleChangesMadeArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
+  /**
+   * Select specific fields to fetch from the UserRoleChange
+   */
+  select?: Prisma.UserRoleChangeSelect<ExtArgs> | null
+  /**
+   * Omit specific fields from the UserRoleChange
+   */
+  omit?: Prisma.UserRoleChangeOmit<ExtArgs> | null
+  /**
+   * Choose, which related nodes to fetch as well
+   */
+  include?: Prisma.UserRoleChangeInclude<ExtArgs> | null
+  where?: Prisma.UserRoleChangeWhereInput
+  orderBy?: Prisma.UserRoleChangeOrderByWithRelationInput | Prisma.UserRoleChangeOrderByWithRelationInput[]
+  cursor?: Prisma.UserRoleChangeWhereUniqueInput
+  take?: number
+  skip?: number
+  distinct?: Prisma.UserRoleChangeScalarFieldEnum | Prisma.UserRoleChangeScalarFieldEnum[]
 }
 
 /**

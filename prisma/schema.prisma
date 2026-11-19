@@ -17,6 +17,11 @@ enum Role {
   DELIVERY_STAFF
 }
 
+enum RefreshRotationStatus {
+  PENDING
+  SUCCEEDED
+}
+
 /// Delivery progress, deliberately separate from `Order.status`.
 ///
 /// An order can be confirmed and paid while the parcel is still waiting for a
@@ -59,6 +64,9 @@ model User {
   promotionUsages     PromotionUsage[]
   /// Short-lived, single-use links for setting or changing a local password.
   passwordResetTokens PasswordResetToken[]
+  refreshSessions     RefreshSession[]
+  refreshRotationResults RefreshRotationResult[]
+  refreshOperationTombstones RefreshOperationTombstone[]
 
   /// Assignments where this user is the courier, and history is never overwritten.
   deliveryAssignments DeliveryAssignment[] @relation("DeliveryStaffAssignments")
@@ -74,10 +82,32 @@ model User {
   /// In-app notifications addressed to this user (customer or administrator).
   notifications       Notification[]
   pushSubscriptions   PushSubscription[]
+  /// Every role change made to this user, kept as an immutable audit history.
+  roleChangesReceived UserRoleChange[] @relation("RoleChangeTarget")
+  /// Role changes this administrator made for other users.
+  roleChangesMade     UserRoleChange[] @relation("RoleChangeActor")
 
   @@index([status])
   @@index([role])
   @@map("users")
+}
+
+/// Immutable audit record for an administrator changing somebody's role.
+/// Both users are retained with RESTRICT so audit history cannot be orphaned.
+model UserRoleChange {
+  id           String   @id @default(uuid()) @db.Uuid
+  actorId      String   @map("actor_id") @db.Uuid
+  targetUserId String   @map("target_user_id") @db.Uuid
+  previousRole Role     @map("previous_role")
+  newRole      Role     @map("new_role")
+  createdAt    DateTime @default(now()) @map("created_at") @db.Timestamptz
+
+  actor  User @relation("RoleChangeActor", fields: [actorId], references: [id], onDelete: Restrict)
+  target User @relation("RoleChangeTarget", fields: [targetUserId], references: [id], onDelete: Restrict)
+
+  @@index([targetUserId, createdAt])
+  @@index([actorId, createdAt])
+  @@map("user_role_changes")
 }
 
 /// The closed set of in-app notification kinds.
@@ -313,6 +343,92 @@ model PasswordResetToken {
   @@map("password_reset_tokens")
 }
 
+/// A one-browser-session refresh credential and its rotation family.
+///
+/// The raw refresh token is never persisted. Only its SHA-256 digest is stored.
+/// Rotations keep expires_at fixed, so every token in a family has the original
+/// absolute seven-day lifetime.
+model RefreshSession {
+  id           String    @id @default(uuid()) @db.Uuid
+  userId       String    @map("user_id") @db.Uuid
+  familyId     String    @map("family_id") @db.Uuid
+  tokenHash    String    @unique @map("token_hash") @db.VarChar(64)
+  csrfHash     String    @map("csrf_hash") @db.VarChar(64)
+  expiresAt    DateTime  @map("expires_at") @db.Timestamptz
+  rotatedAt    DateTime? @map("rotated_at") @db.Timestamptz
+  replacedByTokenHash String? @unique @map("replaced_by_token_hash") @db.VarChar(64)
+  revokedAt    DateTime? @map("revoked_at") @db.Timestamptz
+  revokedReason String?  @map("revoked_reason") @db.VarChar(50)
+  createdAt    DateTime  @default(now()) @map("created_at") @db.Timestamptz
+  lastUsedAt   DateTime? @map("last_used_at") @db.Timestamptz
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade, onUpdate: Cascade)
+  rotationResults RefreshRotationResult[] @relation("RefreshRotationOldSession")
+
+  @@index([userId, revokedAt])
+  @@index([familyId, revokedAt])
+  @@index([expiresAt])
+  @@map("refresh_sessions")
+}
+
+/// Atomic, short-lived recovery record for one refresh rotation operation.
+///
+/// PENDING rows exist only for the lifetime of the transaction that creates
+/// and completes the operation. SUCCEEDED rows hold an AES-GCM encrypted
+/// replacement access/refresh pair and never contain plaintext credentials.
+model RefreshRotationResult {
+  id                  String                @id @default(uuid()) @db.Uuid
+  operationKeyHash    String                @unique @map("operation_key_hash") @db.VarChar(64)
+  oldRefreshSessionId String                @map("old_refresh_session_id") @db.Uuid
+  oldTokenHash        String                @map("old_token_hash") @db.VarChar(64)
+  familyId            String                @map("family_id") @db.Uuid
+  userId              String                @map("user_id") @db.Uuid
+  status              RefreshRotationStatus
+  encryptedPayload    String?               @map("encrypted_payload") @db.Text
+  nonce               String?               @map("nonce") @db.VarChar(16)
+  authenticationTag   String?               @map("authentication_tag") @db.VarChar(24)
+  payloadKeyVersion   Int?                  @map("payload_key_version")
+  createdAt           DateTime              @default(now()) @map("created_at") @db.Timestamptz
+  expiresAt           DateTime              @map("expires_at") @db.Timestamptz
+  completedAt         DateTime?             @map("completed_at") @db.Timestamptz
+
+  oldSession RefreshSession @relation("RefreshRotationOldSession", fields: [oldRefreshSessionId], references: [id], onDelete: Restrict, onUpdate: Cascade)
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade, onUpdate: Cascade)
+
+  @@index([oldRefreshSessionId, status])
+  @@index([oldTokenHash, status])
+  @@index([familyId, status])
+  @@index([userId, status])
+  @@index([expiresAt])
+  @@map("refresh_rotation_results")
+}
+
+/// Binding metadata retained after a rotation result expires.
+///
+/// This row never contains ciphertext or a raw credential. It preserves only
+/// enough identity and binding information to prevent an operation key from
+/// being rebound to another refresh token after the encrypted result is gone.
+model RefreshOperationTombstone {
+  id                   String   @id @default(uuid()) @db.Uuid
+  operationKeyHash     String   @unique @map("operation_key_hash") @db.VarChar(64)
+  oldRefreshSessionId  String   @map("old_refresh_session_id") @db.Uuid
+  oldTokenHash         String   @map("old_token_hash") @db.VarChar(64)
+  replacementTokenHash String?  @map("replacement_token_hash") @db.VarChar(64)
+  familyId             String   @map("family_id") @db.Uuid
+  userId               String   @map("user_id") @db.Uuid
+  familyExpiresAt      DateTime @map("family_expires_at") @db.Timestamptz
+  completedAt          DateTime @map("completed_at") @db.Timestamptz
+  createdAt            DateTime @default(now()) @map("created_at") @db.Timestamptz
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade, onUpdate: Cascade)
+
+  @@index([oldRefreshSessionId])
+  @@index([oldTokenHash])
+  @@index([familyId, familyExpiresAt])
+  @@index([familyExpiresAt])
+  @@map("refresh_operation_tombstones")
+}
+
 /// A catalog category. Categories form a tree through the `parent`/`children`
 /// self-relation: `parentId` is nullable so that root categories exist, and a
 /// category always points at a single optional parent.
@@ -375,7 +491,8 @@ model Collection {
   createdAt    DateTime @default(now()) @map("created_at") @db.Timestamptz
   updatedAt    DateTime @updatedAt @map("updated_at") @db.Timestamptz
 
-  products CollectionProduct[]
+  products  CollectionProduct[]
+  nextDrops NextDrop[]
 
   @@index([isActive, displayOrder])
   @@map("collections")
@@ -429,6 +546,8 @@ model Product {
   slug            String   @unique @db.VarChar(220)
   description     String?  @db.Text
   basePrice       Decimal  @map("base_price") @db.Decimal(12, 2)
+  /** Original price before an active promotion; `null` when the product is not on sale. */
+  originalPrice   Decimal? @map("original_price") @db.Decimal(12, 2)
   status          String   @db.VarChar(30)
   isActive        Boolean  @default(true) @map("is_active")
   optionsRevision Int      @default(0) @map("options_revision")
@@ -1639,7 +1758,8 @@ model Promotion {
   createdAt         DateTime  @default(now()) @map("created_at") @db.Timestamptz
   updatedAt         DateTime  @updatedAt @map("updated_at") @db.Timestamptz
 
-  usages PromotionUsage[]
+  usages    PromotionUsage[]
+  nextDrops NextDrop[]
 
   // Serves the evaluator's "active promotions of one kind, inside a window" read.
   @@index([kind, isActive, startsAt, endsAt])
@@ -1711,4 +1831,36 @@ model PromotionUsage {
   @@index([promotionId, createdAt(sort: Desc), id(sort: Desc)])
   @@index([orderId])
   @@map("promotion_usages")
+}
+
+/// A scheduled homepage "next drop": a timed, featured release linked to an
+/// existing collection and/or an existing promotion coupon.
+///
+/// Only one row may be `is_published = true` at any time. That rule is enforced
+/// by the service inside a transaction and by the partial unique index below,
+/// so two published drops can never coexist even under concurrent publishes.
+///
+/// The linked collection and promotion are references only: a drop does not own
+/// them, and deleting a collection or promotion clears the reference rather than
+/// destroying the drop or the referenced row.
+model NextDrop {
+  id           String   @id @default(uuid()) @db.Uuid
+  title        String   @db.VarChar(255)
+  /// The instant the drop goes live, used by the storefront countdown.
+  launchAt     DateTime @map("launch_at") @db.Timestamptz
+  /// Optional collection the drop features.
+  collectionId String?  @map("collection_id") @db.Uuid
+  /// Optional promotion whose coupon code the drop presents.
+  promotionId  String?  @map("promotion_id") @db.Uuid
+  buttonText   String?  @map("button_text") @db.VarChar(120)
+  buttonUrl    String   @map("button_url") @db.VarChar(2048)
+  isPublished  Boolean  @default(false) @map("is_published")
+  createdAt    DateTime @default(now()) @map("created_at") @db.Timestamptz
+  updatedAt    DateTime @updatedAt @map("updated_at") @db.Timestamptz
+
+  collection Collection? @relation(fields: [collectionId], references: [id], onDelete: SetNull, onUpdate: Cascade)
+  promotion  Promotion?  @relation(fields: [promotionId], references: [id], onDelete: SetNull, onUpdate: Cascade)
+
+  @@index([isPublished])
+  @@map("next_drops")
 }

@@ -3,6 +3,8 @@ import { ValidationPipe } from '@nestjs/common';
 import { Test, TestingModule } from '@nestjs/testing';
 import { CategoriesController } from './categories.controller.js';
 import { CategoriesService } from './categories.service.js';
+import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard.js';
+import { RolesGuard } from '../auth/guards/roles.guard.js';
 import { CategoryResponseDto } from './dto/category-response.dto.js';
 import { CreateCategoryDto } from './dto/create-category.dto.js';
 import { UpdateCategoryDto } from './dto/update-category.dto.js';
@@ -44,10 +46,17 @@ describe('CategoriesController', () => {
       remove: vi.fn(),
     };
 
-    const module: TestingModule = await Test.createTestingModule({
+    const testingModule = Test.createTestingModule({
       controllers: [CategoriesController],
-      providers: [{ provide: CategoriesService, useValue: service }],
-    }).compile();
+      providers: [
+        { provide: CategoriesService, useValue: service },
+      ],
+    })
+      .overrideGuard(JwtAuthGuard)
+      .useValue({ canActivate: () => true })
+      .overrideGuard(RolesGuard)
+      .useValue({ canActivate: () => true });
+    const module: TestingModule = await testingModule.compile();
 
     controller = module.get<CategoriesController>(CategoriesController);
   });
@@ -137,10 +146,17 @@ describe('CategoriesController (HTTP)', () => {
       remove: vi.fn(),
     };
 
-    const module: TestingModule = await Test.createTestingModule({
+    const testingModule = Test.createTestingModule({
       controllers: [CategoriesController],
-      providers: [{ provide: CategoriesService, useValue: service }],
-    }).compile();
+      providers: [
+        { provide: CategoriesService, useValue: service },
+      ],
+    })
+      .overrideGuard(JwtAuthGuard)
+      .useValue({ canActivate: () => true })
+      .overrideGuard(RolesGuard)
+      .useValue({ canActivate: () => true });
+    const module: TestingModule = await testingModule.compile();
 
     app = module.createNestApplication();
     // Mirrors the global pipe in `main.ts` so the DTO contract is exercised

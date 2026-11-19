@@ -9,6 +9,8 @@ import { ProductAttributeResponseDto } from './dto/product-attribute-response.dt
 import { UpdateProductAttributeDto } from './dto/update-product-attribute.dto.js';
 import { ProductAttributesController } from './product-attributes.controller.js';
 import { ProductAttributesService } from './product-attributes.service.js';
+import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard.js';
+import { RolesGuard } from '../auth/guards/roles.guard.js';
 
 const PRODUCT_ID = 'a1b2c3d4-e5f6-4f70-8a9b-0c1d2e3f4a5b';
 const ATTRIBUTE_ID = 'c3d4e5f6-a7b8-4c2d-8e3f-4a5b6c7d8e9f';
@@ -45,10 +47,17 @@ describe('ProductAttributesController', () => {
       remove: vi.fn(),
     };
 
-    const module: TestingModule = await Test.createTestingModule({
+    const testingModule = Test.createTestingModule({
       controllers: [ProductAttributesController],
-      providers: [{ provide: ProductAttributesService, useValue: service }],
-    }).compile();
+      providers: [
+        { provide: ProductAttributesService, useValue: service },
+      ],
+    })
+      .overrideGuard(JwtAuthGuard)
+      .useValue({ canActivate: () => true })
+      .overrideGuard(RolesGuard)
+      .useValue({ canActivate: () => true });
+    const module: TestingModule = await testingModule.compile();
 
     controller =
       module.get<ProductAttributesController>(ProductAttributesController);
@@ -120,10 +129,17 @@ describe('ProductAttributesController (HTTP)', () => {
       remove: vi.fn(),
     };
 
-    const module: TestingModule = await Test.createTestingModule({
+    const testingModule = Test.createTestingModule({
       controllers: [ProductAttributesController],
-      providers: [{ provide: ProductAttributesService, useValue: service }],
-    }).compile();
+      providers: [
+        { provide: ProductAttributesService, useValue: service },
+      ],
+    })
+      .overrideGuard(JwtAuthGuard)
+      .useValue({ canActivate: () => true })
+      .overrideGuard(RolesGuard)
+      .useValue({ canActivate: () => true });
+    const module: TestingModule = await testingModule.compile();
 
     app = module.createNestApplication();
     app.useGlobalPipes(

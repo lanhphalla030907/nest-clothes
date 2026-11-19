@@ -85,6 +85,20 @@ export class CreateProductDto {
   @NotEquals(ZERO_AMOUNT, { message: 'basePrice must be greater than 0' })
   basePrice: string;
 
+  /**
+   * Optional original price before a promotion. When present it must exceed
+   * `basePrice`, so the card can show a strikethrough rather than inventing a
+   * discount the server never offered. Absent means the product is not on sale.
+   */
+  @IsOptional()
+  @Transform(({ value }) => (value === undefined || value === null ? undefined : normalizeMoney(value)))
+  @IsString()
+  @Matches(MONEY_PATTERN, {
+    message:
+      'originalPrice must be a positive amount with at most 2 decimal places and at most 10 integer digits',
+  })
+  originalPrice?: string;
+
   @IsUUID()
   categoryId: string;
 }

@@ -398,6 +398,7 @@ type FieldRefInputType<Model, FieldType> = Model extends never ? never : FieldRe
 
 export const ModelName = {
   User: 'User',
+  UserRoleChange: 'UserRoleChange',
   Notification: 'Notification',
   TelegramOrderAlert: 'TelegramOrderAlert',
   PushSubscription: 'PushSubscription',
@@ -405,6 +406,9 @@ export const ModelName = {
   Feedback: 'Feedback',
   UserIdentity: 'UserIdentity',
   PasswordResetToken: 'PasswordResetToken',
+  RefreshSession: 'RefreshSession',
+  RefreshRotationResult: 'RefreshRotationResult',
+  RefreshOperationTombstone: 'RefreshOperationTombstone',
   Category: 'Category',
   Poster: 'Poster',
   Collection: 'Collection',
@@ -436,7 +440,8 @@ export const ModelName = {
   CodReconciliationRun: 'CodReconciliationRun',
   CodReconciliationRunItem: 'CodReconciliationRunItem',
   Promotion: 'Promotion',
-  PromotionUsage: 'PromotionUsage'
+  PromotionUsage: 'PromotionUsage',
+  NextDrop: 'NextDrop'
 } as const
 
 export type ModelName = (typeof ModelName)[keyof typeof ModelName]
@@ -452,7 +457,7 @@ export type TypeMap<ExtArgs extends runtime.Types.Extensions.InternalArgs = runt
     omit: GlobalOmitOptions
   }
   meta: {
-    modelProps: "user" | "notification" | "telegramOrderAlert" | "pushSubscription" | "pushDeliveryJob" | "feedback" | "userIdentity" | "passwordResetToken" | "category" | "poster" | "collection" | "collectionProduct" | "product" | "productImage" | "productVariant" | "variantCostHistory" | "productOption" | "productOptionValue" | "variantOptionValue" | "variantOption" | "productAttribute" | "inventory" | "cart" | "cartItem" | "wishlist" | "wishlistItem" | "address" | "administrativeLocation" | "shippingProvider" | "codArea" | "order" | "deliveryAssignment" | "checkoutQuote" | "orderItem" | "payment" | "codCollection" | "codReconciliationRun" | "codReconciliationRunItem" | "promotion" | "promotionUsage"
+    modelProps: "user" | "userRoleChange" | "notification" | "telegramOrderAlert" | "pushSubscription" | "pushDeliveryJob" | "feedback" | "userIdentity" | "passwordResetToken" | "refreshSession" | "refreshRotationResult" | "refreshOperationTombstone" | "category" | "poster" | "collection" | "collectionProduct" | "product" | "productImage" | "productVariant" | "variantCostHistory" | "productOption" | "productOptionValue" | "variantOptionValue" | "variantOption" | "productAttribute" | "inventory" | "cart" | "cartItem" | "wishlist" | "wishlistItem" | "address" | "administrativeLocation" | "shippingProvider" | "codArea" | "order" | "deliveryAssignment" | "checkoutQuote" | "orderItem" | "payment" | "codCollection" | "codReconciliationRun" | "codReconciliationRunItem" | "promotion" | "promotionUsage" | "nextDrop"
     txIsolationLevel: TransactionIsolationLevel
   }
   model: {
@@ -527,6 +532,80 @@ export type TypeMap<ExtArgs extends runtime.Types.Extensions.InternalArgs = runt
         count: {
           args: Prisma.UserCountArgs<ExtArgs>
           result: runtime.Types.Utils.Optional<Prisma.UserCountAggregateOutputType> | number
+        }
+      }
+    }
+    UserRoleChange: {
+      payload: Prisma.$UserRoleChangePayload<ExtArgs>
+      fields: Prisma.UserRoleChangeFieldRefs
+      operations: {
+        findUnique: {
+          args: Prisma.UserRoleChangeFindUniqueArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$UserRoleChangePayload> | null
+        }
+        findUniqueOrThrow: {
+          args: Prisma.UserRoleChangeFindUniqueOrThrowArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$UserRoleChangePayload>
+        }
+        findFirst: {
+          args: Prisma.UserRoleChangeFindFirstArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$UserRoleChangePayload> | null
+        }
+        findFirstOrThrow: {
+          args: Prisma.UserRoleChangeFindFirstOrThrowArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$UserRoleChangePayload>
+        }
+        findMany: {
+          args: Prisma.UserRoleChangeFindManyArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$UserRoleChangePayload>[]
+        }
+        create: {
+          args: Prisma.UserRoleChangeCreateArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$UserRoleChangePayload>
+        }
+        createMany: {
+          args: Prisma.UserRoleChangeCreateManyArgs<ExtArgs>
+          result: BatchPayload
+        }
+        createManyAndReturn: {
+          args: Prisma.UserRoleChangeCreateManyAndReturnArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$UserRoleChangePayload>[]
+        }
+        delete: {
+          args: Prisma.UserRoleChangeDeleteArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$UserRoleChangePayload>
+        }
+        update: {
+          args: Prisma.UserRoleChangeUpdateArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$UserRoleChangePayload>
+        }
+        deleteMany: {
+          args: Prisma.UserRoleChangeDeleteManyArgs<ExtArgs>
+          result: BatchPayload
+        }
+        updateMany: {
+          args: Prisma.UserRoleChangeUpdateManyArgs<ExtArgs>
+          result: BatchPayload
+        }
+        updateManyAndReturn: {
+          args: Prisma.UserRoleChangeUpdateManyAndReturnArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$UserRoleChangePayload>[]
+        }
+        upsert: {
+          args: Prisma.UserRoleChangeUpsertArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$UserRoleChangePayload>
+        }
+        aggregate: {
+          args: Prisma.UserRoleChangeAggregateArgs<ExtArgs>
+          result: runtime.Types.Utils.Optional<Prisma.AggregateUserRoleChange>
+        }
+        groupBy: {
+          args: Prisma.UserRoleChangeGroupByArgs<ExtArgs>
+          result: runtime.Types.Utils.Optional<Prisma.UserRoleChangeGroupByOutputType>[]
+        }
+        count: {
+          args: Prisma.UserRoleChangeCountArgs<ExtArgs>
+          result: runtime.Types.Utils.Optional<Prisma.UserRoleChangeCountAggregateOutputType> | number
         }
       }
     }
@@ -1045,6 +1124,228 @@ export type TypeMap<ExtArgs extends runtime.Types.Extensions.InternalArgs = runt
         count: {
           args: Prisma.PasswordResetTokenCountArgs<ExtArgs>
           result: runtime.Types.Utils.Optional<Prisma.PasswordResetTokenCountAggregateOutputType> | number
+        }
+      }
+    }
+    RefreshSession: {
+      payload: Prisma.$RefreshSessionPayload<ExtArgs>
+      fields: Prisma.RefreshSessionFieldRefs
+      operations: {
+        findUnique: {
+          args: Prisma.RefreshSessionFindUniqueArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$RefreshSessionPayload> | null
+        }
+        findUniqueOrThrow: {
+          args: Prisma.RefreshSessionFindUniqueOrThrowArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$RefreshSessionPayload>
+        }
+        findFirst: {
+          args: Prisma.RefreshSessionFindFirstArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$RefreshSessionPayload> | null
+        }
+        findFirstOrThrow: {
+          args: Prisma.RefreshSessionFindFirstOrThrowArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$RefreshSessionPayload>
+        }
+        findMany: {
+          args: Prisma.RefreshSessionFindManyArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$RefreshSessionPayload>[]
+        }
+        create: {
+          args: Prisma.RefreshSessionCreateArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$RefreshSessionPayload>
+        }
+        createMany: {
+          args: Prisma.RefreshSessionCreateManyArgs<ExtArgs>
+          result: BatchPayload
+        }
+        createManyAndReturn: {
+          args: Prisma.RefreshSessionCreateManyAndReturnArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$RefreshSessionPayload>[]
+        }
+        delete: {
+          args: Prisma.RefreshSessionDeleteArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$RefreshSessionPayload>
+        }
+        update: {
+          args: Prisma.RefreshSessionUpdateArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$RefreshSessionPayload>
+        }
+        deleteMany: {
+          args: Prisma.RefreshSessionDeleteManyArgs<ExtArgs>
+          result: BatchPayload
+        }
+        updateMany: {
+          args: Prisma.RefreshSessionUpdateManyArgs<ExtArgs>
+          result: BatchPayload
+        }
+        updateManyAndReturn: {
+          args: Prisma.RefreshSessionUpdateManyAndReturnArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$RefreshSessionPayload>[]
+        }
+        upsert: {
+          args: Prisma.RefreshSessionUpsertArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$RefreshSessionPayload>
+        }
+        aggregate: {
+          args: Prisma.RefreshSessionAggregateArgs<ExtArgs>
+          result: runtime.Types.Utils.Optional<Prisma.AggregateRefreshSession>
+        }
+        groupBy: {
+          args: Prisma.RefreshSessionGroupByArgs<ExtArgs>
+          result: runtime.Types.Utils.Optional<Prisma.RefreshSessionGroupByOutputType>[]
+        }
+        count: {
+          args: Prisma.RefreshSessionCountArgs<ExtArgs>
+          result: runtime.Types.Utils.Optional<Prisma.RefreshSessionCountAggregateOutputType> | number
+        }
+      }
+    }
+    RefreshRotationResult: {
+      payload: Prisma.$RefreshRotationResultPayload<ExtArgs>
+      fields: Prisma.RefreshRotationResultFieldRefs
+      operations: {
+        findUnique: {
+          args: Prisma.RefreshRotationResultFindUniqueArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$RefreshRotationResultPayload> | null
+        }
+        findUniqueOrThrow: {
+          args: Prisma.RefreshRotationResultFindUniqueOrThrowArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$RefreshRotationResultPayload>
+        }
+        findFirst: {
+          args: Prisma.RefreshRotationResultFindFirstArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$RefreshRotationResultPayload> | null
+        }
+        findFirstOrThrow: {
+          args: Prisma.RefreshRotationResultFindFirstOrThrowArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$RefreshRotationResultPayload>
+        }
+        findMany: {
+          args: Prisma.RefreshRotationResultFindManyArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$RefreshRotationResultPayload>[]
+        }
+        create: {
+          args: Prisma.RefreshRotationResultCreateArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$RefreshRotationResultPayload>
+        }
+        createMany: {
+          args: Prisma.RefreshRotationResultCreateManyArgs<ExtArgs>
+          result: BatchPayload
+        }
+        createManyAndReturn: {
+          args: Prisma.RefreshRotationResultCreateManyAndReturnArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$RefreshRotationResultPayload>[]
+        }
+        delete: {
+          args: Prisma.RefreshRotationResultDeleteArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$RefreshRotationResultPayload>
+        }
+        update: {
+          args: Prisma.RefreshRotationResultUpdateArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$RefreshRotationResultPayload>
+        }
+        deleteMany: {
+          args: Prisma.RefreshRotationResultDeleteManyArgs<ExtArgs>
+          result: BatchPayload
+        }
+        updateMany: {
+          args: Prisma.RefreshRotationResultUpdateManyArgs<ExtArgs>
+          result: BatchPayload
+        }
+        updateManyAndReturn: {
+          args: Prisma.RefreshRotationResultUpdateManyAndReturnArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$RefreshRotationResultPayload>[]
+        }
+        upsert: {
+          args: Prisma.RefreshRotationResultUpsertArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$RefreshRotationResultPayload>
+        }
+        aggregate: {
+          args: Prisma.RefreshRotationResultAggregateArgs<ExtArgs>
+          result: runtime.Types.Utils.Optional<Prisma.AggregateRefreshRotationResult>
+        }
+        groupBy: {
+          args: Prisma.RefreshRotationResultGroupByArgs<ExtArgs>
+          result: runtime.Types.Utils.Optional<Prisma.RefreshRotationResultGroupByOutputType>[]
+        }
+        count: {
+          args: Prisma.RefreshRotationResultCountArgs<ExtArgs>
+          result: runtime.Types.Utils.Optional<Prisma.RefreshRotationResultCountAggregateOutputType> | number
+        }
+      }
+    }
+    RefreshOperationTombstone: {
+      payload: Prisma.$RefreshOperationTombstonePayload<ExtArgs>
+      fields: Prisma.RefreshOperationTombstoneFieldRefs
+      operations: {
+        findUnique: {
+          args: Prisma.RefreshOperationTombstoneFindUniqueArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$RefreshOperationTombstonePayload> | null
+        }
+        findUniqueOrThrow: {
+          args: Prisma.RefreshOperationTombstoneFindUniqueOrThrowArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$RefreshOperationTombstonePayload>
+        }
+        findFirst: {
+          args: Prisma.RefreshOperationTombstoneFindFirstArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$RefreshOperationTombstonePayload> | null
+        }
+        findFirstOrThrow: {
+          args: Prisma.RefreshOperationTombstoneFindFirstOrThrowArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$RefreshOperationTombstonePayload>
+        }
+        findMany: {
+          args: Prisma.RefreshOperationTombstoneFindManyArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$RefreshOperationTombstonePayload>[]
+        }
+        create: {
+          args: Prisma.RefreshOperationTombstoneCreateArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$RefreshOperationTombstonePayload>
+        }
+        createMany: {
+          args: Prisma.RefreshOperationTombstoneCreateManyArgs<ExtArgs>
+          result: BatchPayload
+        }
+        createManyAndReturn: {
+          args: Prisma.RefreshOperationTombstoneCreateManyAndReturnArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$RefreshOperationTombstonePayload>[]
+        }
+        delete: {
+          args: Prisma.RefreshOperationTombstoneDeleteArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$RefreshOperationTombstonePayload>
+        }
+        update: {
+          args: Prisma.RefreshOperationTombstoneUpdateArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$RefreshOperationTombstonePayload>
+        }
+        deleteMany: {
+          args: Prisma.RefreshOperationTombstoneDeleteManyArgs<ExtArgs>
+          result: BatchPayload
+        }
+        updateMany: {
+          args: Prisma.RefreshOperationTombstoneUpdateManyArgs<ExtArgs>
+          result: BatchPayload
+        }
+        updateManyAndReturn: {
+          args: Prisma.RefreshOperationTombstoneUpdateManyAndReturnArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$RefreshOperationTombstonePayload>[]
+        }
+        upsert: {
+          args: Prisma.RefreshOperationTombstoneUpsertArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$RefreshOperationTombstonePayload>
+        }
+        aggregate: {
+          args: Prisma.RefreshOperationTombstoneAggregateArgs<ExtArgs>
+          result: runtime.Types.Utils.Optional<Prisma.AggregateRefreshOperationTombstone>
+        }
+        groupBy: {
+          args: Prisma.RefreshOperationTombstoneGroupByArgs<ExtArgs>
+          result: runtime.Types.Utils.Optional<Prisma.RefreshOperationTombstoneGroupByOutputType>[]
+        }
+        count: {
+          args: Prisma.RefreshOperationTombstoneCountArgs<ExtArgs>
+          result: runtime.Types.Utils.Optional<Prisma.RefreshOperationTombstoneCountAggregateOutputType> | number
         }
       }
     }
@@ -3416,6 +3717,80 @@ export type TypeMap<ExtArgs extends runtime.Types.Extensions.InternalArgs = runt
         }
       }
     }
+    NextDrop: {
+      payload: Prisma.$NextDropPayload<ExtArgs>
+      fields: Prisma.NextDropFieldRefs
+      operations: {
+        findUnique: {
+          args: Prisma.NextDropFindUniqueArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$NextDropPayload> | null
+        }
+        findUniqueOrThrow: {
+          args: Prisma.NextDropFindUniqueOrThrowArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$NextDropPayload>
+        }
+        findFirst: {
+          args: Prisma.NextDropFindFirstArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$NextDropPayload> | null
+        }
+        findFirstOrThrow: {
+          args: Prisma.NextDropFindFirstOrThrowArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$NextDropPayload>
+        }
+        findMany: {
+          args: Prisma.NextDropFindManyArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$NextDropPayload>[]
+        }
+        create: {
+          args: Prisma.NextDropCreateArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$NextDropPayload>
+        }
+        createMany: {
+          args: Prisma.NextDropCreateManyArgs<ExtArgs>
+          result: BatchPayload
+        }
+        createManyAndReturn: {
+          args: Prisma.NextDropCreateManyAndReturnArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$NextDropPayload>[]
+        }
+        delete: {
+          args: Prisma.NextDropDeleteArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$NextDropPayload>
+        }
+        update: {
+          args: Prisma.NextDropUpdateArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$NextDropPayload>
+        }
+        deleteMany: {
+          args: Prisma.NextDropDeleteManyArgs<ExtArgs>
+          result: BatchPayload
+        }
+        updateMany: {
+          args: Prisma.NextDropUpdateManyArgs<ExtArgs>
+          result: BatchPayload
+        }
+        updateManyAndReturn: {
+          args: Prisma.NextDropUpdateManyAndReturnArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$NextDropPayload>[]
+        }
+        upsert: {
+          args: Prisma.NextDropUpsertArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$NextDropPayload>
+        }
+        aggregate: {
+          args: Prisma.NextDropAggregateArgs<ExtArgs>
+          result: runtime.Types.Utils.Optional<Prisma.AggregateNextDrop>
+        }
+        groupBy: {
+          args: Prisma.NextDropGroupByArgs<ExtArgs>
+          result: runtime.Types.Utils.Optional<Prisma.NextDropGroupByOutputType>[]
+        }
+        count: {
+          args: Prisma.NextDropCountArgs<ExtArgs>
+          result: runtime.Types.Utils.Optional<Prisma.NextDropCountAggregateOutputType> | number
+        }
+      }
+    }
   }
 } & {
   other: {
@@ -3472,6 +3847,18 @@ export const UserScalarFieldEnum = {
 } as const
 
 export type UserScalarFieldEnum = (typeof UserScalarFieldEnum)[keyof typeof UserScalarFieldEnum]
+
+
+export const UserRoleChangeScalarFieldEnum = {
+  id: 'id',
+  actorId: 'actorId',
+  targetUserId: 'targetUserId',
+  previousRole: 'previousRole',
+  newRole: 'newRole',
+  createdAt: 'createdAt'
+} as const
+
+export type UserRoleChangeScalarFieldEnum = (typeof UserRoleChangeScalarFieldEnum)[keyof typeof UserRoleChangeScalarFieldEnum]
 
 
 export const NotificationScalarFieldEnum = {
@@ -3581,6 +3968,60 @@ export const PasswordResetTokenScalarFieldEnum = {
 export type PasswordResetTokenScalarFieldEnum = (typeof PasswordResetTokenScalarFieldEnum)[keyof typeof PasswordResetTokenScalarFieldEnum]
 
 
+export const RefreshSessionScalarFieldEnum = {
+  id: 'id',
+  userId: 'userId',
+  familyId: 'familyId',
+  tokenHash: 'tokenHash',
+  csrfHash: 'csrfHash',
+  expiresAt: 'expiresAt',
+  rotatedAt: 'rotatedAt',
+  replacedByTokenHash: 'replacedByTokenHash',
+  revokedAt: 'revokedAt',
+  revokedReason: 'revokedReason',
+  createdAt: 'createdAt',
+  lastUsedAt: 'lastUsedAt'
+} as const
+
+export type RefreshSessionScalarFieldEnum = (typeof RefreshSessionScalarFieldEnum)[keyof typeof RefreshSessionScalarFieldEnum]
+
+
+export const RefreshRotationResultScalarFieldEnum = {
+  id: 'id',
+  operationKeyHash: 'operationKeyHash',
+  oldRefreshSessionId: 'oldRefreshSessionId',
+  oldTokenHash: 'oldTokenHash',
+  familyId: 'familyId',
+  userId: 'userId',
+  status: 'status',
+  encryptedPayload: 'encryptedPayload',
+  nonce: 'nonce',
+  authenticationTag: 'authenticationTag',
+  payloadKeyVersion: 'payloadKeyVersion',
+  createdAt: 'createdAt',
+  expiresAt: 'expiresAt',
+  completedAt: 'completedAt'
+} as const
+
+export type RefreshRotationResultScalarFieldEnum = (typeof RefreshRotationResultScalarFieldEnum)[keyof typeof RefreshRotationResultScalarFieldEnum]
+
+
+export const RefreshOperationTombstoneScalarFieldEnum = {
+  id: 'id',
+  operationKeyHash: 'operationKeyHash',
+  oldRefreshSessionId: 'oldRefreshSessionId',
+  oldTokenHash: 'oldTokenHash',
+  replacementTokenHash: 'replacementTokenHash',
+  familyId: 'familyId',
+  userId: 'userId',
+  familyExpiresAt: 'familyExpiresAt',
+  completedAt: 'completedAt',
+  createdAt: 'createdAt'
+} as const
+
+export type RefreshOperationTombstoneScalarFieldEnum = (typeof RefreshOperationTombstoneScalarFieldEnum)[keyof typeof RefreshOperationTombstoneScalarFieldEnum]
+
+
 export const CategoryScalarFieldEnum = {
   id: 'id',
   name: 'name',
@@ -3642,6 +4083,7 @@ export const ProductScalarFieldEnum = {
   slug: 'slug',
   description: 'description',
   basePrice: 'basePrice',
+  originalPrice: 'originalPrice',
   status: 'status',
   isActive: 'isActive',
   optionsRevision: 'optionsRevision',
@@ -4106,6 +4548,22 @@ export const PromotionUsageScalarFieldEnum = {
 export type PromotionUsageScalarFieldEnum = (typeof PromotionUsageScalarFieldEnum)[keyof typeof PromotionUsageScalarFieldEnum]
 
 
+export const NextDropScalarFieldEnum = {
+  id: 'id',
+  title: 'title',
+  launchAt: 'launchAt',
+  collectionId: 'collectionId',
+  promotionId: 'promotionId',
+  buttonText: 'buttonText',
+  buttonUrl: 'buttonUrl',
+  isPublished: 'isPublished',
+  createdAt: 'createdAt',
+  updatedAt: 'updatedAt'
+} as const
+
+export type NextDropScalarFieldEnum = (typeof NextDropScalarFieldEnum)[keyof typeof NextDropScalarFieldEnum]
+
+
 export const SortOrder = {
   asc: 'asc',
   desc: 'desc'
@@ -4276,6 +4734,20 @@ export type EnumPushDeliveryStatusFieldRefInput<$PrismaModel> = FieldRefInputTyp
  * Reference to a field of type 'PushDeliveryStatus[]'
  */
 export type ListEnumPushDeliveryStatusFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel, 'PushDeliveryStatus[]'>
+    
+
+
+/**
+ * Reference to a field of type 'RefreshRotationStatus'
+ */
+export type EnumRefreshRotationStatusFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel, 'RefreshRotationStatus'>
+    
+
+
+/**
+ * Reference to a field of type 'RefreshRotationStatus[]'
+ */
+export type ListEnumRefreshRotationStatusFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel, 'RefreshRotationStatus[]'>
     
 
 
@@ -4472,6 +4944,7 @@ export interface PrismaClientOptionsWithAdapter extends PrismaClientBaseOptions 
 export type PrismaClientOptions = PrismaClientOptionsWithAccelerateUrl | PrismaClientOptionsWithAdapter
 export type GlobalOmitConfig = {
   user?: Prisma.UserOmit
+  userRoleChange?: Prisma.UserRoleChangeOmit
   notification?: Prisma.NotificationOmit
   telegramOrderAlert?: Prisma.TelegramOrderAlertOmit
   pushSubscription?: Prisma.PushSubscriptionOmit
@@ -4479,6 +4952,9 @@ export type GlobalOmitConfig = {
   feedback?: Prisma.FeedbackOmit
   userIdentity?: Prisma.UserIdentityOmit
   passwordResetToken?: Prisma.PasswordResetTokenOmit
+  refreshSession?: Prisma.RefreshSessionOmit
+  refreshRotationResult?: Prisma.RefreshRotationResultOmit
+  refreshOperationTombstone?: Prisma.RefreshOperationTombstoneOmit
   category?: Prisma.CategoryOmit
   poster?: Prisma.PosterOmit
   collection?: Prisma.CollectionOmit
@@ -4511,6 +4987,7 @@ export type GlobalOmitConfig = {
   codReconciliationRunItem?: Prisma.CodReconciliationRunItemOmit
   promotion?: Prisma.PromotionOmit
   promotionUsage?: Prisma.PromotionUsageOmit
+  nextDrop?: Prisma.NextDropOmit
 }
 
 /* Types for Logging */

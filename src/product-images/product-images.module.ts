@@ -1,4 +1,5 @@
 import { Module } from '@nestjs/common';
+import { JwtAuthModule } from '../auth/jwt/jwt-auth.module.js';
 import { ProductsModule } from '../products/products.module.js';
 import { ProductImagesController } from './product-images.controller.js';
 import { ProductImagesService } from './product-images.service.js';
@@ -34,11 +35,16 @@ import { ProductImagesRepository } from './repositories/product-images.repositor
  * the ownership chain (product -> image) is enforced inside the service rather
  * than left for a caller to reproduce.
  *
+ * `JwtAuthModule` is imported directly for the guards on the admin routes.
+ * `ProductsModule` imports it but does not re-export it, and Nest exports are
+ * not transitive, so the guard's `AccessTokenService` dependency is only
+ * resolvable here through this explicit import. No providers are duplicated.
+ *
  * `PrismaService` arrives without an explicit import because `PrismaModule` is
  * `@Global`.
  */
 @Module({
-  imports: [ProductsModule],
+  imports: [ProductsModule, JwtAuthModule],
   controllers: [ProductImagesController],
   providers: [ProductImagesService, ProductImagesRepository],
   exports: [ProductImagesService],

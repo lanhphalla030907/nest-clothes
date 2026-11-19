@@ -10,7 +10,12 @@ import {
   Patch,
   Post,
   Query,
+  UseGuards,
 } from '@nestjs/common';
+import { Roles } from '../auth/decorators/roles.decorator.js';
+import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard.js';
+import { RolesGuard } from '../auth/guards/roles.guard.js';
+import { Role } from '../generated/prisma/enums.js';
 import { CreateProductDto } from './dto/create-product.dto.js';
 import { ProductResponseDto } from './dto/product-response.dto.js';
 import { PublicProductQueryDto } from './dto/public-product-query.dto.js';
@@ -26,6 +31,8 @@ export class ProductsController {
   constructor(private readonly productsService: ProductsService) {}
 
   @Post()
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles(Role.ADMIN)
   create(@Body() dto: CreateProductDto): Promise<ProductResponseDto> {
     return this.productsService.create(dto);
   }
@@ -60,6 +67,8 @@ export class ProductsController {
   }
 
   @Patch(':id')
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles(Role.ADMIN)
   update(
     @Param('id', ParseUUIDPipe) id: string,
     @Body() dto: UpdateProductDto,
@@ -68,6 +77,8 @@ export class ProductsController {
   }
 
   @Delete(':id')
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles(Role.ADMIN)
   @HttpCode(HttpStatus.NO_CONTENT)
   remove(@Param('id', ParseUUIDPipe) id: string): Promise<void> {
     return this.productsService.remove(id);

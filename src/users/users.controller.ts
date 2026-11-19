@@ -2,6 +2,8 @@ import { Body, Controller, Post } from '@nestjs/common';
 import { CreateUserDto } from './dto/create-user.dto.js';
 import { UserResponseDto } from './dto/user-response.dto.js';
 import { UsersService } from './users.service.js';
+import { Throttle } from '@nestjs/throttler';
+import { RATE_LIMIT_POLICIES } from '../common/rate-limit/rate-limit.config.js';
 
 /**
  * Registration only.
@@ -22,6 +24,12 @@ export class UsersController {
   constructor(private readonly usersService: UsersService) {}
 
   @Post()
+  @Throttle({
+    default: {
+      limit: RATE_LIMIT_POLICIES.registration.limit,
+      ttl: RATE_LIMIT_POLICIES.registration.ttl,
+    },
+  })
   create(@Body() dto: CreateUserDto): Promise<UserResponseDto> {
     return this.usersService.create(dto);
   }

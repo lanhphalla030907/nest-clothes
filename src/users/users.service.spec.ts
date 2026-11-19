@@ -7,6 +7,7 @@ import { CreateUserDto } from './dto/create-user.dto.js';
 import { UserResponseDto } from './dto/user-response.dto.js';
 import { UsersRepository } from './repositories/users.repository.js';
 import { UsersService } from './users.service.js';
+import { RefreshSessionRepository } from '../auth/refresh/refresh-session.repository.js';
 
 const PLAINTEXT_PASSWORD = 'Str0ng!Passw0rd';
 
@@ -70,6 +71,10 @@ describe('UsersService', () => {
         {
           provide: UsersRepository,
           useValue: { create: repositoryCreate },
+        },
+        {
+          provide: RefreshSessionRepository,
+          useValue: { revokeUserSessions: vi.fn() },
         },
       ],
     }).compile();

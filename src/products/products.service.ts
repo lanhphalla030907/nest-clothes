@@ -120,6 +120,7 @@ export class ProductsService {
        */
       status: lifecycle?.status ?? DEFAULT_PRODUCT_STATUS,
       isActive: lifecycle?.isActive ?? DEFAULT_PRODUCT_IS_ACTIVE,
+      originalPrice: dto.originalPrice ?? undefined,
     };
 
     await this.assertSlugAvailable(data.slug);
@@ -308,6 +309,11 @@ export class ProductsService {
 
     if (dto.categoryId !== undefined) {
       data.categoryId = dto.categoryId;
+    }
+
+    if (dto.originalPrice !== undefined) {
+      data.originalPrice =
+        dto.originalPrice === null ? undefined : normalizeMoney(dto.originalPrice);
     }
 
     return data;

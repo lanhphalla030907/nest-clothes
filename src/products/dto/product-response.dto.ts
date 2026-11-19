@@ -24,6 +24,9 @@ export class ProductResponseDto {
    * every two-decimal value exactly, so a number would allow the amount to drift
    * between the database and the client. The string always carries the same two
    * fraction digits as the `Decimal(12,2)` column.
+   *
+   * No product-level original price is exposed: variant prices and checkout
+   * promotions are the actual pricing sources, so no sale price is invented here.
    */
   basePrice: string;
   status: ProductStatus;

@@ -11,7 +11,12 @@ import {
   Post,
   UploadedFile,
   UseInterceptors,
+  UseGuards,
 } from '@nestjs/common';
+import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard.js';
+import { RolesGuard } from '../auth/guards/roles.guard.js';
+import { Roles } from '../auth/decorators/roles.decorator.js';
+import { Role } from '../generated/prisma/enums.js';
 import { CreateProductImageDto } from './dto/create-product-image.dto.js';
 import { ProductImageResponseDto } from './dto/product-image-response.dto.js';
 import { UpdateProductImageDto } from './dto/update-product-image.dto.js';
@@ -61,6 +66,8 @@ export class ProductImagesController {
    * to special-case this one.
    */
   @Post('upload')
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles(Role.ADMIN)
   @UseInterceptors(ProductImageUploadInterceptor)
   upload(
     @Param('productId', ParseUUIDPipe) productId: string,
@@ -71,6 +78,8 @@ export class ProductImagesController {
   }
 
   @Post()
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles(Role.ADMIN)
   create(
     @Param('productId', ParseUUIDPipe) productId: string,
     @Body() dto: CreateProductImageDto,
@@ -94,6 +103,8 @@ export class ProductImagesController {
   }
 
   @Patch(':imageId')
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles(Role.ADMIN)
   update(
     @Param('productId', ParseUUIDPipe) productId: string,
     @Param('imageId', ParseUUIDPipe) imageId: string,
@@ -110,6 +121,8 @@ export class ProductImagesController {
    * refused with 409, and a Cloudinary failure still leaves the row in place.
    */
   @Delete(':imageId')
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles(Role.ADMIN)
   @HttpCode(HttpStatus.NO_CONTENT)
   remove(
     @Param('productId', ParseUUIDPipe) productId: string,

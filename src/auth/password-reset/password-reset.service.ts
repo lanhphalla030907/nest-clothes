@@ -22,6 +22,7 @@ import {
   PASSWORD_RESET_TOKEN_TTL_MS,
 } from './password-reset.constants.js';
 import { PasswordResetTokenRepository } from './password-reset-token.repository.js';
+import { RefreshTokenService } from '../refresh/refresh-token.service.js';
 
 export interface PasswordResetMessage {
   message: string;
@@ -35,6 +36,7 @@ export class PasswordResetService {
     private readonly passwordService: PasswordService,
     private readonly emailService: EmailService,
     private readonly prisma: PrismaService,
+    private readonly refreshTokens: RefreshTokenService,
   ) {}
 
   /**
@@ -149,6 +151,13 @@ export class PasswordResetService {
         user.id,
         passwordChangedAt,
         token.id,
+        tx,
+      );
+
+      await this.refreshTokens.revokeUserSessions(
+        user.id,
+        'password_reset',
+        passwordChangedAt,
         tx,
       );
     });

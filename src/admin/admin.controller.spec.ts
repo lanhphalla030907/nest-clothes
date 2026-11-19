@@ -1,5 +1,6 @@
 import {
   ConflictException,
+  ForbiddenException,
   HttpStatus,
   NotFoundException,
   ValidationPipe,
@@ -31,7 +32,10 @@ describe('AdminController (HTTP)', () => {
   let app: INestApplication;
   let usersService: {
     findOne: ReturnType<typeof vi.fn>;
+    findPage: ReturnType<typeof vi.fn>;
     createDeliveryStaff: ReturnType<typeof vi.fn>;
+    changeRole: ReturnType<typeof vi.fn>;
+    changeStatus: ReturnType<typeof vi.fn>;
   };
   let identities: TestIdentityRegistry;
   let base: string;
@@ -45,6 +49,50 @@ describe('AdminController (HTTP)', () => {
         email: 'grace@example.test',
         phone: null,
         status: 'ACTIVE',
+        role: Role.CUSTOMER,
+        emailVerifiedAt: null,
+        lastLoginAt: null,
+        createdAt: new Date('2026-01-01T00:00:00.000Z'),
+        updatedAt: new Date('2026-01-01T00:00:00.000Z'),
+      }),
+      findPage: vi.fn().mockResolvedValue({
+        items: [
+          {
+          id: SUBJECT_ID,
+          firstName: 'Grace',
+          lastName: 'Hopper',
+          email: 'grace@example.test',
+          phone: null,
+          status: 'ACTIVE',
+          role: Role.CUSTOMER,
+          emailVerifiedAt: null,
+          lastLoginAt: null,
+          createdAt: new Date('2026-01-01T00:00:00.000Z'),
+          updatedAt: new Date('2026-01-01T00:00:00.000Z'),
+          },
+        ],
+        pagination: { page: 1, limit: 10, total: 1, totalPages: 1 },
+      }),
+      changeRole: vi.fn().mockResolvedValue({
+        id: SUBJECT_ID,
+        firstName: 'Grace',
+        lastName: 'Hopper',
+        email: 'grace@example.test',
+        phone: null,
+        status: 'ACTIVE',
+        role: Role.ADMIN,
+        emailVerifiedAt: null,
+        lastLoginAt: null,
+        createdAt: new Date('2026-01-01T00:00:00.000Z'),
+        updatedAt: new Date('2026-01-01T00:00:00.000Z'),
+      }),
+      changeStatus: vi.fn().mockResolvedValue({
+        id: SUBJECT_ID,
+        firstName: 'Grace',
+        lastName: 'Hopper',
+        email: 'grace@example.test',
+        phone: null,
+        status: 'INACTIVE',
         role: Role.CUSTOMER,
         emailVerifiedAt: null,
         lastLoginAt: null,
@@ -124,6 +172,20 @@ describe('AdminController (HTTP)', () => {
   ) =>
     fetch(`${base}${path}`, {
       method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        ...(userId === undefined ? {} : identities.bearerHeaderFor(userId)),
+      },
+      body: JSON.stringify(body),
+    });
+
+  const patch = (
+    path: string,
+    body: unknown,
+    userId?: string,
+  ) =>
+    fetch(`${base}${path}`, {
+      method: 'PATCH',
       headers: {
         'Content-Type': 'application/json',
         ...(userId === undefined ? {} : identities.bearerHeaderFor(userId)),
@@ -313,7 +375,156 @@ describe('AdminController (HTTP)', () => {
     expect(res.status).toBe(HttpStatus.CONFLICT);
   });
 
-  it('declares user lookup and creation routes', () => {
+  it('lists users for an admin without exposing authentication fields', async () => {
+    const res = await get('/admin/users', ADMIN_ID);
+
+    expect(res.status).toBe(HttpStatus.OK);
+    expect(usersService.findPage).toHaveBeenCalledWith(
+      expect.objectContaining({ page: 1, limit: 10 }),
+    );
+    const text = await res.text();
+    expect(text).not.toContain('passwordHash');
+    expect(text).not.toContain('password');
+    expect(JSON.parse(text)).toMatchObject({
+      items: [expect.objectContaining({ id: SUBJECT_ID })],
+      pagination: { page: 1, limit: 10, total: 1, totalPages: 1 },
+    });
+  });
+
+  it('refuses a non-admin callers from listing users', async () => {
+    const res = await get('/admin/users', CUSTOMER_ID);
+
+    expect(res.status).toBe(HttpStatus.FORBIDDEN);
+    expect(usersService.findPage).not.toHaveBeenCalled();
+  });
+
+  it('lets an admin assign ADMIN to another user', async () => {
+    const res = await patch(
+      `/admin/users/${SUBJECT_ID}/role`,
+      { role: Role.ADMIN },
+      ADMIN_ID,
+    );
+
+    expect(res.status).toBe(HttpStatus.OK);
+    // The actor is taken from the verified token, never from the body or URL.
+    expect(usersService.changeRole).toHaveBeenCalledWith(
+      ADMIN_ID,
+      SUBJECT_ID,
+      Role.ADMIN,
+    );
+    const text = await res.text();
+    expect(text).not.toContain('passwordHash');
+    expect(JSON.parse(text)).toMatchObject({ id: SUBJECT_ID, role: Role.ADMIN });
+  });
+
+  it('refuses a customer trying to assign a role', async () => {
+    const res = await patch(
+      `/admin/users/${SUBJECT_ID}/role`,
+      { role: Role.ADMIN },
+      CUSTOMER_ID,
+    );
+
+    expect(res.status).toBe(HttpStatus.FORBIDDEN);
+    expect(usersService.changeRole).not.toHaveBeenCalled();
+  });
+
+  it('requires authentication to change a role', async () => {
+    const res = await patch(`/admin/users/${SUBJECT_ID}/role`, {
+      role: Role.ADMIN,
+    });
+
+    expect(res.status).toBe(HttpStatus.UNAUTHORIZED);
+    expect(usersService.changeRole).not.toHaveBeenCalled();
+  });
+
+  it('lets an admin deactivate another user and refuses a customer', async () => {
+    const updated = await patch(
+      `/admin/users/${SUBJECT_ID}/status`,
+      { status: 'INACTIVE' },
+      ADMIN_ID,
+    );
+    expect(updated.status).toBe(HttpStatus.OK);
+    expect(usersService.changeStatus).toHaveBeenCalledWith(
+      ADMIN_ID,
+      SUBJECT_ID,
+      'INACTIVE',
+    );
+
+    const denied = await patch(
+      `/admin/users/${SUBJECT_ID}/status`,
+      { status: 'INACTIVE' },
+      CUSTOMER_ID,
+    );
+    expect(denied.status).toBe(HttpStatus.FORBIDDEN);
+    expect(usersService.changeStatus).toHaveBeenCalledTimes(1);
+  });
+
+  it('validates account status values before reaching the service', async () => {
+    const res = await patch(
+      `/admin/users/${SUBJECT_ID}/status`,
+      { status: 'SUSPENDED' },
+      ADMIN_ID,
+    );
+    expect(res.status).toBe(HttpStatus.BAD_REQUEST);
+    expect(usersService.changeStatus).not.toHaveBeenCalled();
+  });
+
+  it('passes a service refusal to change the caller\'s own role through as 403', async () => {
+    usersService.changeRole.mockRejectedValue(
+      new ForbiddenException('You cannot change your own role'),
+    );
+
+    const res = await patch(
+      `/admin/users/${ADMIN_ID}/role`,
+      { role: Role.CUSTOMER },
+      ADMIN_ID,
+    );
+
+    expect(res.status).toBe(HttpStatus.FORBIDDEN);
+    expect(usersService.changeRole).toHaveBeenCalledWith(
+      ADMIN_ID,
+      ADMIN_ID,
+      Role.CUSTOMER,
+    );
+  });
+
+  it('passes an unknown target through as 404', async () => {
+    usersService.changeRole.mockRejectedValue(
+      new NotFoundException('User does not exist'),
+    );
+
+    const res = await patch(
+      `/admin/users/${UNKNOWN_ID}/role`,
+      { role: Role.ADMIN },
+      ADMIN_ID,
+    );
+
+    expect(res.status).toBe(HttpStatus.NOT_FOUND);
+  });
+
+  it('rejects malformed target ids before the service', async () => {
+    const res = await patch('/admin/users/not-a-uuid/role', { role: Role.ADMIN }, ADMIN_ID);
+
+    expect(res.status).toBe(HttpStatus.BAD_REQUEST);
+    expect(usersService.changeRole).not.toHaveBeenCalled();
+  });
+
+  it.each([
+    ['unknown role', { role: 'SUPERUSER' }],
+    ['missing role', {}],
+    ['delivery manager role', { role: Role.DELIVERY_MANAGER }],
+  ])('rejects an invalid role payload: %s', async (_case, body) => {
+    const res = await patch(
+      `/admin/users/${SUBJECT_ID}/role`,
+      body,
+      ADMIN_ID,
+    );
+
+    expect(res.status).toBe(HttpStatus.BAD_REQUEST);
+    expect(usersService.changeRole).not.toHaveBeenCalled();
+  });
+
+  it('declares user lookup, creation and role-change routes', () => {
     expect(Reflect.getMetadata('path', AdminController)).toBe('admin');
 
     const prototype = AdminController.prototype as unknown as Record<string, object>;
@@ -321,6 +532,6 @@ describe('AdminController (HTTP)', () => {
       .filter((name) => name !== 'constructor')
       .map((name) => Reflect.getMetadata('path', prototype[name]) as string);
 
-    expect(routes).toEqual(['users/:id', 'users']);
+    expect(routes).toEqual(['users', 'users/:id', 'users', 'users/:id/role', 'users/:id/status']);
   });
 });

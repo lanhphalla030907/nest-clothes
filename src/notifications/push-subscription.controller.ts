@@ -14,12 +14,6 @@ import {
 } from '@nestjs/common';
 import { CurrentUser } from '../auth/decorators/current-user.decorator.js';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard.js';
-import {
-  AuthRateLimiterGuard,
-} from '../auth/guards/auth-rate-limiter.guard.js';
-import {
-  AuthRateLimit,
-} from '../auth/guards/auth-rate-limit.decorator.js';
 import type { AuthenticatedUser } from '../auth/types/authenticated-user.js';
 import { PushSubscriptionService } from './push-subscription.service.js';
 import { RegisterSubscriptionDto } from './push-subscription.dto.js';
@@ -49,8 +43,6 @@ export class PushSubscriptionController {
    * user is transferred in a single transaction.
    */
   @Post()
-  @UseGuards(AuthRateLimiterGuard)
-  @AuthRateLimit({ limit: 10, windowMs: 60_000 })
   async register(
     @CurrentUser() user: AuthenticatedUser,
     @Body() dto: RegisterSubscriptionDto,
@@ -97,8 +89,6 @@ export class PushSubscriptionController {
    */
   @Delete(':id')
   @HttpCode(HttpStatus.NO_CONTENT)
-  @UseGuards(AuthRateLimiterGuard)
-  @AuthRateLimit({ limit: 10, windowMs: 60_000 })
   async revoke(
     @CurrentUser() user: AuthenticatedUser,
     @Param('id', ParseUUIDPipe) id: string,

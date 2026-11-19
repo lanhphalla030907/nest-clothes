@@ -6,3 +6,13 @@
  * column must import this constant instead of repeating the literal.
  */
 export const ACTIVE_USER_STATUS = 'ACTIVE';
+export const INACTIVE_USER_STATUS = 'INACTIVE';
+
+/** The only account states administrators may set. */
+export const MANAGEABLE_USER_STATUSES = [
+  ACTIVE_USER_STATUS,
+  INACTIVE_USER_STATUS,
+] as const;
+
+export type ManageableUserStatus =
+  (typeof MANAGEABLE_USER_STATUSES)[number];

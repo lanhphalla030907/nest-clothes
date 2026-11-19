@@ -52,6 +52,7 @@ export const AnyNull = runtime.AnyNull
 
 export const ModelName = {
   User: 'User',
+  UserRoleChange: 'UserRoleChange',
   Notification: 'Notification',
   TelegramOrderAlert: 'TelegramOrderAlert',
   PushSubscription: 'PushSubscription',
@@ -59,6 +60,9 @@ export const ModelName = {
   Feedback: 'Feedback',
   UserIdentity: 'UserIdentity',
   PasswordResetToken: 'PasswordResetToken',
+  RefreshSession: 'RefreshSession',
+  RefreshRotationResult: 'RefreshRotationResult',
+  RefreshOperationTombstone: 'RefreshOperationTombstone',
   Category: 'Category',
   Poster: 'Poster',
   Collection: 'Collection',
@@ -90,7 +94,8 @@ export const ModelName = {
   CodReconciliationRun: 'CodReconciliationRun',
   CodReconciliationRunItem: 'CodReconciliationRunItem',
   Promotion: 'Promotion',
-  PromotionUsage: 'PromotionUsage'
+  PromotionUsage: 'PromotionUsage',
+  NextDrop: 'NextDrop'
 } as const
 
 export type ModelName = (typeof ModelName)[keyof typeof ModelName]
@@ -126,6 +131,18 @@ export const UserScalarFieldEnum = {
 } as const
 
 export type UserScalarFieldEnum = (typeof UserScalarFieldEnum)[keyof typeof UserScalarFieldEnum]
+
+
+export const UserRoleChangeScalarFieldEnum = {
+  id: 'id',
+  actorId: 'actorId',
+  targetUserId: 'targetUserId',
+  previousRole: 'previousRole',
+  newRole: 'newRole',
+  createdAt: 'createdAt'
+} as const
+
+export type UserRoleChangeScalarFieldEnum = (typeof UserRoleChangeScalarFieldEnum)[keyof typeof UserRoleChangeScalarFieldEnum]
 
 
 export const NotificationScalarFieldEnum = {
@@ -235,6 +252,60 @@ export const PasswordResetTokenScalarFieldEnum = {
 export type PasswordResetTokenScalarFieldEnum = (typeof PasswordResetTokenScalarFieldEnum)[keyof typeof PasswordResetTokenScalarFieldEnum]
 
 
+export const RefreshSessionScalarFieldEnum = {
+  id: 'id',
+  userId: 'userId',
+  familyId: 'familyId',
+  tokenHash: 'tokenHash',
+  csrfHash: 'csrfHash',
+  expiresAt: 'expiresAt',
+  rotatedAt: 'rotatedAt',
+  replacedByTokenHash: 'replacedByTokenHash',
+  revokedAt: 'revokedAt',
+  revokedReason: 'revokedReason',
+  createdAt: 'createdAt',
+  lastUsedAt: 'lastUsedAt'
+} as const
+
+export type RefreshSessionScalarFieldEnum = (typeof RefreshSessionScalarFieldEnum)[keyof typeof RefreshSessionScalarFieldEnum]
+
+
+export const RefreshRotationResultScalarFieldEnum = {
+  id: 'id',
+  operationKeyHash: 'operationKeyHash',
+  oldRefreshSessionId: 'oldRefreshSessionId',
+  oldTokenHash: 'oldTokenHash',
+  familyId: 'familyId',
+  userId: 'userId',
+  status: 'status',
+  encryptedPayload: 'encryptedPayload',
+  nonce: 'nonce',
+  authenticationTag: 'authenticationTag',
+  payloadKeyVersion: 'payloadKeyVersion',
+  createdAt: 'createdAt',
+  expiresAt: 'expiresAt',
+  completedAt: 'completedAt'
+} as const
+
+export type RefreshRotationResultScalarFieldEnum = (typeof RefreshRotationResultScalarFieldEnum)[keyof typeof RefreshRotationResultScalarFieldEnum]
+
+
+export const RefreshOperationTombstoneScalarFieldEnum = {
+  id: 'id',
+  operationKeyHash: 'operationKeyHash',
+  oldRefreshSessionId: 'oldRefreshSessionId',
+  oldTokenHash: 'oldTokenHash',
+  replacementTokenHash: 'replacementTokenHash',
+  familyId: 'familyId',
+  userId: 'userId',
+  familyExpiresAt: 'familyExpiresAt',
+  completedAt: 'completedAt',
+  createdAt: 'createdAt'
+} as const
+
+export type RefreshOperationTombstoneScalarFieldEnum = (typeof RefreshOperationTombstoneScalarFieldEnum)[keyof typeof RefreshOperationTombstoneScalarFieldEnum]
+
+
 export const CategoryScalarFieldEnum = {
   id: 'id',
   name: 'name',
@@ -296,6 +367,7 @@ export const ProductScalarFieldEnum = {
   slug: 'slug',
   description: 'description',
   basePrice: 'basePrice',
+  originalPrice: 'originalPrice',
   status: 'status',
   isActive: 'isActive',
   optionsRevision: 'optionsRevision',
@@ -758,6 +830,22 @@ export const PromotionUsageScalarFieldEnum = {
 } as const
 
 export type PromotionUsageScalarFieldEnum = (typeof PromotionUsageScalarFieldEnum)[keyof typeof PromotionUsageScalarFieldEnum]
+
+
+export const NextDropScalarFieldEnum = {
+  id: 'id',
+  title: 'title',
+  launchAt: 'launchAt',
+  collectionId: 'collectionId',
+  promotionId: 'promotionId',
+  buttonText: 'buttonText',
+  buttonUrl: 'buttonUrl',
+  isPublished: 'isPublished',
+  createdAt: 'createdAt',
+  updatedAt: 'updatedAt'
+} as const
+
+export type NextDropScalarFieldEnum = (typeof NextDropScalarFieldEnum)[keyof typeof NextDropScalarFieldEnum]
 
 
 export const SortOrder = {

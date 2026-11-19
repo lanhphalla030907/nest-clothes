@@ -30,10 +30,15 @@ import { LocationsModule } from './locations/locations.module.js';
 import { CollectionsModule } from './collections/collections.module.js';
 import { FeedbackModule } from './feedback/feedback.module.js';
 import { ScheduleModule } from '@nestjs/schedule';
+import { APP_GUARD } from '@nestjs/core';
+import { ThrottlerModule } from '@nestjs/throttler';
+import { createThrottlerOptions } from './common/rate-limit/rate-limit.config.js';
+import { LomorThrottlerGuard } from './common/rate-limit/lomor-throttler.guard.js';
 
 @Module({
   imports: [
     ScheduleModule.forRoot(),
+    ThrottlerModule.forRoot(createThrottlerOptions()),
     /**
      * CloudinaryModule is @Global and comes first so its validated credentials
      * and configured client exist before anything that could depend on them. It
@@ -103,6 +108,12 @@ import { ScheduleModule } from '@nestjs/schedule';
     ReceiptModule,
   ],
   controllers: [AppController],
-  providers: [AppService],
+  providers: [
+    AppService,
+    {
+      provide: APP_GUARD,
+      useClass: LomorThrottlerGuard,
+    },
+  ],
 })
 export class AppModule {}

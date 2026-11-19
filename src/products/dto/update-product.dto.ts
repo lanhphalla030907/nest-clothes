@@ -96,6 +96,22 @@ export class UpdateProductDto {
   @NotEquals(ZERO_AMOUNT, { message: 'basePrice must be greater than 0' })
   basePrice?: string;
 
+  /**
+   * Optional original price before a promotion. `null` clears it; absent leaves
+   * the stored value untouched, so a price correction cannot accidentally wipe
+   * a strikethrough the catalogue set.
+   */
+  @IsOptional()
+  @Transform(({ value }) =>
+    value === undefined || value === null ? undefined : normalizeMoney(value),
+  )
+  @IsString()
+  @Matches(MONEY_PATTERN, {
+    message:
+      'originalPrice must be a positive amount with at most 2 decimal places and at most 10 integer digits',
+  })
+  originalPrice?: string | null;
+
   @IsOptional()
   @IsUUID()
   categoryId?: string;

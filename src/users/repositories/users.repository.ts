@@ -1,6 +1,11 @@
 import { Injectable } from '@nestjs/common';
+import { ACTIVE_USER_STATUS } from '../../common/constants/user-status.constants.js';
 import { Prisma, type User } from '../../generated/prisma/client.js';
+import { Role } from '../../generated/prisma/enums.js';
 import { PrismaService } from '../../prisma/prisma.service.js';
+
+/** A client bound to an interactive transaction, accepted by every write below. */
+export type UserTransactionClient = Prisma.TransactionClient;
 
 /**
  * The only place in the users feature that talks to the database.
@@ -98,5 +103,98 @@ export class UsersRepository {
       where: { id: userId },
       data,
     });
+  }
+
+  /**
+   * Runs `work` in one interactive transaction. Role changes read before writing,
+   * so the read, the update and the audit insert must never be observed apart.
+   */
+  runInTransaction<T>(
+    work: (tx: UserTransactionClient) => Promise<T>,
+  ): Promise<T> {
+    return this.prisma.$transaction(work);
+  }
+
+  /** Returns every user for the admin list, in a stable name order. */
+  findAll(
+    client: Prisma.TransactionClient | PrismaService = this.prisma,
+  ): Promise<User[]> {
+    return client.user.findMany({
+      orderBy: [{ lastName: 'asc' }, { firstName: 'asc' }],
+    });
+  }
+
+  /** Returns one bounded admin page and its matching total. */
+  async findAdminPage(
+    filters: {
+      page: number;
+      limit: number;
+      role?: Role;
+      status?: string;
+      search?: string;
+    },
+  ): Promise<{ items: User[]; total: number }> {
+    const where: Prisma.UserWhereInput = {
+      ...(filters.role === undefined ? {} : { role: filters.role }),
+      ...(filters.status === undefined ? {} : { status: filters.status }),
+      ...(filters.search === undefined || filters.search === ''
+        ? {}
+        : {
+            OR: [
+              { firstName: { contains: filters.search, mode: 'insensitive' } },
+              { lastName: { contains: filters.search, mode: 'insensitive' } },
+              { email: { contains: filters.search, mode: 'insensitive' } },
+            ],
+          }),
+    };
+    const skip = (filters.page - 1) * filters.limit;
+    const [items, total] = await this.prisma.$transaction([
+      this.prisma.user.findMany({
+        where,
+        orderBy: [{ lastName: 'asc' }, { firstName: 'asc' }, { id: 'asc' }],
+        skip,
+        take: filters.limit,
+      }),
+      this.prisma.user.count({ where }),
+    ]);
+    return { items, total };
+  }
+
+  /** Counts active administrators — the guard against demoting the last one. */
+  countActiveAdmins(
+    client: Prisma.TransactionClient | PrismaService = this.prisma,
+  ): Promise<number> {
+    return client.user.count({
+      where: { role: Role.ADMIN, status: ACTIVE_USER_STATUS },
+    });
+  }
+
+  /** Writes only the role column, never any other user field. */
+  updateRole(
+    userId: string,
+    role: Role,
+    client: Prisma.TransactionClient | PrismaService = this.prisma,
+  ): Promise<User> {
+    return client.user.update({
+      where: { id: userId },
+      data: { role },
+    });
+  }
+
+  /** Writes only account status, never a role or related user data. */
+  updateStatus(
+    userId: string,
+    status: string,
+    client: Prisma.TransactionClient | PrismaService = this.prisma,
+  ): Promise<User> {
+    return client.user.update({ where: { id: userId }, data: { status } });
+  }
+
+  /** Appends the immutable audit record for a completed role change. */
+  recordRoleChange(
+    data: Prisma.UserRoleChangeUncheckedCreateInput,
+    client: Prisma.TransactionClient | PrismaService = this.prisma,
+  ): Promise<unknown> {
+    return client.userRoleChange.create({ data });
   }
 }

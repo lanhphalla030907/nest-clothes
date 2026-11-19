@@ -17,8 +17,8 @@ import { GoogleLoginDto } from './dto/google-login.dto.js';
 import { LoginResponseDto } from './dto/login-response.dto.js';
 import { LoginDto } from './dto/login.dto.js';
 import { GoogleAuthService } from './google/google-auth.service.js';
-import { AccessTokenService } from './jwt/access-token.service.js';
 import { PasswordService } from './password/password.service.js';
+import { AuthSessionService } from './refresh/auth-session.service.js';
 
 const INVALID_CREDENTIALS_MESSAGE = 'Invalid email or password';
 const TIMING_EQUALISATION_SECRET = 'auth-timing-equalisation-placeholder-secret';
@@ -32,7 +32,7 @@ export class AuthService {
     private readonly usersRepository: UsersRepository,
     private readonly userIdentityRepository: UserIdentityRepository,
     private readonly passwordService: PasswordService,
-    private readonly accessTokenService: AccessTokenService,
+    private readonly authSessionService: AuthSessionService,
     private readonly googleAuthService: GoogleAuthService,
     private readonly prisma: PrismaService,
   ) {}
@@ -76,11 +76,7 @@ export class AuthService {
       new Date(),
     );
 
-    return LoginResponseDto.fromIdentity(
-      authenticatedUser,
-      this.accessTokenService.sign(authenticatedUser),
-      this.accessTokenService.expiresIn,
-    );
+    return this.authSessionService.issue(authenticatedUser);
   }
 
   /**
@@ -121,11 +117,7 @@ export class AuthService {
         new Date(),
       );
 
-      return LoginResponseDto.fromIdentity(
-        authenticatedUser,
-        this.accessTokenService.sign(authenticatedUser),
-        this.accessTokenService.expiresIn,
-      );
+      return this.authSessionService.issue(authenticatedUser);
     }
 
     // 2. Account Resolution by Verified Email
@@ -189,11 +181,7 @@ export class AuthService {
               racedIdentity.user.id,
               new Date(),
             );
-            return LoginResponseDto.fromIdentity(
-              authUser,
-              this.accessTokenService.sign(authUser),
-              this.accessTokenService.expiresIn,
-            );
+            return this.authSessionService.issue(authUser);
           }
         }
         throw error;
@@ -202,11 +190,7 @@ export class AuthService {
       const authenticatedUser = await this.usersRepository.findById(
         existingUser.id,
       );
-      return LoginResponseDto.fromIdentity(
-        authenticatedUser!,
-        this.accessTokenService.sign(authenticatedUser!),
-        this.accessTokenService.expiresIn,
-      );
+      return this.authSessionService.issue(authenticatedUser!);
     }
 
     // 3. New Customer Registration
@@ -243,11 +227,7 @@ export class AuthService {
         return user;
       });
 
-      return LoginResponseDto.fromIdentity(
-        createdUser,
-        this.accessTokenService.sign(createdUser),
-        this.accessTokenService.expiresIn,
-      );
+      return this.authSessionService.issue(createdUser);
     } catch (error) {
       if (this.isUniqueConstraintViolation(error)) {
         // Concurrent registration race: check if identity or user exists now
@@ -266,11 +246,7 @@ export class AuthService {
             racedIdentity.user.id,
             new Date(),
           );
-          return LoginResponseDto.fromIdentity(
-            authUser,
-            this.accessTokenService.sign(authUser),
-            this.accessTokenService.expiresIn,
-          );
+          return this.authSessionService.issue(authUser);
         }
 
         // Email uniqueness conflict during concurrent registration

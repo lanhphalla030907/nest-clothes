@@ -6,6 +6,7 @@ import {
   HttpStatus,
   Post,
   UseGuards,
+  UseInterceptors,
 } from '@nestjs/common';
 import { UserResponseDto } from '../users/dto/user-response.dto.js';
 import { AuthService } from './auth.service.js';
@@ -15,9 +16,10 @@ import { GoogleLoginDto } from './dto/google-login.dto.js';
 import { LoginResponseDto } from './dto/login-response.dto.js';
 import { LoginDto } from './dto/login.dto.js';
 import { ResetPasswordDto } from './dto/reset-password.dto.js';
-import { AuthRateLimit } from './guards/auth-rate-limit.decorator.js';
-import { AuthRateLimiterGuard } from './guards/auth-rate-limiter.guard.js';
+import { Throttle } from '@nestjs/throttler';
+import { RATE_LIMIT_POLICIES } from '../common/rate-limit/rate-limit.config.js';
 import { JwtAuthGuard } from './guards/jwt-auth.guard.js';
+import { AuthSessionCookieInterceptor } from './refresh/auth-session-cookie.interceptor.js';
 import {
   PasswordResetMessage,
   PasswordResetService,
@@ -33,6 +35,7 @@ import type { AuthenticatedUser } from './types/authenticated-user.js';
  * Protected routes mount {@link JwtAuthGuard}, so nothing there can be reached by an unauthenticated request.
  */
 @Controller('auth')
+@UseInterceptors(AuthSessionCookieInterceptor)
 export class AuthController {
   constructor(
     private readonly authService: AuthService,
@@ -43,7 +46,12 @@ export class AuthController {
    * Exchanges valid email/password credentials for an access token.
    */
   @Post('login')
-  @UseGuards(AuthRateLimiterGuard)
+  @Throttle({
+    default: {
+      limit: RATE_LIMIT_POLICIES.login.limit,
+      ttl: RATE_LIMIT_POLICIES.login.ttl,
+    },
+  })
   @HttpCode(HttpStatus.OK)
   login(@Body() dto: LoginDto): Promise<LoginResponseDto> {
     return this.authService.login(dto);
@@ -53,7 +61,12 @@ export class AuthController {
    * Authenticates or registers a customer via Google ID Token.
    */
   @Post('google')
-  @UseGuards(AuthRateLimiterGuard)
+  @Throttle({
+    default: {
+      limit: RATE_LIMIT_POLICIES.googleLogin.limit,
+      ttl: RATE_LIMIT_POLICIES.googleLogin.ttl,
+    },
+  })
   @HttpCode(HttpStatus.OK)
   googleLogin(@Body() dto: GoogleLoginDto): Promise<LoginResponseDto> {
     return this.authService.googleLogin(dto);
@@ -63,8 +76,12 @@ export class AuthController {
    * Starts a password reset. The response never says whether the address exists.
    */
   @Post('forgot-password')
-  @UseGuards(AuthRateLimiterGuard)
-  @AuthRateLimit({ limit: 5, windowMs: 60_000 })
+  @Throttle({
+    default: {
+      limit: RATE_LIMIT_POLICIES.forgotPassword.limit,
+      ttl: RATE_LIMIT_POLICIES.forgotPassword.ttl,
+    },
+  })
   @HttpCode(HttpStatus.OK)
   forgotPassword(
     @Body() dto: ForgotPasswordDto,
@@ -76,8 +93,12 @@ export class AuthController {
    * Consumes a single-use reset token and sets a new local password.
    */
   @Post('reset-password')
-  @UseGuards(AuthRateLimiterGuard)
-  @AuthRateLimit({ limit: 10, windowMs: 60_000 })
+  @Throttle({
+    default: {
+      limit: RATE_LIMIT_POLICIES.resetPassword.limit,
+      ttl: RATE_LIMIT_POLICIES.resetPassword.ttl,
+    },
+  })
   @HttpCode(HttpStatus.OK)
   resetPassword(@Body() dto: ResetPasswordDto): Promise<PasswordResetMessage> {
     return this.passwordResetService.resetPassword(dto);
@@ -87,7 +108,7 @@ export class AuthController {
    * Explicitly connects a Google identity to the caller's authenticated account.
    */
   @Post('google/link')
-  @UseGuards(JwtAuthGuard, AuthRateLimiterGuard)
+  @UseGuards(JwtAuthGuard)
   @HttpCode(HttpStatus.OK)
   linkGoogle(
     @CurrentUser() user: AuthenticatedUser,

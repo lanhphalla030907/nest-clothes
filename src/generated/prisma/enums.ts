@@ -19,6 +19,14 @@ export const Role = {
 export type Role = (typeof Role)[keyof typeof Role]
 
 
+export const RefreshRotationStatus = {
+  PENDING: 'PENDING',
+  SUCCEEDED: 'SUCCEEDED'
+} as const
+
+export type RefreshRotationStatus = (typeof RefreshRotationStatus)[keyof typeof RefreshRotationStatus]
+
+
 export const DeliveryStatus = {
   PENDING_ASSIGNMENT: 'PENDING_ASSIGNMENT',
   ASSIGNED: 'ASSIGNED',

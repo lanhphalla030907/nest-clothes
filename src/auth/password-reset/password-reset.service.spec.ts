@@ -20,6 +20,7 @@ import {
   hashPasswordResetToken,
   PasswordResetService,
 } from './password-reset.service.js';
+import { RefreshTokenService } from '../refresh/refresh-token.service.js';
 
 const USER_ID = '3f2504e0-4f89-41d3-9a0c-0305e82c3301';
 const TOKEN_ID = '7a1f71e9-9d0f-44a9-a0a0-58ff9d74f2f0';
@@ -79,6 +80,7 @@ describe('PasswordResetService', () => {
   let sendPasswordReset: ReturnType<typeof vi.fn>;
   let emailService: { isConfigured: boolean; sendPasswordReset: typeof sendPasswordReset };
   let prismaTransaction: ReturnType<typeof vi.fn>;
+  let revokeUserSessions: ReturnType<typeof vi.fn>;
 
   beforeEach(async () => {
     findByEmail = vi.fn();
@@ -94,6 +96,7 @@ describe('PasswordResetService', () => {
     prismaTransaction = vi.fn(async (cb: (tx: unknown) => Promise<unknown>) =>
       cb({}),
     );
+    revokeUserSessions = vi.fn().mockResolvedValue(0);
 
     const module: TestingModule = await Test.createTestingModule({
       providers: [
@@ -117,6 +120,10 @@ describe('PasswordResetService', () => {
         {
           provide: PrismaService,
           useValue: { $transaction: prismaTransaction },
+        },
+        {
+          provide: RefreshTokenService,
+          useValue: { revokeUserSessions },
         },
       ],
     }).compile();

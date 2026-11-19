@@ -398,6 +398,7 @@ export type PromotionWhereInput = {
   createdAt?: Prisma.DateTimeFilter<"Promotion"> | Date | string
   updatedAt?: Prisma.DateTimeFilter<"Promotion"> | Date | string
   usages?: Prisma.PromotionUsageListRelationFilter
+  nextDrops?: Prisma.NextDropListRelationFilter
 }
 
 export type PromotionOrderByWithRelationInput = {
@@ -421,6 +422,7 @@ export type PromotionOrderByWithRelationInput = {
   createdAt?: Prisma.SortOrder
   updatedAt?: Prisma.SortOrder
   usages?: Prisma.PromotionUsageOrderByRelationAggregateInput
+  nextDrops?: Prisma.NextDropOrderByRelationAggregateInput
 }
 
 export type PromotionWhereUniqueInput = Prisma.AtLeast<{
@@ -447,6 +449,7 @@ export type PromotionWhereUniqueInput = Prisma.AtLeast<{
   createdAt?: Prisma.DateTimeFilter<"Promotion"> | Date | string
   updatedAt?: Prisma.DateTimeFilter<"Promotion"> | Date | string
   usages?: Prisma.PromotionUsageListRelationFilter
+  nextDrops?: Prisma.NextDropListRelationFilter
 }, "id" | "code">
 
 export type PromotionOrderByWithAggregationInput = {
@@ -522,6 +525,7 @@ export type PromotionCreateInput = {
   createdAt?: Date | string
   updatedAt?: Date | string
   usages?: Prisma.PromotionUsageCreateNestedManyWithoutPromotionInput
+  nextDrops?: Prisma.NextDropCreateNestedManyWithoutPromotionInput
 }
 
 export type PromotionUncheckedCreateInput = {
@@ -545,6 +549,7 @@ export type PromotionUncheckedCreateInput = {
   createdAt?: Date | string
   updatedAt?: Date | string
   usages?: Prisma.PromotionUsageUncheckedCreateNestedManyWithoutPromotionInput
+  nextDrops?: Prisma.NextDropUncheckedCreateNestedManyWithoutPromotionInput
 }
 
 export type PromotionUpdateInput = {
@@ -568,6 +573,7 @@ export type PromotionUpdateInput = {
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   usages?: Prisma.PromotionUsageUpdateManyWithoutPromotionNestedInput
+  nextDrops?: Prisma.NextDropUpdateManyWithoutPromotionNestedInput
 }
 
 export type PromotionUncheckedUpdateInput = {
@@ -591,6 +597,7 @@ export type PromotionUncheckedUpdateInput = {
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   usages?: Prisma.PromotionUsageUncheckedUpdateManyWithoutPromotionNestedInput
+  nextDrops?: Prisma.NextDropUncheckedUpdateManyWithoutPromotionNestedInput
 }
 
 export type PromotionCreateManyInput = {
@@ -750,12 +757,9 @@ export type PromotionScalarRelationFilter = {
   isNot?: Prisma.PromotionWhereInput
 }
 
-export type NullableIntFieldUpdateOperationsInput = {
-  set?: number | null
-  increment?: number
-  decrement?: number
-  multiply?: number
-  divide?: number
+export type PromotionNullableScalarRelationFilter = {
+  is?: Prisma.PromotionWhereInput | null
+  isNot?: Prisma.PromotionWhereInput | null
 }
 
 export type PromotionCreateNestedOneWithoutUsagesInput = {
@@ -770,6 +774,22 @@ export type PromotionUpdateOneRequiredWithoutUsagesNestedInput = {
   upsert?: Prisma.PromotionUpsertWithoutUsagesInput
   connect?: Prisma.PromotionWhereUniqueInput
   update?: Prisma.XOR<Prisma.XOR<Prisma.PromotionUpdateToOneWithWhereWithoutUsagesInput, Prisma.PromotionUpdateWithoutUsagesInput>, Prisma.PromotionUncheckedUpdateWithoutUsagesInput>
+}
+
+export type PromotionCreateNestedOneWithoutNextDropsInput = {
+  create?: Prisma.XOR<Prisma.PromotionCreateWithoutNextDropsInput, Prisma.PromotionUncheckedCreateWithoutNextDropsInput>
+  connectOrCreate?: Prisma.PromotionCreateOrConnectWithoutNextDropsInput
+  connect?: Prisma.PromotionWhereUniqueInput
+}
+
+export type PromotionUpdateOneWithoutNextDropsNestedInput = {
+  create?: Prisma.XOR<Prisma.PromotionCreateWithoutNextDropsInput, Prisma.PromotionUncheckedCreateWithoutNextDropsInput>
+  connectOrCreate?: Prisma.PromotionCreateOrConnectWithoutNextDropsInput
+  upsert?: Prisma.PromotionUpsertWithoutNextDropsInput
+  disconnect?: Prisma.PromotionWhereInput | boolean
+  delete?: Prisma.PromotionWhereInput | boolean
+  connect?: Prisma.PromotionWhereUniqueInput
+  update?: Prisma.XOR<Prisma.XOR<Prisma.PromotionUpdateToOneWithWhereWithoutNextDropsInput, Prisma.PromotionUpdateWithoutNextDropsInput>, Prisma.PromotionUncheckedUpdateWithoutNextDropsInput>
 }
 
 export type PromotionCreateWithoutUsagesInput = {
@@ -792,6 +812,7 @@ export type PromotionCreateWithoutUsagesInput = {
   archivedAt?: Date | string | null
   createdAt?: Date | string
   updatedAt?: Date | string
+  nextDrops?: Prisma.NextDropCreateNestedManyWithoutPromotionInput
 }
 
 export type PromotionUncheckedCreateWithoutUsagesInput = {
@@ -814,6 +835,7 @@ export type PromotionUncheckedCreateWithoutUsagesInput = {
   archivedAt?: Date | string | null
   createdAt?: Date | string
   updatedAt?: Date | string
+  nextDrops?: Prisma.NextDropUncheckedCreateNestedManyWithoutPromotionInput
 }
 
 export type PromotionCreateOrConnectWithoutUsagesInput = {
@@ -852,6 +874,7 @@ export type PromotionUpdateWithoutUsagesInput = {
   archivedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  nextDrops?: Prisma.NextDropUpdateManyWithoutPromotionNestedInput
 }
 
 export type PromotionUncheckedUpdateWithoutUsagesInput = {
@@ -874,6 +897,115 @@ export type PromotionUncheckedUpdateWithoutUsagesInput = {
   archivedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  nextDrops?: Prisma.NextDropUncheckedUpdateManyWithoutPromotionNestedInput
+}
+
+export type PromotionCreateWithoutNextDropsInput = {
+  id?: string
+  code?: string | null
+  name: string
+  description?: string | null
+  kind: string
+  discountType: string
+  percentOff?: runtime.Decimal | runtime.DecimalJsLike | number | string | null
+  amountOff?: runtime.Decimal | runtime.DecimalJsLike | number | string | null
+  minSubtotal?: runtime.Decimal | runtime.DecimalJsLike | number | string
+  maxDiscount?: runtime.Decimal | runtime.DecimalJsLike | number | string | null
+  startsAt?: Date | string | null
+  endsAt?: Date | string | null
+  isActive?: boolean
+  usageLimitTotal?: number | null
+  usageLimitPerUser?: number | null
+  priority?: number
+  archivedAt?: Date | string | null
+  createdAt?: Date | string
+  updatedAt?: Date | string
+  usages?: Prisma.PromotionUsageCreateNestedManyWithoutPromotionInput
+}
+
+export type PromotionUncheckedCreateWithoutNextDropsInput = {
+  id?: string
+  code?: string | null
+  name: string
+  description?: string | null
+  kind: string
+  discountType: string
+  percentOff?: runtime.Decimal | runtime.DecimalJsLike | number | string | null
+  amountOff?: runtime.Decimal | runtime.DecimalJsLike | number | string | null
+  minSubtotal?: runtime.Decimal | runtime.DecimalJsLike | number | string
+  maxDiscount?: runtime.Decimal | runtime.DecimalJsLike | number | string | null
+  startsAt?: Date | string | null
+  endsAt?: Date | string | null
+  isActive?: boolean
+  usageLimitTotal?: number | null
+  usageLimitPerUser?: number | null
+  priority?: number
+  archivedAt?: Date | string | null
+  createdAt?: Date | string
+  updatedAt?: Date | string
+  usages?: Prisma.PromotionUsageUncheckedCreateNestedManyWithoutPromotionInput
+}
+
+export type PromotionCreateOrConnectWithoutNextDropsInput = {
+  where: Prisma.PromotionWhereUniqueInput
+  create: Prisma.XOR<Prisma.PromotionCreateWithoutNextDropsInput, Prisma.PromotionUncheckedCreateWithoutNextDropsInput>
+}
+
+export type PromotionUpsertWithoutNextDropsInput = {
+  update: Prisma.XOR<Prisma.PromotionUpdateWithoutNextDropsInput, Prisma.PromotionUncheckedUpdateWithoutNextDropsInput>
+  create: Prisma.XOR<Prisma.PromotionCreateWithoutNextDropsInput, Prisma.PromotionUncheckedCreateWithoutNextDropsInput>
+  where?: Prisma.PromotionWhereInput
+}
+
+export type PromotionUpdateToOneWithWhereWithoutNextDropsInput = {
+  where?: Prisma.PromotionWhereInput
+  data: Prisma.XOR<Prisma.PromotionUpdateWithoutNextDropsInput, Prisma.PromotionUncheckedUpdateWithoutNextDropsInput>
+}
+
+export type PromotionUpdateWithoutNextDropsInput = {
+  id?: Prisma.StringFieldUpdateOperationsInput | string
+  code?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  name?: Prisma.StringFieldUpdateOperationsInput | string
+  description?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  kind?: Prisma.StringFieldUpdateOperationsInput | string
+  discountType?: Prisma.StringFieldUpdateOperationsInput | string
+  percentOff?: Prisma.NullableDecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string | null
+  amountOff?: Prisma.NullableDecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string | null
+  minSubtotal?: Prisma.DecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string
+  maxDiscount?: Prisma.NullableDecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string | null
+  startsAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  endsAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  isActive?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  usageLimitTotal?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
+  usageLimitPerUser?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
+  priority?: Prisma.IntFieldUpdateOperationsInput | number
+  archivedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  usages?: Prisma.PromotionUsageUpdateManyWithoutPromotionNestedInput
+}
+
+export type PromotionUncheckedUpdateWithoutNextDropsInput = {
+  id?: Prisma.StringFieldUpdateOperationsInput | string
+  code?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  name?: Prisma.StringFieldUpdateOperationsInput | string
+  description?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  kind?: Prisma.StringFieldUpdateOperationsInput | string
+  discountType?: Prisma.StringFieldUpdateOperationsInput | string
+  percentOff?: Prisma.NullableDecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string | null
+  amountOff?: Prisma.NullableDecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string | null
+  minSubtotal?: Prisma.DecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string
+  maxDiscount?: Prisma.NullableDecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string | null
+  startsAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  endsAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  isActive?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  usageLimitTotal?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
+  usageLimitPerUser?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
+  priority?: Prisma.IntFieldUpdateOperationsInput | number
+  archivedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  usages?: Prisma.PromotionUsageUncheckedUpdateManyWithoutPromotionNestedInput
 }
 
 
@@ -883,10 +1015,12 @@ export type PromotionUncheckedUpdateWithoutUsagesInput = {
 
 export type PromotionCountOutputType = {
   usages: number
+  nextDrops: number
 }
 
 export type PromotionCountOutputTypeSelect<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
   usages?: boolean | PromotionCountOutputTypeCountUsagesArgs
+  nextDrops?: boolean | PromotionCountOutputTypeCountNextDropsArgs
 }
 
 /**
@@ -904,6 +1038,13 @@ export type PromotionCountOutputTypeDefaultArgs<ExtArgs extends runtime.Types.Ex
  */
 export type PromotionCountOutputTypeCountUsagesArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
   where?: Prisma.PromotionUsageWhereInput
+}
+
+/**
+ * PromotionCountOutputType without action
+ */
+export type PromotionCountOutputTypeCountNextDropsArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
+  where?: Prisma.NextDropWhereInput
 }
 
 
@@ -928,6 +1069,7 @@ export type PromotionSelect<ExtArgs extends runtime.Types.Extensions.InternalArg
   createdAt?: boolean
   updatedAt?: boolean
   usages?: boolean | Prisma.Promotion$usagesArgs<ExtArgs>
+  nextDrops?: boolean | Prisma.Promotion$nextDropsArgs<ExtArgs>
   _count?: boolean | Prisma.PromotionCountOutputTypeDefaultArgs<ExtArgs>
 }, ExtArgs["result"]["promotion"]>
 
@@ -1000,6 +1142,7 @@ export type PromotionSelectScalar = {
 export type PromotionOmit<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetOmit<"id" | "code" | "name" | "description" | "kind" | "discountType" | "percentOff" | "amountOff" | "minSubtotal" | "maxDiscount" | "startsAt" | "endsAt" | "isActive" | "usageLimitTotal" | "usageLimitPerUser" | "priority" | "archivedAt" | "createdAt" | "updatedAt", ExtArgs["result"]["promotion"]>
 export type PromotionInclude<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
   usages?: boolean | Prisma.Promotion$usagesArgs<ExtArgs>
+  nextDrops?: boolean | Prisma.Promotion$nextDropsArgs<ExtArgs>
   _count?: boolean | Prisma.PromotionCountOutputTypeDefaultArgs<ExtArgs>
 }
 export type PromotionIncludeCreateManyAndReturn<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {}
@@ -1009,6 +1152,7 @@ export type $PromotionPayload<ExtArgs extends runtime.Types.Extensions.InternalA
   name: "Promotion"
   objects: {
     usages: Prisma.$PromotionUsagePayload<ExtArgs>[]
+    nextDrops: Prisma.$NextDropPayload<ExtArgs>[]
   }
   scalars: runtime.Types.Extensions.GetPayloadResult<{
     id: string
@@ -1462,6 +1606,7 @@ readonly fields: PromotionFieldRefs;
 export interface Prisma__PromotionClient<T, Null = never, ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs, GlobalOmitOptions = {}> extends Prisma.PrismaPromise<T> {
   readonly [Symbol.toStringTag]: "PrismaPromise"
   usages<T extends Prisma.Promotion$usagesArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.Promotion$usagesArgs<ExtArgs>>): Prisma.PrismaPromise<runtime.Types.Result.GetResult<Prisma.$PromotionUsagePayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
+  nextDrops<T extends Prisma.Promotion$nextDropsArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.Promotion$nextDropsArgs<ExtArgs>>): Prisma.PrismaPromise<runtime.Types.Result.GetResult<Prisma.$NextDropPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
   /**
    * Attaches callbacks for the resolution and/or rejection of the Promise.
    * @param onfulfilled The callback to execute when the Promise is resolved.
@@ -1924,6 +2069,30 @@ export type Promotion$usagesArgs<ExtArgs extends runtime.Types.Extensions.Intern
   take?: number
   skip?: number
   distinct?: Prisma.PromotionUsageScalarFieldEnum | Prisma.PromotionUsageScalarFieldEnum[]
+}
+
+/**
+ * Promotion.nextDrops
+ */
+export type Promotion$nextDropsArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
+  /**
+   * Select specific fields to fetch from the NextDrop
+   */
+  select?: Prisma.NextDropSelect<ExtArgs> | null
+  /**
+   * Omit specific fields from the NextDrop
+   */
+  omit?: Prisma.NextDropOmit<ExtArgs> | null
+  /**
+   * Choose, which related nodes to fetch as well
+   */
+  include?: Prisma.NextDropInclude<ExtArgs> | null
+  where?: Prisma.NextDropWhereInput
+  orderBy?: Prisma.NextDropOrderByWithRelationInput | Prisma.NextDropOrderByWithRelationInput[]
+  cursor?: Prisma.NextDropWhereUniqueInput
+  take?: number
+  skip?: number
+  distinct?: Prisma.NextDropScalarFieldEnum | Prisma.NextDropScalarFieldEnum[]
 }
 
 /**

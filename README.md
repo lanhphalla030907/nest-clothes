@@ -70,6 +70,17 @@ $ mau deploy
 
 With Mau, you can deploy your application in just a few clicks, allowing you to focus on building features rather than managing infrastructure.
 
+## Rate limiting
+
+The backend uses Nest throttling with an in-process memory store. This is
+appropriate for the current single-instance deployment. A multi-instance or
+horizontally scaled deployment must use shared storage such as Redis so all
+instances enforce the same counters.
+
+`TRUSTED_PROXIES` is optional and must contain only explicit IP addresses or
+CIDR ranges for trusted reverse proxies. When unset, Express ignores
+`X-Forwarded-For` and uses the direct peer address.
+
 ## Observability
 
 In production applications, observability is essential for understanding how your system behaves, detecting issues early, and maintaining reliable performance.

@@ -1,4 +1,5 @@
 import { Module } from '@nestjs/common';
+import { JwtAuthModule } from '../auth/jwt/jwt-auth.module.js';
 import { CategoriesModule } from '../categories/categories.module.js';
 import { ProductsController } from './products.controller.js';
 import { ProductsService } from './products.service.js';
@@ -30,7 +31,7 @@ import { ProductsRepository } from './repositories/products.repository.js';
  * other way round.
  */
 @Module({
-  imports: [CategoriesModule],
+  imports: [CategoriesModule, JwtAuthModule],
   controllers: [ProductsController],
   providers: [ProductsService, ProductsRepository],
   exports: [ProductsRepository, ProductsService],

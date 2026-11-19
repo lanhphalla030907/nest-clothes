@@ -14,6 +14,8 @@ import { CheckoutResponseDto } from './dto/checkout-response.dto.js';
 import { CheckoutDto } from './dto/checkout.dto.js';
 import { CreateCheckoutQuoteDto } from './dto/create-checkout-quote.dto.js';
 import { CheckoutQuoteResponseDto } from './dto/checkout-quote-response.dto.js';
+import { Throttle } from '@nestjs/throttler';
+import { RATE_LIMIT_POLICIES } from '../common/rate-limit/rate-limit.config.js';
 
 /**
  * HTTP routing only: validate the request through the DTO and pipe, delegate to
@@ -55,6 +57,12 @@ export class CheckoutController {
   constructor(private readonly checkoutService: CheckoutService) {}
 
   @Post('quote')
+  @Throttle({
+    default: {
+      limit: RATE_LIMIT_POLICIES.checkoutQuote.limit,
+      ttl: RATE_LIMIT_POLICIES.checkoutQuote.ttl,
+    },
+  })
   @HttpCode(HttpStatus.CREATED)
   createQuote(
     @CurrentUser() user: AuthenticatedUser,
@@ -64,6 +72,12 @@ export class CheckoutController {
   }
 
   @Post()
+  @Throttle({
+    default: {
+      limit: RATE_LIMIT_POLICIES.orderCreation.limit,
+      ttl: RATE_LIMIT_POLICIES.orderCreation.ttl,
+    },
+  })
   @HttpCode(HttpStatus.CREATED)
   checkout(
     @CurrentUser() user: AuthenticatedUser,

@@ -47,6 +47,12 @@ export { Prisma }
  */
 export type User = Prisma.UserModel
 /**
+ * Model UserRoleChange
+ * Immutable audit record for an administrator changing somebody's role.
+ * Both users are retained with RESTRICT so audit history cannot be orphaned.
+ */
+export type UserRoleChange = Prisma.UserRoleChangeModel
+/**
  * Model Notification
  * One in-app notification addressed to exactly one user.
  * 
@@ -122,6 +128,33 @@ export type UserIdentity = Prisma.UserIdentityModel
  * the row is kept as an audit trail rather than deleted.
  */
 export type PasswordResetToken = Prisma.PasswordResetTokenModel
+/**
+ * Model RefreshSession
+ * A one-browser-session refresh credential and its rotation family.
+ * 
+ * The raw refresh token is never persisted. Only its SHA-256 digest is stored.
+ * Rotations keep expires_at fixed, so every token in a family has the original
+ * absolute seven-day lifetime.
+ */
+export type RefreshSession = Prisma.RefreshSessionModel
+/**
+ * Model RefreshRotationResult
+ * Atomic, short-lived recovery record for one refresh rotation operation.
+ * 
+ * PENDING rows exist only for the lifetime of the transaction that creates
+ * and completes the operation. SUCCEEDED rows hold an AES-GCM encrypted
+ * replacement access/refresh pair and never contain plaintext credentials.
+ */
+export type RefreshRotationResult = Prisma.RefreshRotationResultModel
+/**
+ * Model RefreshOperationTombstone
+ * Binding metadata retained after a rotation result expires.
+ * 
+ * This row never contains ciphertext or a raw credential. It preserves only
+ * enough identity and binding information to prevent an operation key from
+ * being rebound to another refresh token after the encrypted result is gone.
+ */
+export type RefreshOperationTombstone = Prisma.RefreshOperationTombstoneModel
 /**
  * Model Category
  * A catalog category. Categories form a tree through the `parent`/`children`
@@ -857,3 +890,17 @@ export type Promotion = Prisma.PromotionModel
  * with the existing treatment of orders, payments and COD collections.
  */
 export type PromotionUsage = Prisma.PromotionUsageModel
+/**
+ * Model NextDrop
+ * A scheduled homepage "next drop": a timed, featured release linked to an
+ * existing collection and/or an existing promotion coupon.
+ * 
+ * Only one row may be `is_published = true` at any time. That rule is enforced
+ * by the service inside a transaction and by the partial unique index below,
+ * so two published drops can never coexist even under concurrent publishes.
+ * 
+ * The linked collection and promotion are references only: a drop does not own
+ * them, and deleting a collection or promotion clears the reference rather than
+ * destroying the drop or the referenced row.
+ */
+export type NextDrop = Prisma.NextDropModel

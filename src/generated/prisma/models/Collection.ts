@@ -251,6 +251,7 @@ export type CollectionWhereInput = {
   createdAt?: Prisma.DateTimeFilter<"Collection"> | Date | string
   updatedAt?: Prisma.DateTimeFilter<"Collection"> | Date | string
   products?: Prisma.CollectionProductListRelationFilter
+  nextDrops?: Prisma.NextDropListRelationFilter
 }
 
 export type CollectionOrderByWithRelationInput = {
@@ -264,6 +265,7 @@ export type CollectionOrderByWithRelationInput = {
   createdAt?: Prisma.SortOrder
   updatedAt?: Prisma.SortOrder
   products?: Prisma.CollectionProductOrderByRelationAggregateInput
+  nextDrops?: Prisma.NextDropOrderByRelationAggregateInput
 }
 
 export type CollectionWhereUniqueInput = Prisma.AtLeast<{
@@ -280,6 +282,7 @@ export type CollectionWhereUniqueInput = Prisma.AtLeast<{
   createdAt?: Prisma.DateTimeFilter<"Collection"> | Date | string
   updatedAt?: Prisma.DateTimeFilter<"Collection"> | Date | string
   products?: Prisma.CollectionProductListRelationFilter
+  nextDrops?: Prisma.NextDropListRelationFilter
 }, "id" | "slug">
 
 export type CollectionOrderByWithAggregationInput = {
@@ -325,6 +328,7 @@ export type CollectionCreateInput = {
   createdAt?: Date | string
   updatedAt?: Date | string
   products?: Prisma.CollectionProductCreateNestedManyWithoutCollectionInput
+  nextDrops?: Prisma.NextDropCreateNestedManyWithoutCollectionInput
 }
 
 export type CollectionUncheckedCreateInput = {
@@ -338,6 +342,7 @@ export type CollectionUncheckedCreateInput = {
   createdAt?: Date | string
   updatedAt?: Date | string
   products?: Prisma.CollectionProductUncheckedCreateNestedManyWithoutCollectionInput
+  nextDrops?: Prisma.NextDropUncheckedCreateNestedManyWithoutCollectionInput
 }
 
 export type CollectionUpdateInput = {
@@ -351,6 +356,7 @@ export type CollectionUpdateInput = {
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   products?: Prisma.CollectionProductUpdateManyWithoutCollectionNestedInput
+  nextDrops?: Prisma.NextDropUpdateManyWithoutCollectionNestedInput
 }
 
 export type CollectionUncheckedUpdateInput = {
@@ -364,6 +370,7 @@ export type CollectionUncheckedUpdateInput = {
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   products?: Prisma.CollectionProductUncheckedUpdateManyWithoutCollectionNestedInput
+  nextDrops?: Prisma.NextDropUncheckedUpdateManyWithoutCollectionNestedInput
 }
 
 export type CollectionCreateManyInput = {
@@ -451,6 +458,11 @@ export type CollectionScalarRelationFilter = {
   isNot?: Prisma.CollectionWhereInput
 }
 
+export type CollectionNullableScalarRelationFilter = {
+  is?: Prisma.CollectionWhereInput | null
+  isNot?: Prisma.CollectionWhereInput | null
+}
+
 export type CollectionCreateNestedOneWithoutProductsInput = {
   create?: Prisma.XOR<Prisma.CollectionCreateWithoutProductsInput, Prisma.CollectionUncheckedCreateWithoutProductsInput>
   connectOrCreate?: Prisma.CollectionCreateOrConnectWithoutProductsInput
@@ -465,6 +477,22 @@ export type CollectionUpdateOneRequiredWithoutProductsNestedInput = {
   update?: Prisma.XOR<Prisma.XOR<Prisma.CollectionUpdateToOneWithWhereWithoutProductsInput, Prisma.CollectionUpdateWithoutProductsInput>, Prisma.CollectionUncheckedUpdateWithoutProductsInput>
 }
 
+export type CollectionCreateNestedOneWithoutNextDropsInput = {
+  create?: Prisma.XOR<Prisma.CollectionCreateWithoutNextDropsInput, Prisma.CollectionUncheckedCreateWithoutNextDropsInput>
+  connectOrCreate?: Prisma.CollectionCreateOrConnectWithoutNextDropsInput
+  connect?: Prisma.CollectionWhereUniqueInput
+}
+
+export type CollectionUpdateOneWithoutNextDropsNestedInput = {
+  create?: Prisma.XOR<Prisma.CollectionCreateWithoutNextDropsInput, Prisma.CollectionUncheckedCreateWithoutNextDropsInput>
+  connectOrCreate?: Prisma.CollectionCreateOrConnectWithoutNextDropsInput
+  upsert?: Prisma.CollectionUpsertWithoutNextDropsInput
+  disconnect?: Prisma.CollectionWhereInput | boolean
+  delete?: Prisma.CollectionWhereInput | boolean
+  connect?: Prisma.CollectionWhereUniqueInput
+  update?: Prisma.XOR<Prisma.XOR<Prisma.CollectionUpdateToOneWithWhereWithoutNextDropsInput, Prisma.CollectionUpdateWithoutNextDropsInput>, Prisma.CollectionUncheckedUpdateWithoutNextDropsInput>
+}
+
 export type CollectionCreateWithoutProductsInput = {
   id?: string
   title: string
@@ -475,6 +503,7 @@ export type CollectionCreateWithoutProductsInput = {
   displayOrder?: number
   createdAt?: Date | string
   updatedAt?: Date | string
+  nextDrops?: Prisma.NextDropCreateNestedManyWithoutCollectionInput
 }
 
 export type CollectionUncheckedCreateWithoutProductsInput = {
@@ -487,6 +516,7 @@ export type CollectionUncheckedCreateWithoutProductsInput = {
   displayOrder?: number
   createdAt?: Date | string
   updatedAt?: Date | string
+  nextDrops?: Prisma.NextDropUncheckedCreateNestedManyWithoutCollectionInput
 }
 
 export type CollectionCreateOrConnectWithoutProductsInput = {
@@ -515,6 +545,7 @@ export type CollectionUpdateWithoutProductsInput = {
   displayOrder?: Prisma.IntFieldUpdateOperationsInput | number
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  nextDrops?: Prisma.NextDropUpdateManyWithoutCollectionNestedInput
 }
 
 export type CollectionUncheckedUpdateWithoutProductsInput = {
@@ -527,6 +558,75 @@ export type CollectionUncheckedUpdateWithoutProductsInput = {
   displayOrder?: Prisma.IntFieldUpdateOperationsInput | number
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  nextDrops?: Prisma.NextDropUncheckedUpdateManyWithoutCollectionNestedInput
+}
+
+export type CollectionCreateWithoutNextDropsInput = {
+  id?: string
+  title: string
+  slug: string
+  description?: string | null
+  coverImage: string
+  isActive?: boolean
+  displayOrder?: number
+  createdAt?: Date | string
+  updatedAt?: Date | string
+  products?: Prisma.CollectionProductCreateNestedManyWithoutCollectionInput
+}
+
+export type CollectionUncheckedCreateWithoutNextDropsInput = {
+  id?: string
+  title: string
+  slug: string
+  description?: string | null
+  coverImage: string
+  isActive?: boolean
+  displayOrder?: number
+  createdAt?: Date | string
+  updatedAt?: Date | string
+  products?: Prisma.CollectionProductUncheckedCreateNestedManyWithoutCollectionInput
+}
+
+export type CollectionCreateOrConnectWithoutNextDropsInput = {
+  where: Prisma.CollectionWhereUniqueInput
+  create: Prisma.XOR<Prisma.CollectionCreateWithoutNextDropsInput, Prisma.CollectionUncheckedCreateWithoutNextDropsInput>
+}
+
+export type CollectionUpsertWithoutNextDropsInput = {
+  update: Prisma.XOR<Prisma.CollectionUpdateWithoutNextDropsInput, Prisma.CollectionUncheckedUpdateWithoutNextDropsInput>
+  create: Prisma.XOR<Prisma.CollectionCreateWithoutNextDropsInput, Prisma.CollectionUncheckedCreateWithoutNextDropsInput>
+  where?: Prisma.CollectionWhereInput
+}
+
+export type CollectionUpdateToOneWithWhereWithoutNextDropsInput = {
+  where?: Prisma.CollectionWhereInput
+  data: Prisma.XOR<Prisma.CollectionUpdateWithoutNextDropsInput, Prisma.CollectionUncheckedUpdateWithoutNextDropsInput>
+}
+
+export type CollectionUpdateWithoutNextDropsInput = {
+  id?: Prisma.StringFieldUpdateOperationsInput | string
+  title?: Prisma.StringFieldUpdateOperationsInput | string
+  slug?: Prisma.StringFieldUpdateOperationsInput | string
+  description?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  coverImage?: Prisma.StringFieldUpdateOperationsInput | string
+  isActive?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  displayOrder?: Prisma.IntFieldUpdateOperationsInput | number
+  createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  products?: Prisma.CollectionProductUpdateManyWithoutCollectionNestedInput
+}
+
+export type CollectionUncheckedUpdateWithoutNextDropsInput = {
+  id?: Prisma.StringFieldUpdateOperationsInput | string
+  title?: Prisma.StringFieldUpdateOperationsInput | string
+  slug?: Prisma.StringFieldUpdateOperationsInput | string
+  description?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  coverImage?: Prisma.StringFieldUpdateOperationsInput | string
+  isActive?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  displayOrder?: Prisma.IntFieldUpdateOperationsInput | number
+  createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  products?: Prisma.CollectionProductUncheckedUpdateManyWithoutCollectionNestedInput
 }
 
 
@@ -536,10 +636,12 @@ export type CollectionUncheckedUpdateWithoutProductsInput = {
 
 export type CollectionCountOutputType = {
   products: number
+  nextDrops: number
 }
 
 export type CollectionCountOutputTypeSelect<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
   products?: boolean | CollectionCountOutputTypeCountProductsArgs
+  nextDrops?: boolean | CollectionCountOutputTypeCountNextDropsArgs
 }
 
 /**
@@ -559,6 +661,13 @@ export type CollectionCountOutputTypeCountProductsArgs<ExtArgs extends runtime.T
   where?: Prisma.CollectionProductWhereInput
 }
 
+/**
+ * CollectionCountOutputType without action
+ */
+export type CollectionCountOutputTypeCountNextDropsArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
+  where?: Prisma.NextDropWhereInput
+}
+
 
 export type CollectionSelect<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetSelect<{
   id?: boolean
@@ -571,6 +680,7 @@ export type CollectionSelect<ExtArgs extends runtime.Types.Extensions.InternalAr
   createdAt?: boolean
   updatedAt?: boolean
   products?: boolean | Prisma.Collection$productsArgs<ExtArgs>
+  nextDrops?: boolean | Prisma.Collection$nextDropsArgs<ExtArgs>
   _count?: boolean | Prisma.CollectionCountOutputTypeDefaultArgs<ExtArgs>
 }, ExtArgs["result"]["collection"]>
 
@@ -613,6 +723,7 @@ export type CollectionSelectScalar = {
 export type CollectionOmit<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetOmit<"id" | "title" | "slug" | "description" | "coverImage" | "isActive" | "displayOrder" | "createdAt" | "updatedAt", ExtArgs["result"]["collection"]>
 export type CollectionInclude<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
   products?: boolean | Prisma.Collection$productsArgs<ExtArgs>
+  nextDrops?: boolean | Prisma.Collection$nextDropsArgs<ExtArgs>
   _count?: boolean | Prisma.CollectionCountOutputTypeDefaultArgs<ExtArgs>
 }
 export type CollectionIncludeCreateManyAndReturn<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {}
@@ -622,6 +733,7 @@ export type $CollectionPayload<ExtArgs extends runtime.Types.Extensions.Internal
   name: "Collection"
   objects: {
     products: Prisma.$CollectionProductPayload<ExtArgs>[]
+    nextDrops: Prisma.$NextDropPayload<ExtArgs>[]
   }
   scalars: runtime.Types.Extensions.GetPayloadResult<{
     id: string
@@ -1028,6 +1140,7 @@ readonly fields: CollectionFieldRefs;
 export interface Prisma__CollectionClient<T, Null = never, ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs, GlobalOmitOptions = {}> extends Prisma.PrismaPromise<T> {
   readonly [Symbol.toStringTag]: "PrismaPromise"
   products<T extends Prisma.Collection$productsArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.Collection$productsArgs<ExtArgs>>): Prisma.PrismaPromise<runtime.Types.Result.GetResult<Prisma.$CollectionProductPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
+  nextDrops<T extends Prisma.Collection$nextDropsArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.Collection$nextDropsArgs<ExtArgs>>): Prisma.PrismaPromise<runtime.Types.Result.GetResult<Prisma.$NextDropPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
   /**
    * Attaches callbacks for the resolution and/or rejection of the Promise.
    * @param onfulfilled The callback to execute when the Promise is resolved.
@@ -1480,6 +1593,30 @@ export type Collection$productsArgs<ExtArgs extends runtime.Types.Extensions.Int
   take?: number
   skip?: number
   distinct?: Prisma.CollectionProductScalarFieldEnum | Prisma.CollectionProductScalarFieldEnum[]
+}
+
+/**
+ * Collection.nextDrops
+ */
+export type Collection$nextDropsArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
+  /**
+   * Select specific fields to fetch from the NextDrop
+   */
+  select?: Prisma.NextDropSelect<ExtArgs> | null
+  /**
+   * Omit specific fields from the NextDrop
+   */
+  omit?: Prisma.NextDropOmit<ExtArgs> | null
+  /**
+   * Choose, which related nodes to fetch as well
+   */
+  include?: Prisma.NextDropInclude<ExtArgs> | null
+  where?: Prisma.NextDropWhereInput
+  orderBy?: Prisma.NextDropOrderByWithRelationInput | Prisma.NextDropOrderByWithRelationInput[]
+  cursor?: Prisma.NextDropWhereUniqueInput
+  take?: number
+  skip?: number
+  distinct?: Prisma.NextDropScalarFieldEnum | Prisma.NextDropScalarFieldEnum[]
 }
 
 /**

@@ -47,3 +47,35 @@ export class LoginResponseDto {
     return dto;
   }
 }
+
+export interface AuthSessionSecrets {
+  rawRefreshToken: string;
+  rawCsrfToken: string;
+  familyId: string;
+  expiresAt: Date;
+}
+
+const AUTH_SESSION_SECRETS = Symbol('AUTH_SESSION_SECRETS');
+
+type LoginResponseWithSecrets = LoginResponseDto & {
+  [AUTH_SESSION_SECRETS]?: AuthSessionSecrets;
+};
+
+export function attachAuthSessionSecrets(
+  response: LoginResponseDto,
+  secrets: AuthSessionSecrets,
+): LoginResponseDto {
+  Object.defineProperty(response as LoginResponseWithSecrets, AUTH_SESSION_SECRETS, {
+    value: Object.freeze({ ...secrets }),
+    enumerable: false,
+    configurable: false,
+    writable: false,
+  });
+  return response;
+}
+
+export function getAuthSessionSecrets(
+  response: LoginResponseDto,
+): AuthSessionSecrets | undefined {
+  return (response as LoginResponseWithSecrets)[AUTH_SESSION_SECRETS];
+}

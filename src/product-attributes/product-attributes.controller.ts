@@ -9,7 +9,12 @@ import {
   ParseUUIDPipe,
   Patch,
   Post,
+  UseGuards,
 } from '@nestjs/common';
+import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard.js';
+import { RolesGuard } from '../auth/guards/roles.guard.js';
+import { Roles } from '../auth/decorators/roles.decorator.js';
+import { Role } from '../generated/prisma/enums.js';
 import { CreateProductAttributeDto } from './dto/create-product-attribute.dto.js';
 import { ProductAttributeResponseDto } from './dto/product-attribute-response.dto.js';
 import { UpdateProductAttributeDto } from './dto/update-product-attribute.dto.js';
@@ -34,6 +39,8 @@ export class ProductAttributesController {
   ) {}
 
   @Post()
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles(Role.ADMIN)
   create(
     @Param('productId', ParseUUIDPipe) productId: string,
     @Body() dto: CreateProductAttributeDto,
@@ -57,6 +64,8 @@ export class ProductAttributesController {
   }
 
   @Patch(':attributeId')
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles(Role.ADMIN)
   update(
     @Param('productId', ParseUUIDPipe) productId: string,
     @Param('attributeId', ParseUUIDPipe) attributeId: string,
@@ -66,6 +75,8 @@ export class ProductAttributesController {
   }
 
   @Delete(':attributeId')
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles(Role.ADMIN)
   @HttpCode(HttpStatus.NO_CONTENT)
   remove(
     @Param('productId', ParseUUIDPipe) productId: string,

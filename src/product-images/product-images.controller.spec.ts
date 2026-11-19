@@ -14,6 +14,8 @@ import { UploadProductImageDto } from './dto/upload-product-image.dto.js';
 import type { UploadedImageFile } from './interfaces/uploaded-image-file.js';
 import { ProductImagesController } from './product-images.controller.js';
 import { ProductImagesService } from './product-images.service.js';
+import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard.js';
+import { RolesGuard } from '../auth/guards/roles.guard.js';
 
 const PRODUCT_ID = 'a1b2c3d4-e5f6-4f70-8a9b-0c1d2e3f4a5b';
 const IMAGE_ID = 'c1b2c3d4-e5f6-4f70-8a9b-0c1d2e3f4a5b';
@@ -101,10 +103,17 @@ describe('ProductImagesController', () => {
   beforeEach(async () => {
     service = buildServiceMock();
 
-    const module: TestingModule = await Test.createTestingModule({
+    const testingModule = Test.createTestingModule({
       controllers: [ProductImagesController],
-      providers: [{ provide: ProductImagesService, useValue: service }],
-    }).compile();
+      providers: [
+        { provide: ProductImagesService, useValue: service },
+      ],
+    })
+      .overrideGuard(JwtAuthGuard)
+      .useValue({ canActivate: () => true })
+      .overrideGuard(RolesGuard)
+      .useValue({ canActivate: () => true });
+    const module: TestingModule = await testingModule.compile();
 
     controller = module.get<ProductImagesController>(ProductImagesController);
   });
@@ -185,10 +194,17 @@ describe('ProductImagesController (HTTP)', () => {
   beforeEach(async () => {
     service = buildServiceMock();
 
-    const module: TestingModule = await Test.createTestingModule({
+    const testingModule = Test.createTestingModule({
       controllers: [ProductImagesController],
-      providers: [{ provide: ProductImagesService, useValue: service }],
-    }).compile();
+      providers: [
+        { provide: ProductImagesService, useValue: service },
+      ],
+    })
+      .overrideGuard(JwtAuthGuard)
+      .useValue({ canActivate: () => true })
+      .overrideGuard(RolesGuard)
+      .useValue({ canActivate: () => true });
+    const module: TestingModule = await testingModule.compile();
 
     app = module.createNestApplication();
     app.useGlobalPipes(
@@ -422,10 +438,17 @@ describe('ProductImagesController (multipart upload)', () => {
   beforeEach(async () => {
     service = buildServiceMock();
 
-    const module: TestingModule = await Test.createTestingModule({
+    const testingModule = Test.createTestingModule({
       controllers: [ProductImagesController],
-      providers: [{ provide: ProductImagesService, useValue: service }],
-    }).compile();
+      providers: [
+        { provide: ProductImagesService, useValue: service },
+      ],
+    })
+      .overrideGuard(JwtAuthGuard)
+      .useValue({ canActivate: () => true })
+      .overrideGuard(RolesGuard)
+      .useValue({ canActivate: () => true });
+    const module: TestingModule = await testingModule.compile();
 
     app = module.createNestApplication();
     app.useGlobalPipes(

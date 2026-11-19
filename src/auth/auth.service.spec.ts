@@ -20,6 +20,7 @@ import { LoginDto } from './dto/login.dto.js';
 import { GoogleAuthService } from './google/google-auth.service.js';
 import { AccessTokenService } from './jwt/access-token.service.js';
 import { PasswordService } from './password/password.service.js';
+import { AuthSessionService } from './refresh/auth-session.service.js';
 
 const VALID_EMAIL = 'ada.lovelace@example.com';
 const OTHER_EMAIL = 'grace.hopper@example.com';
@@ -83,12 +84,22 @@ describe('AuthService', () => {
     verifyGoogleToken = vi.fn();
     prismaTransaction = vi.fn(async (cb: (tx: any) => Promise<any>) => cb({}));
     accessTokenService = testAccessTokenService();
+    const authSessionService = {
+      issue: vi.fn(async (user: any) =>
+        LoginResponseDto.fromIdentity(
+          user,
+          accessTokenService.sign(user),
+          accessTokenService.expiresIn,
+        ),
+      ),
+    };
 
     const module: TestingModule = await Test.createTestingModule({
       providers: [
         AuthService,
         PasswordService,
         { provide: AccessTokenService, useValue: accessTokenService },
+        { provide: AuthSessionService, useValue: authSessionService },
         {
           provide: UsersRepository,
           useValue: {

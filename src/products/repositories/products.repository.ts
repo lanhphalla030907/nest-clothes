@@ -21,6 +21,8 @@ export interface CreateProductData {
   slug: string;
   description: string | null;
   basePrice: string;
+  /** Original price before a promotion; `undefined` when the product is not on sale. */
+  originalPrice?: string;
   status: string;
   isActive: boolean;
 }
@@ -32,6 +34,8 @@ export interface UpdateProductData {
   slug?: string;
   description?: string | null;
   basePrice?: string;
+  /** Original price before a promotion; `undefined` leaves the stored value untouched. */
+  originalPrice?: string | null;
 }
 
 /**

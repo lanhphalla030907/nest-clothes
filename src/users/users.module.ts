@@ -4,6 +4,7 @@ import { UsersController } from './users.controller.js';
 import { UsersService } from './users.service.js';
 import { UsersRepository } from './repositories/users.repository.js';
 import { UserIdentityRepository } from './repositories/user-identity.repository.js';
+import { RefreshSessionRepository } from '../auth/refresh/refresh-session.repository.js';
 
 /**
  * Owns the user aggregate and the registration endpoint.
@@ -21,7 +22,7 @@ import { UserIdentityRepository } from './repositories/user-identity.repository.
 @Module({
   imports: [PasswordModule],
   controllers: [UsersController],
-  providers: [UsersService, UsersRepository, UserIdentityRepository],
-  exports: [UsersRepository, UserIdentityRepository, UsersService],
+  providers: [UsersService, UsersRepository, UserIdentityRepository, RefreshSessionRepository],
+  exports: [UsersRepository, UserIdentityRepository, UsersService, RefreshSessionRepository],
 })
 export class UsersModule {}
